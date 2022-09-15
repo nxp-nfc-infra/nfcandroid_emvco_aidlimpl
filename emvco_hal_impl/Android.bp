@@ -1,0 +1,63 @@
+//
+//
+//  Copyright 2022 NXP
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+//
+cc_library_shared {
+    name: "emvco_poller",
+    proprietary: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+        "-Wno-implicit-fallthrough",
+        "-DNXP_EXTNS=TRUE",
+    ],
+
+    srcs: [
+        "hal/phNxpNciHal.c",
+        "hal/phNxpNciHal_ext.c",
+        "log/phNxpLog.c",
+        "osal/android/phDal4Nfc_messageQueueLib.c",
+        "osal/android/phOsalNfc_Tml.c",
+        "osal/android/phOsalNfc_Timer.c",
+        "osal/android/phOsalNfc_Thread.c",
+        "osal/android/phOsalNfc_Memory.c",
+        "tml/phTmlNfc.c",
+        "tml/phTmlNfc_i2c.c",
+        "utils/NxpNfcCapability.c",
+        "utils/phNxpConfig.c",
+        "utils/phNxpNciHal_utils.c",
+        "utils/sparse_crc32.c",
+    ],
+
+    local_include_dirs: [
+        "inc/common",
+        "hal",
+        "log",
+        "tml",
+        "osal/android",
+        "utils",
+    ],
+
+    export_include_dirs: [
+        "inc/extns",
+    ],
+
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
+}

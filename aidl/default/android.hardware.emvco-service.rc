@@ -1,0 +1,4 @@
+service emvco_hal_service /vendor/bin/hw/android.hardware.emvco-service
+    class hal
+    user nfc
+    group nfc

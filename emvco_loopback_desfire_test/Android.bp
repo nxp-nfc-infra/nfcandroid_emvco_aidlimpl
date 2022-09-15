@@ -1,0 +1,25 @@
+cc_test {
+    name: "EMVCoAidlHalDesfireTest",
+    defaults: [
+        "VtsHalTargetTestDefaults",
+        "use_libaidlvintf_gtest_helper_static",
+    ],
+    srcs: [
+        "EMVCoAidlHalTargetTest.cpp",
+    ],
+    shared_libs: [
+        "libbinder",
+        "libbinder_ndk",
+    ],
+    static_libs: [
+        "android.hardware.emvco-V1-ndk",
+        "VtsHalHidlTargetTestBase",
+    ],
+    test_suites: [
+        "general-tests",
+        "vts",
+    ],
+    cppflags: [
+        "-fexceptions",
+    ],
+}

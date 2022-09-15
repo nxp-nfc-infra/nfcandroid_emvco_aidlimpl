@@ -1,0 +1,21 @@
+aidl_interface {
+    name: "android.hardware.emvco",
+    vendor_available: true,
+    srcs: ["android/hardware/emvco/*.aidl"],
+    stability: "vintf",
+    backend: {
+        ndk: {
+            vndk: {
+                enabled: true,
+            },
+        },
+        java: {
+            sdk_version: "module_current",
+            enabled: true,
+        },
+        cpp: {
+            enabled: false,
+        },
+    },
+    versions: ["1"],
+}
