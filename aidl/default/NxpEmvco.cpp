@@ -35,6 +35,17 @@ using ::aidl::android::hardware::emvco::EmvcoStatus;
 std::vector<std::unique_ptr<LinkedCallback>> NxpEmvco::callbacks_;
 std::mutex NxpEmvco::callbacks_lock_;
 std::shared_ptr<NxpEmvco> NxpEmvco::emvco_service_;
+std::shared_ptr<INfcStateChangeCallback> NxpEmvco::nfc_State_change_callback =
+    nullptr;
+
+void NxpEmvco::setNfcState(bool enableNfc) {
+  if (NxpEmvco::nfc_State_change_callback != nullptr) {
+    auto ret = NxpEmvco::nfc_State_change_callback->setNfcState(enableNfc);
+    if (!ret.isOk()) {
+      LOG(ERROR) << "Failed to send event!";
+    }
+  }
+}
 
 void NxpEmvco::eventCallback(uint8_t event, uint8_t status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
@@ -120,17 +131,28 @@ NxpEmvco::NxpEmvco()
 }
 
 binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s BALA dump method called", __func__);
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s", __func__);
   (void)fd;
   (void)p;
   (void)q;
   return STATUS_OK;
 }
 
-::ndk::ScopedAStatus NxpEmvco::handleNfcStateChanged(int32_t in_nfcState) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s BALA handleNfcStateChanged nfcState:%d",
-           __func__, in_nfcState);
+::ndk::ScopedAStatus NxpEmvco::handleNfcStateChange(int32_t in_nfcState) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s handleNfcStateChanged nfcState:%d", __func__,
+           in_nfcState);
   phNxpNciHal_handleNfcStateChanged(in_nfcState);
+  return ndk::ScopedAStatus::ok();
+}
+
+::ndk::ScopedAStatus NxpEmvco::doRegisterNFCStateChangeCallback(
+    const std::shared_ptr<
+        ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+        &in_nfcStateChangeCallback,
+    bool *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s", __func__);
+  NxpEmvco::nfc_State_change_callback = in_nfcStateChangeCallback;
+  *_aidl_return = true;
   return ndk::ScopedAStatus::ok();
 }
 ::ndk::ScopedAStatus NxpEmvco::doSetEMVCoMode(int8_t in_config,
@@ -139,7 +161,7 @@ binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_open called check return",
            __func__);
 
-  phNxpNciHal_open(eventCallback, dataCallback);
+  phNxpNciHal_open(eventCallback, dataCallback, setNfcState);
 
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_isStartEMVCo:%d", __func__,
            in_isStartEMVCo);
@@ -151,7 +173,7 @@ binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
 
 ::ndk::ScopedAStatus NxpEmvco::open() {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  NFCSTATUS status = phNxpNciHal_open(eventCallback, dataCallback);
+  NFCSTATUS status = phNxpNciHal_open(eventCallback, dataCallback, setNfcState);
 
   return CHK_STATUS(status);
 }

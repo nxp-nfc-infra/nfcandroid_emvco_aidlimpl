@@ -128,6 +128,41 @@ static void phNxpNciHal_initialize_debug_enabled_flag() {
   NXPLOG_NCIHAL_D("nfc_debug_enabled : %d", nfc_debug_enabled);
 }
 
+void phNxpNciHal_led_switch_control(phNxpNci_EMVCoStatus emvcoStatus) {
+  NXPLOG_NCIHAL_D("%s emvcoStatus:%d", __func__, emvcoStatus);
+  NFCSTATUS status = NFCSTATUS_FAILED;
+  switch (emvcoStatus) {
+  case EMVCO_MODE_ON: {
+    status = phTmlNfc_IoCtl(phTmlNfc_e_RedLedOff);
+    if (NFCSTATUS_SUCCESS == status) {
+      NXPLOG_NCIHAL_D("RED LED OFF - SUCCESS\n");
+    } else {
+      NXPLOG_NCIHAL_D("RED LED OFF  - FAILED\n");
+    }
+    status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOn);
+    if (NFCSTATUS_SUCCESS == status) {
+      NXPLOG_NCIHAL_D("GREEN LED ON - SUCCESS\n");
+    } else {
+      NXPLOG_NCIHAL_D("GREEN LED ON - FAILED\n");
+    }
+    break;
+  }
+  case EMVCO_MODE_OFF: {
+    status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOff);
+    if (NFCSTATUS_SUCCESS == status) {
+      NXPLOG_NCIHAL_D("GREEN LED OFF - SUCCESS\n");
+    } else {
+      NXPLOG_NCIHAL_D("GREEN LED OFF  - FAILED\n");
+    }
+    status = phTmlNfc_IoCtl(phTmlNfc_e_RedLedOn);
+    if (NFCSTATUS_SUCCESS == status) {
+      NXPLOG_NCIHAL_D("RED LED ON - SUCCESS\n");
+    } else {
+      NXPLOG_NCIHAL_D("RED LED ON - FAILED\n");
+    }
+  }
+  }
+}
 /******************************************************************************
  * Function         phNxpNciHal_client_thread
  *
@@ -254,20 +289,23 @@ static void *phNxpNciHal_client_thread(void *arg) {
     }
     case EMVCO_EVENT_STOPPED_MSG: {
       REENTRANCE_LOCK();
+      int mode_switch_status = phTmlNfc_IoCtl(phTmlNfc_e_NFCCModeSwitchOff);
+      NXPLOG_NCIHAL_D("%s EMVCO_MODE_OFF status:%d", __func__,
+                      mode_switch_status);
+      phNxpNciHal_led_switch_control(EMVCO_MODE_OFF);
+
       if (nxpncihal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
         (*nxpncihal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOPPED,
                                             HAL_NFC_STATUS_OK);
       }
 
-      if (!fork()) {
-        char command[50];
-        strcpy(command, "svc nfc enable");
-        int status = execl("/system/bin/sh", "sh", "-c", command, (char *)NULL);
-        NXPLOG_NCIHAL_D("enable NFC svc status:%d", status);
-      } else {
-        NXPLOG_NCIHAL_D("failed to enable NFC");
+      if (nxpncihal_ctrl.p_nfc_state_cback != NULL) {
+        /* Send the event */
+        NXPLOG_NCIHAL_D("NFC ENABLE called");
+        (*nxpncihal_ctrl.p_nfc_state_cback)(true);
       }
+
       REENTRANCE_UNLOCK();
       break;
     }
@@ -337,7 +375,8 @@ void phNxpNciHal_handleNfcStateChanged(int32_t nfc_state) {
   return;
 }
 int phNxpNciHal_openImpl(nfc_stack_callback_t *p_cback,
-                         nfc_stack_data_callback_t *p_data_cback) {
+                         nfc_stack_data_callback_t *p_data_cback,
+                         nfc_state_change_callback_t *p_nfc_state_cback) {
   NFCSTATUS wConfigStatus = NFCSTATUS_SUCCESS;
   NFCSTATUS status = NFCSTATUS_SUCCESS;
   NXPLOG_NCIHAL_D("phNxpNciHal_open nfcStatus:%d", nfcStatus);
@@ -347,14 +386,10 @@ int phNxpNciHal_openImpl(nfc_stack_callback_t *p_cback,
       NXPLOG_NCIHAL_D("phOsalNfc_Thread_sem_init() Failed, errno = 0x%02X",
                       errno);
     }
-    if (!fork()) {
-      char command[50];
-      strcpy(command, "svc nfc disable");
-      int status = execl("/system/bin/sh", "sh", "-c", command, (char *)NULL);
-      NXPLOG_NCIHAL_D("disable NFC status:%d", status);
-    } else {
-      NXPLOG_NCIHAL_D("disable NFC not called");
-    }
+    NXPLOG_NCIHAL_D("NFC DISABLE called through p_nfc_state_cback");
+    p_nfc_state_cback(false);
+    NXPLOG_NCIHAL_D("NFC DISABLE called through p_nfc_state_cback end");
+
     pthread_mutex_lock(&nfcStatusSyncLock);
     pthread_cond_wait(&nfcStatusCondVar, &nfcStatusSyncLock);
     pthread_mutex_unlock(&nfcStatusSyncLock);
@@ -372,7 +407,7 @@ int phNxpNciHal_openImpl(nfc_stack_callback_t *p_cback,
   }
   nxpncihal_ctrl.p_nfc_stack_cback = p_cback;
   nxpncihal_ctrl.p_nfc_stack_data_cback = p_data_cback;
-
+  nxpncihal_ctrl.p_nfc_state_cback = p_nfc_state_cback;
   phNxpNciHal_open_complete(wConfigStatus);
 
   return wConfigStatus;
@@ -398,9 +433,10 @@ void *phNxpNciHal_doSetEMVCoModeImpl(void *vargp) {
 
   if (in_isStartEMVCo) {
     if (emvco_config >= 1) {
-      int status =
-          phNxpNciHal_openImpl(m_p_nfc_stack_cback, m_p_nfc_stack_data_cback);
-      if (status == NFCSTATUS_SUCCESS) {
+      int hal_open_status = phNxpNciHal_openImpl(
+          m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
+      NXPLOG_NCIHAL_D("%s EMVCo HAL open status:%d", __func__, in_isStartEMVCo);
+      if (hal_open_status == NFCSTATUS_SUCCESS) {
         phLibNfc_Message_t msg;
         msg.eMsgType = EMVCO_EVENT_START_MSG;
         msg.pMsgData = NULL;
@@ -460,6 +496,7 @@ int phNxpNciHal_MinOpen() {
   phTmlNfc_Config_t tTmlConfig;
   char *nfc_dev_node = NULL;
   const uint16_t max_len = 260;
+  int mode_switch_status;
   NFCSTATUS wConfigStatus = NFCSTATUS_SUCCESS;
   NFCSTATUS status = NFCSTATUS_SUCCESS;
   NXPLOG_NCIHAL_D("phNxpNci_MinOpen(): enter");
@@ -571,6 +608,12 @@ int phNxpNciHal_MinOpen() {
   phNxpNciHal_ext_init();
 
 init_retry:
+
+  mode_switch_status = phTmlNfc_IoCtl(phTmlNfc_e_NFCCModeSwitchOn);
+  NXPLOG_NCIHAL_D("%s modeswitch IOCTL status:%d", __func__,
+                  mode_switch_status);
+  phNxpNciHal_led_switch_control(EMVCO_MODE_ON);
+
   status = phNxpNciHal_send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
   if (status != NFCSTATUS_SUCCESS) {
     NXPLOG_NCIHAL_E("NCI_CORE_RESET: Failed");
@@ -650,10 +693,12 @@ clean_and_return:
  *
  ******************************************************************************/
 int phNxpNciHal_open(nfc_stack_callback_t *p_cback,
-                     nfc_stack_data_callback_t *p_data_cback) {
+                     nfc_stack_data_callback_t *p_data_cback,
+                     nfc_state_change_callback_t *p_nfc_state_cback) {
   NXPLOG_NCIHAL_D("%s:", __func__);
   m_p_nfc_stack_cback = p_cback;
   m_p_nfc_stack_data_cback = p_data_cback;
+  m_p_nfc_state_cback = p_nfc_state_cback;
   return NFCSTATUS_SUCCESS;
 }
 

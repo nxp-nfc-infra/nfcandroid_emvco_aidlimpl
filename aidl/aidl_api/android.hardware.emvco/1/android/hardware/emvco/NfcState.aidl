@@ -34,10 +34,10 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.hardware.emvco;
-@VintfStability
-interface INxpEmvcoProfileDiscovery {
-  boolean doRegisterEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback emvcoClientCallback);
-  oneway void doSetEMVCoMode(in byte config, boolean isStartEMVCo);
-  oneway void handleNfcStateChange(int nfcState);
-  boolean doRegisterNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeCallback nfcStateChangeCallback);
+@Backing(type="int") @VintfStability
+enum NfcState {
+  STATE_OFF = 1,
+  STATE_TURNING_ON = 1,
+  STATE_ON = 2,
+  STATE_TURNING_OFF = 3,
 }

@@ -66,8 +66,13 @@ typedef enum {
 
 phNxpNci_NfcStatus nfcStatus;
 
+typedef enum { EMVCO_MODE_ON = 1, EMVCO_MODE_OFF } phNxpNci_EMVCoStatus;
+
+phNxpNci_EMVCoStatus emvcoStatus;
+
 nfc_stack_callback_t *m_p_nfc_stack_cback;
 nfc_stack_data_callback_t *m_p_nfc_stack_data_cback;
+nfc_state_change_callback_t *m_p_nfc_state_cback;
 
 typedef struct nci_data {
   uint16_t len;
@@ -119,6 +124,7 @@ typedef struct phNxpNciHal_Control {
   /* libnfc-nci callbacks */
   nfc_stack_callback_t *p_nfc_stack_cback;
   nfc_stack_data_callback_t *p_nfc_stack_data_cback;
+  nfc_state_change_callback_t *p_nfc_state_cback;
 
   /* control granted callback */
   phNxpNciHal_control_granted_callback_t *p_control_granted_cback;
@@ -202,6 +208,7 @@ void phNxpNciHal_release_control(void);
 int phNxpNciHal_write_unlocked(uint16_t data_len, const uint8_t *p_data);
 NFCSTATUS phNxpNciHal_core_reset_recovery();
 void phNxpNciHal_discovery_cmd_ext(uint8_t *p_cmd_data, uint16_t cmd_len);
+void phNxpNciHal_led_switch_control(phNxpNci_EMVCoStatus emvcoStatus);
 /*******************************************************************************
 **
 ** Function         phNxpNciHal_configFeatureList

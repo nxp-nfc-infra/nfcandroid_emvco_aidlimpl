@@ -39,6 +39,20 @@ NxpEmvcoProfileDiscovery::doSetEMVCoMode(int8_t in_config,
   return NxpEmvco::getInstance()->doSetEMVCoMode(in_config, in_isStartEMVCo);
 }
 
+::ndk::ScopedAStatus NxpEmvcoProfileDiscovery::doRegisterNFCStateChangeCallback(
+    const std::shared_ptr<
+        ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+        &in_nfcStateChangeCallback,
+    bool *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return NxpEmvco::getInstance()->doRegisterNFCStateChangeCallback(
+      in_nfcStateChangeCallback, _aidl_return);
+}
+::ndk::ScopedAStatus
+NxpEmvcoProfileDiscovery::handleNfcStateChange(int32_t in_nfcState) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return NxpEmvco::getInstance()->handleNfcStateChange(in_nfcState);
+}
 } // namespace emvco
 } // namespace hardware
 } // namespace android

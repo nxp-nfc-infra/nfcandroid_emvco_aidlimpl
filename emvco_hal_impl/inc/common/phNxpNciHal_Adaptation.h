@@ -38,6 +38,8 @@ typedef void(nfc_stack_callback_t)(nfc_event_t event,
  */
 typedef void(nfc_stack_data_callback_t)(uint16_t data_len, uint8_t *p_data);
 
+typedef void(nfc_state_change_callback_t)(bool enableNfc);
+
 enum {
   HAL_NFC_OPEN_CPLT_EVT = 0u,
   HAL_NFC_CLOSE_CPLT_EVT = 1u,
@@ -195,7 +197,8 @@ typedef struct {
 
 /* NXP HAL functions */
 int phNxpNciHal_open(nfc_stack_callback_t *p_cback,
-                     nfc_stack_data_callback_t *p_data_cback);
+                     nfc_stack_data_callback_t *p_data_cback,
+                     nfc_state_change_callback_t *p_nfc_state_cback);
 int phNxpNciHal_MinOpen();
 int phNxpNciHal_write(uint16_t data_len, const uint8_t *p_data);
 int phNxpNciHal_write_internal(uint16_t data_len, const uint8_t *p_data);

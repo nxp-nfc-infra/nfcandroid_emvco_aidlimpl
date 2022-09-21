@@ -27,5 +27,4 @@ interface INxpEmvco {
     INxpEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
     INxpEmvcoContactlessCard getNxpEmvcoContactlessCard();
     INxpEmvcoContactCard getNxpEmvcoContactCard();
-    oneway void handleNfcStateChanged(int nfcState);
 }

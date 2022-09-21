@@ -18,12 +18,10 @@
 
 package android.hardware.emvco;
 
-import android.hardware.emvco.IEmvcoClientCallback;
-import android.hardware.emvco.INfcStateChangeCallback;
+
 @VintfStability
-interface INxpEmvcoProfileDiscovery {
-    boolean doRegisterEMVCoEventListener(in IEmvcoClientCallback emvcoClientCallback);
-    oneway void doSetEMVCoMode(in byte config, boolean isStartEMVCo);
-    oneway void handleNfcStateChange(int nfcState);
-    boolean doRegisterNFCStateChangeCallback(in INfcStateChangeCallback nfcStateChangeCallback);
+interface INfcStateChangeCallback {
+  
+    oneway void setNfcState(boolean enableNfc);
+
 }

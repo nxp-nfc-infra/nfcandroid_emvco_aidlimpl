@@ -323,24 +323,90 @@ int phTmlNfc_i2c_nfcc_reset(void *pDevHandle, enum NfccResetType eType) {
 
 /*******************************************************************************
 **
-** Function         phTmlNfc_i2c_get_nfc_state
+** Function         phTmlNfc_i2c_led_control
 **
-** Description      Get NFC state
+** Description      Controls the RED and GREEN LED
 **
 ** Parameters       pDevHandle     - valid device handle
-** Returns           0   - unknown
-**                   1   - FW DWL
-**                   2 	 - NCI
+**                  eType          - led control
+**
+** Returns           0   - reset operation success
+**                  -1   - reset operation failure
 **
 *******************************************************************************/
-int phTmlNfc_i2c_get_nfc_state(void *pDevHandle) {
-  int ret = NFC_STATE_UNKNOWN;
-  NXPLOG_TML_D("%s ", __func__);
+int phTmlNfc_i2c_led_control(void *pDevHandle, enum LEDControl eType) {
+  int ret = -1;
+  NXPLOG_TML_D("%s, LEDControl eType %u", __func__, eType);
+
   if (NULL == pDevHandle) {
-    return ret;
+    return -1;
   }
-  ret = phOsalNfc_Tml_ioctl((intptr_t)pDevHandle, NFC_GET_NFC_STATE, 0, 1);
-  NXPLOG_TML_D("%s :nfc state = %d", __func__, ret);
+
+  ret = phOsalNfc_Tml_ioctl((intptr_t)pDevHandle, LEDS_CONTROL, eType, 2);
+
+  if (ret < 0) {
+    NXPLOG_TML_E("%s :failed errno = 0x%x", __func__, errno);
+  }
+  return ret;
+}
+
+/*******************************************************************************
+**
+** Function         phTmlNfc_i2c_led_control
+**
+** Description      sets the mode switch to NFCC
+**
+** Parameters       pDevHandle     - valid device handle
+**                  eType          - mode switch control
+**
+** Returns           0   - reset operation success
+**                  -1   - reset operation failure
+**
+*******************************************************************************/
+int phTmlNfc_i2c_nfcc_profile_switch(void *pDevHandle, enum ProfileMode eType) {
+  int ret = -1;
+  NXPLOG_TML_D("%s, LEDControl eType %u", __func__, eType);
+
+  if (NULL == pDevHandle) {
+    return -1;
+  }
+
+  ret =
+      phOsalNfc_Tml_ioctl((intptr_t)pDevHandle, NFCC_PROFILE_SWITCH, eType, 2);
+
+  if (ret < 0) {
+    NXPLOG_TML_E("%s :failed errno = 0x%x", __func__, errno);
+  }
+  return ret;
+}
+
+/*******************************************************************************
+**
+** Function         phTmlNfc_i2c_led_control
+**
+** Description      sets the mode switch to NFCC
+**
+** Parameters       pDevHandle     - valid device handle
+**                  eType          - mode switch control
+**
+** Returns           0   - reset operation success
+**                  -1   - reset operation failure
+**
+*******************************************************************************/
+int phTmlNfc_i2c_smcu_profile_switch(void *pDevHandle, enum ProfileMode eType) {
+  int ret = -1;
+  NXPLOG_TML_D("%s, LEDControl eType %u", __func__, eType);
+
+  if (NULL == pDevHandle) {
+    return -1;
+  }
+
+  ret =
+      phOsalNfc_Tml_ioctl((intptr_t)pDevHandle, SMCU_PROFILE_SWITCH, eType, 2);
+
+  if (ret < 0) {
+    NXPLOG_TML_E("%s :failed errno = 0x%x", __func__, errno);
+  }
   return ret;
 }
 

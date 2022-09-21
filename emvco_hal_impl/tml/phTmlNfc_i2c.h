@@ -30,20 +30,17 @@
  * NFC_SET_PWR(2): reset and power on with firmware download enabled
  */
 #define NFC_SET_PWR _IOW(NFC_MAGIC, 0x01, uint32_t)
+#define NFCC_PROFILE_SWITCH _IOW(NFC_MAGIC, 0x04, uint32_t)
+#define SMCU_PROFILE_SWITCH _IOW(NFC_MAGIC, 0x05, uint32_t)
 
 /*
- * get platform interface type(i2c or i3c) for common MW
- * return 0 - i2c, 1 - i3c
+ * LED control via ioctl
+ * RED_LED_OFF(0): RED LED OFF
+ * RED_LED_ON(1):  RED LED ON
+ * GREEN_LED_OFF(2): GREEN LED OFF
+ * GREEN_LED_ON(3): GREEN LED ON
  */
-#define NFC_GET_PLATFORM_TYPE _IO(NFC_MAGIC, 0x04)
-/*
- * get boot state
- * return unknown, fw dwl, fw teared, nci
- */
-#define NFC_GET_NFC_STATE _IO(NFC_MAGIC, 0x05)
-
-/* NFC HAL can call this ioctl to get the current IRQ state */
-#define NFC_GET_IRQ_STATE _IO(NFC_MAGIC, 0x06)
+#define LEDS_CONTROL _IOW(NFC_MAGIC, 0x06, uint32_t)
 
 enum NfccResetType : uint32_t {
   MODE_POWER_OFF = 0x00,
@@ -53,6 +50,19 @@ enum NfccResetType : uint32_t {
   MODE_FW_DWND_HIGH,
   MODE_POWER_RESET,
   MODE_FW_GPIO_LOW
+};
+
+enum LEDControl : uint32_t {
+  RED_LED_OFF = 0x00,
+  RED_LED_ON,
+  GREEN_LED_OFF,
+  GREEN_LED_ON
+};
+
+/* Profile mode type */
+enum ProfileMode : uint32_t {
+  NCI_MODE = 0,
+  EMVCO_MODE,
 };
 
 /*****************************************************************************
@@ -136,20 +146,6 @@ int phTmlNfc_i2c_write(void *pDevHandle, uint8_t *pBuffer, int nNbBytesToWrite);
 int phTmlNfc_i2c_nfcc_reset(void *pDevHandle, enum NfccResetType eType);
 
 /*****************************************************************************
-**
-** Function         GetNfcState
-**
-** Description      Get NFC state
-**
-** Parameters       pDevHandle     - valid device handle
-** Returns           0   - unknown
-**                   1   - FW DWL
-**                   2   - NCI
-**
-*****************************************************************************/
-int phTmlNfc_i2c_get_nfc_state(void *pDevHandle);
-
-/*****************************************************************************
  **
  ** Function         SemTimedWait
  **
@@ -175,4 +171,9 @@ void phTmlNfc_i2c_sem_post();
 
 int phTmlNfc_i2c_flush_data(void *pDevHandle, uint8_t *pBuffer, int numRead);
 
+int phTmlNfc_i2c_led_control(void *pDevHandle, enum LEDControl eType);
+
+int phTmlNfc_i2c_nfcc_profile_switch(void *pDevHandle, enum ProfileMode eType);
+
+int phTmlNfc_i2c_smcu_profile_switch(void *pDevHandle, enum ProfileMode eType);
 #endif /* _PHOSALNFC_I2CTRANSPORT_H_*/

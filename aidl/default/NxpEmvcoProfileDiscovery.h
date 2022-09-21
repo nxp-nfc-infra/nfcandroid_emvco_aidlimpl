@@ -19,6 +19,7 @@
 #include "NxpEmvco.h"
 #include <aidl/android/hardware/emvco/BnNxpEmvcoProfileDiscovery.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
+#include <aidl/android/hardware/emvco/INfcStateChangeCallback.h>
 
 namespace aidl {
 namespace android {
@@ -33,6 +34,12 @@ public:
       bool *_aidl_return) override;
   ::ndk::ScopedAStatus doSetEMVCoMode(int8_t in_config,
                                       bool in_isStartEMVCo) override;
+  ::ndk::ScopedAStatus doRegisterNFCStateChangeCallback(
+      const std::shared_ptr<
+          ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+          &in_nfcStateChangeCallback,
+      bool *_aidl_return) override;
+  ::ndk::ScopedAStatus handleNfcStateChange(int32_t in_nfcState) override;
 };
 
 } // namespace emvco

@@ -25,6 +25,7 @@
 #include "NxpEmvcoProfileDiscovery.h"
 #include <aidl/android/hardware/emvco/BnNxpEmvco.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
+#include <aidl/android/hardware/emvco/INfcStateChangeCallback.h>
 #include <android-base/logging.h>
 #include <log/log.h>
 
@@ -50,7 +51,7 @@ public:
   ::ndk::ScopedAStatus getNxpEmvcoContactCard(
       std::shared_ptr<::aidl::android::hardware::emvco::INxpEmvcoContactCard>
           *_aidl_return) override;
-  ::ndk::ScopedAStatus handleNfcStateChanged(int32_t in_nfcState) override;
+  ::ndk::ScopedAStatus handleNfcStateChange(int32_t in_nfcState);
 
   ::ndk::ScopedAStatus doRegisterEMVCoEventListener(
       const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
@@ -62,10 +63,17 @@ public:
   ::ndk::ScopedAStatus open();
   ::ndk::ScopedAStatus
   close(const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback);
+  ::ndk::ScopedAStatus doRegisterNFCStateChangeCallback(
+      const std::shared_ptr<
+          ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+          &in_nfcStateChangeCallback,
+      bool *_aidl_return);
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);
   static std::shared_ptr<NxpEmvco> getInstance();
+  static void setNfcState(bool enableNfc);
+  static std::shared_ptr<INfcStateChangeCallback> nfc_State_change_callback;
 
 private:
   friend LinkedCallback;
@@ -76,6 +84,7 @@ private:
   std::shared_ptr<INxpEmvcoProfileDiscovery> nxp_emvco_profile_discovery_;
   std::shared_ptr<INxpEmvcoContactCard> nxp_emvco_contact_card_;
   std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_contactless_card;
+
   void registerCallback(const std::shared_ptr<IEmvcoClientCallback> &callback);
   void
   unregisterCallback(const std::shared_ptr<IEmvcoClientCallback> &callback);

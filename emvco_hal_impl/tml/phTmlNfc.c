@@ -847,6 +847,42 @@ NFCSTATUS phTmlNfc_IoCtl(phTmlNfc_ControlCode_t eControlCode) {
       usleep(100 * 1000);
       break;
     }
+    case phTmlNfc_e_RedLedOff: {
+      phTmlNfc_i2c_led_control(gpphTmlNfc_Context->pDevHandle, RED_LED_OFF);
+      break;
+    }
+    case phTmlNfc_e_RedLedOn: {
+      phTmlNfc_i2c_led_control(gpphTmlNfc_Context->pDevHandle, RED_LED_ON);
+      break;
+    }
+    case phTmlNfc_e_GreenLedOff: {
+      phTmlNfc_i2c_led_control(gpphTmlNfc_Context->pDevHandle, GREEN_LED_OFF);
+      break;
+    }
+    case phTmlNfc_e_GreenLedOn: {
+      phTmlNfc_i2c_led_control(gpphTmlNfc_Context->pDevHandle, GREEN_LED_ON);
+      break;
+    }
+    case phTmlNfc_e_NFCCModeSwitchOn: {
+      phTmlNfc_i2c_nfcc_profile_switch(gpphTmlNfc_Context->pDevHandle,
+                                       EMVCO_MODE);
+      break;
+    }
+    case phTmlNfc_e_NFCCModeSwitchOff: {
+      phTmlNfc_i2c_nfcc_profile_switch(gpphTmlNfc_Context->pDevHandle,
+                                       NCI_MODE);
+      break;
+    }
+    case phTmlNfc_e_SMCUModeSwitchOn: {
+      phTmlNfc_i2c_smcu_profile_switch(gpphTmlNfc_Context->pDevHandle,
+                                       EMVCO_MODE);
+      break;
+    }
+    case phTmlNfc_e_SMCUModeSwitchOff: {
+      phTmlNfc_i2c_smcu_profile_switch(gpphTmlNfc_Context->pDevHandle,
+                                       NCI_MODE);
+      break;
+    }
     default: {
       wStatus = NFCSTATUS_INVALID_PARAMETER;
       break;

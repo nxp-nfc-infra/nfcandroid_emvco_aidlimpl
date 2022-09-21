@@ -68,8 +68,10 @@ using ndk::SpAIBinder;
 
 #define NCI_START_DISCOVERY                                                    \
   { 0x21, 0x03, 0x05, 0x02, 0x00, 0x01, 0x01, 0x01 }
+// TODO: Passing 0x03 (discover) mode is temporary. once FW has fix, we will
+// change to 0x00 (IDLE) mode
 #define NCI_STOP_DISCOVERY                                                     \
-  { 0x21, 0x06, 0x01, 0x00 }
+  { 0x21, 0x06, 0x01, 0x03 }
 #define NCI_SEND_PPSE                                                          \
   {                                                                            \
     0x00, 0x00, 0x14, 0x00, 0xA4, 0x04, 0x00, 0x0E, 0x32, 0x50, 0x41, 0x59,    \

@@ -39,5 +39,4 @@ interface INxpEmvco {
   android.hardware.emvco.INxpEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
   android.hardware.emvco.INxpEmvcoContactlessCard getNxpEmvcoContactlessCard();
   android.hardware.emvco.INxpEmvcoContactCard getNxpEmvcoContactCard();
-  oneway void handleNfcStateChanged(int nfcState);
 }

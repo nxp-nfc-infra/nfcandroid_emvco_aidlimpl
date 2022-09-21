@@ -197,7 +197,9 @@ NFCSTATUS phNxpNciHal_stop_emvco_mode() {
   NXPLOG_NCIHAL_D("phNxpNciHal_stop_emvco_mode send nci_stop_discovery");
   isStopEMVCoMode = true;
   NFCSTATUS status = NFCSTATUS_SUCCESS;
-  uint8_t nci_stop_discovery[] = {0x21, 0x06, 0x01, 0x00};
+  // TODO: Passing 0x03 (discover) mode is temporary. once FW has fix, we will
+  // change to 0x00 (IDLE) mode
+  uint8_t nci_stop_discovery[] = {0x21, 0x06, 0x01, 0x03};
   phNxpNciHal_write(sizeof(nci_stop_discovery), nci_stop_discovery);
   return status;
 }
