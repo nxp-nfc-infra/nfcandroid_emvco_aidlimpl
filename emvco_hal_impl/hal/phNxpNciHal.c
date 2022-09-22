@@ -229,6 +229,10 @@ static void *phNxpNciHal_client_thread(void *arg) {
         (*nxpncihal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOPPED,
                                             HAL_NFC_STATUS_OK);
       }
+      if (nxpncihal_ctrl.p_nfc_state_cback != NULL) {
+        NXPLOG_NCIHAL_D("%s ENABLE NFC", __func__);
+        (*nxpncihal_ctrl.p_nfc_state_cback)(true);
+      }
       phNxpNciHal_kill_client_thread(&nxpncihal_ctrl);
       REENTRANCE_UNLOCK();
       break;
@@ -289,22 +293,7 @@ static void *phNxpNciHal_client_thread(void *arg) {
     }
     case EMVCO_EVENT_STOPPED_MSG: {
       REENTRANCE_LOCK();
-      int mode_switch_status = phTmlNfc_IoCtl(phTmlNfc_e_NFCCModeSwitchOff);
-      NXPLOG_NCIHAL_D("%s EMVCO_MODE_OFF status:%d", __func__,
-                      mode_switch_status);
-      phNxpNciHal_led_switch_control(EMVCO_MODE_OFF);
-
-      if (nxpncihal_ctrl.p_nfc_stack_cback != NULL) {
-        /* Send the event */
-        (*nxpncihal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOPPED,
-                                            HAL_NFC_STATUS_OK);
-      }
-
-      if (nxpncihal_ctrl.p_nfc_state_cback != NULL) {
-        /* Send the event */
-        NXPLOG_NCIHAL_D("NFC ENABLE called");
-        (*nxpncihal_ctrl.p_nfc_state_cback)(true);
-      }
+      NXPLOG_NCIHAL_D("%s EMVCO_EVENT_STOPPED_MSG", __func__);
 
       REENTRANCE_UNLOCK();
       break;
@@ -360,6 +349,7 @@ phNxpNciHal_kill_client_thread(phNxpNciHal_Control_t *p_nxpncihal_ctrl) {
   NXPLOG_NCIHAL_D("Terminating phNxpNciHal client thread...");
   p_nxpncihal_ctrl->p_nfc_stack_cback = NULL;
   p_nxpncihal_ctrl->p_nfc_stack_data_cback = NULL;
+  p_nxpncihal_ctrl->p_nfc_state_cback = NULL;
   p_nxpncihal_ctrl->thread_running = 0;
 
   return;
@@ -386,9 +376,8 @@ int phNxpNciHal_openImpl(nfc_stack_callback_t *p_cback,
       NXPLOG_NCIHAL_D("phOsalNfc_Thread_sem_init() Failed, errno = 0x%02X",
                       errno);
     }
-    NXPLOG_NCIHAL_D("NFC DISABLE called through p_nfc_state_cback");
+    NXPLOG_NCIHAL_D("Disable NFC");
     p_nfc_state_cback(false);
-    NXPLOG_NCIHAL_D("NFC DISABLE called through p_nfc_state_cback end");
 
     pthread_mutex_lock(&nfcStatusSyncLock);
     pthread_cond_wait(&nfcStatusCondVar, &nfcStatusSyncLock);
@@ -453,6 +442,8 @@ void *phNxpNciHal_doSetEMVCoModeImpl(void *vargp) {
 
     } else {
       NXPLOG_NCIHAL_D("%s In-valid polling technlogy", __func__);
+      (*m_p_nfc_stack_cback)(EMVCO_EVENT_START_SUCCESS,
+                                            HAL_NFC_STATUS_FAILED);
     }
   } else {
     if (nxpncihal_ctrl.halStatus == HAL_STATUS_OPEN) {

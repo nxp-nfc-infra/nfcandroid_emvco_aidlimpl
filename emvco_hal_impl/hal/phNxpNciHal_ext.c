@@ -178,13 +178,12 @@ void *phNxpNciHal_process_emvco_mode_rsp_impl(void *vargp) {
       case RF_DEACTIVATE_NTF: {
         if (p_len == 4 && isStopEMVCoMode) {
           isStopEMVCoMode = false;
-          NXPLOG_NCIHAL_D("RF_DEACTIVATE_RSP close the HAL");
+          NXPLOG_NCIHAL_D("RF_DEACTIVATE_RSP");
           phLibNfc_Message_t msg;
           msg.eMsgType = EMVCO_EVENT_STOPPED_MSG;
           msg.pMsgData = NULL;
           msg.Size = 0;
           phTmlNfc_DeferredCall(gpphTmlNfc_Context->dwCallbackThreadId, &msg);
-          phNxpNciHal_close(false);
         }
       }
       }
@@ -197,10 +196,12 @@ NFCSTATUS phNxpNciHal_stop_emvco_mode() {
   NXPLOG_NCIHAL_D("phNxpNciHal_stop_emvco_mode send nci_stop_discovery");
   isStopEMVCoMode = true;
   NFCSTATUS status = NFCSTATUS_SUCCESS;
-  // TODO: Passing 0x03 (discover) mode is temporary. once FW has fix, we will
-  // change to 0x00 (IDLE) mode
-  uint8_t nci_stop_discovery[] = {0x21, 0x06, 0x01, 0x03};
-  phNxpNciHal_write(sizeof(nci_stop_discovery), nci_stop_discovery);
+  int mode_switch_status = phTmlNfc_IoCtl(phTmlNfc_e_NFCCModeSwitchOff);
+  NXPLOG_NCIHAL_D("%s EMVCO_MODE_OFF status:%d", __func__, mode_switch_status);
+  phNxpNciHal_led_switch_control(EMVCO_MODE_OFF);
+  int hal_close_status = phNxpNciHal_close(true);
+  NXPLOG_NCIHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
+
   return status;
 }
 void phNxpNciHal_configure_pooling_tech(const int8_t emvco_config) {
