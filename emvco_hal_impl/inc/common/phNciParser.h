@@ -62,12 +62,7 @@
   (oid) = (*(p)&NCI_OID_MASK);                                                 \
   (p)++;
 
-#define MSG_CORE_RESET 0
-#define MSG_CORE_INIT 1
-#define MSG_CORE_SET_CONFIG 2
-#define MSG_CORE_GET_CONFIG 3
 #define MSG_CORE_PROPRIETARY_RSP 2
-#define MSG_CORE_STAND_BY_RSP 0
-#define MSG_RF_DISCOVER 3
+#define MSG_RF_DISCOVER_RSP 3
 #define RF_DEACTIVATE_NTF 6
 #endif /* PHNFCPARSER_H */

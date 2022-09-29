@@ -421,7 +421,9 @@ void *phNxpNciHal_doSetEMVCoModeImpl(void *vargp) {
   NXPLOG_NCIHAL_D("%s in_isStartEMVCo:%d", __func__, in_isStartEMVCo);
 
   if (in_isStartEMVCo) {
-    if (emvco_config >= 1) {
+    if (emvco_config >= NFC_A_PASSIVE_POLL_MODE &&
+        emvco_config != NFC_AF_PASSIVE_POLL_MODE &&
+        emvco_config != NFC_BF_PASSIVE_POLL_MODE) {
       int hal_open_status = phNxpNciHal_openImpl(
           m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
       NXPLOG_NCIHAL_D("%s EMVCo HAL open status:%d", __func__, in_isStartEMVCo);

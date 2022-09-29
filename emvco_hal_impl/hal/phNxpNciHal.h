@@ -55,6 +55,14 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 #define NXP_MAX_CONFIG_STRING_LEN 260
 #define NCI_HEADER_SIZE 3
 
+#define NFC_A_PASSIVE_POLL_MODE 1
+#define NFC_B_PASSIVE_POLL_MODE 2
+#define NFC_AB_PASSIVE_POLL_MODE 3
+#define NFC_F_PASSIVE_POLL_MODE 4
+#define NFC_AF_PASSIVE_POLL_MODE 5
+#define NFC_BF_PASSIVE_POLL_MODE 6
+#define NFC_ABF_PASSIVE_POLL_MODE 7
+
 sem_t nfcStatusSemaphore;
 
 typedef enum {

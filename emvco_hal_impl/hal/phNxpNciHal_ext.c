@@ -53,13 +53,13 @@ extern uint16_t wFwVer;
 
 uint16_t rom_version;
 
-#define NFC_A_PASSIVE_POLL_MODE 1
-#define NFC_B_PASSIVE_POLL_MODE 2
-#define NFC_AB_PASSIVE_POLL_MODE 3
 uint8_t cmd_start_discovery_a[6] = {0x21, 0x03, 0x03, 0x01, 0x00, 0x01};
 uint8_t cmd_start_discovery_b[6] = {0x21, 0x03, 0x03, 0x01, 0x01, 0x01};
+uint8_t cmd_start_discovery_f[6] = {0x21, 0x03, 0x03, 0x01, 0x02, 0x01};
 uint8_t cmd_start_discovery_ab[8] = {0x21, 0x03, 0x05, 0x02,
                                      0x00, 0x01, 0x01, 0x01};
+uint8_t cmd_start_discovery_abf[10] = {0x21, 0x03, 0x07, 0x03, 0x00,
+                                       0x01, 0x01, 0x01, 0x02, 0x01};
 uint8_t cmd_start_discovery[12];
 
 extern uint32_t timeoutTimerId;
@@ -118,54 +118,23 @@ void *phNxpNciHal_process_emvco_mode_rsp_impl(void *vargp) {
   NCI_MSG_PRS_HDR1(p_data, op_code);
   NXPLOG_NCIHAL_D("phNxpNciHal_process_emvco_mode_rsp op_code:%d", op_code);
   p_data = p_ntf;
-  uint8_t cmd_disable_standby[] = {0x2F, 0x00, 0x01, 0x00};
-  uint8_t cmd_set_emv_profile[] = {0x20, 0x02, 0x05, 0x01,
-                                   0xA0, 0x44, 0x01, 0x01};
 
   switch (msg_type) {
   case NCI_MSG_TYPE_RSP:
     switch (group_id) {
-    case NCI_GID_CORE:
-      switch (op_code) {
-      case MSG_CORE_RESET:
-        break;
-
-      case MSG_CORE_INIT:
-        break;
-
-      case MSG_CORE_SET_CONFIG:
-        if (p_len == 5) {
-          NXPLOG_NCIHAL_D("send cmd_start_discovery");
-          phNxpNciHal_write(sizeof(cmd_start_discovery), cmd_start_discovery);
-        }
-        break;
-
-      case MSG_CORE_GET_CONFIG:
-        break;
-
-        break;
-      default:
-        NXPLOG_NCIHAL_E("unknown opcode:0x%x", op_code);
-        break;
-      }
     case NCI_GID_PROP:
       switch (op_code) {
       case MSG_CORE_PROPRIETARY_RSP:
         if (p_len == 8) {
-          NXPLOG_NCIHAL_D("send cmd_disable_standby");
-          phNxpNciHal_write(sizeof(cmd_disable_standby), cmd_disable_standby);
-        }
-        break;
-      case MSG_CORE_STAND_BY_RSP:
-        if (p_len == 4) {
-          NXPLOG_NCIHAL_D("send cmd_set_emv_profile");
-          phNxpNciHal_write(sizeof(cmd_set_emv_profile), cmd_set_emv_profile);
+          NXPLOG_NCIHAL_D("send cmd_start_discovery");
+          int size_of_cmd_start_discovery = cmd_start_discovery[2] + 3;
+          phNxpNciHal_write(size_of_cmd_start_discovery, cmd_start_discovery);
         }
         break;
       }
     case NCI_GID_RF_MANAGE:
       switch (op_code) {
-      case MSG_RF_DISCOVER: {
+      case MSG_RF_DISCOVER_RSP: {
         if (p_len == 4) {
           NXPLOG_NCIHAL_D("EMVCO_POLLING_STARTED_MSG");
           phLibNfc_Message_t msg;
@@ -216,9 +185,17 @@ void phNxpNciHal_configure_pooling_tech(const int8_t emvco_config) {
     memcpy(cmd_start_discovery, cmd_start_discovery_b,
            sizeof(cmd_start_discovery_b));
     break;
+  case NFC_F_PASSIVE_POLL_MODE:
+    memcpy(cmd_start_discovery, cmd_start_discovery_f,
+           sizeof(cmd_start_discovery_f));
+    break;
   case NFC_AB_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_ab,
            sizeof(cmd_start_discovery_ab));
+    break;
+  case NFC_ABF_PASSIVE_POLL_MODE:
+    memcpy(cmd_start_discovery, cmd_start_discovery_abf,
+           sizeof(cmd_start_discovery_abf));
     break;
   }
 }
@@ -793,14 +770,15 @@ NFCSTATUS phNxpNciHal_write_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
             status = NFCSTATUS_FAILED;
 #endif
     } else if (p_cmd_data[0] == 0x21 && p_cmd_data[1] == 0x03) {
-      NXPLOG_NCIHAL_D("EmvCo Poll mode - Discover map only for A and B");
-      p_cmd_data[2] = 0x05;
+      NXPLOG_NCIHAL_D("Commented EmvCo Poll mode workaround - Discover map "
+                      "only for A and B");
+      /*p_cmd_data[2] = 0x05;
       p_cmd_data[3] = 0x02;
       p_cmd_data[4] = 0x00;
       p_cmd_data[5] = 0x01;
       p_cmd_data[6] = 0x01;
       p_cmd_data[7] = 0x01;
-      *cmd_len = 8;
+      *cmd_len = 8;*/
     }
   }
 

@@ -127,12 +127,16 @@ public:
   ::ndk::ScopedAStatus sendEvent(EmvcoEvent event,
                                  EmvcoStatus event_status) override {
     ALOGI("%s ", __func__);
-    on_hal_event_cb_(event, event_status);
+    if (!is_aborted_) {
+      on_hal_event_cb_(event, event_status);
+    }
     return ::ndk::ScopedAStatus::ok();
   };
   ::ndk::ScopedAStatus sendData(const std::vector<uint8_t> &data) override {
     ALOGI("%s before mutex ", __func__);
-    on_nci_data_cb_(data);
+    if (!is_aborted_) {
+      on_nci_data_cb_(data);
+    }
     return ::ndk::ScopedAStatus::ok();
   };
 
@@ -250,6 +254,7 @@ int hexToDecimal(char *hex) {
 }
 void signal_callback_handler(int signum) {
   ALOGI("%s Self test App abort requested, signum:%d", __func__, signum);
+  is_aborted_ = true;
   if (nxp_emvco_cl_service_ != nullptr) {
     nxp_emvco_cl_service_->doSetEMVCoMode(pollingConfiguration, false);
   }
@@ -264,14 +269,30 @@ int main(int argc, char **argv) {
     ALOGI("%s argv:", argv[i]);
   }
   if (argc == 3) {
-    if (strstr(argv[2], "A") != NULL || strstr(argv[2], "a") != NULL) {
+    if (strcmp(argv[2], "A") == 0 || strcmp(argv[2], "a") == 0) {
       pollingConfiguration = 1;
     }
-    if (strstr(argv[2], "B") != NULL || strstr(argv[2], "b") != NULL) {
+    if (strcmp(argv[2], "B") == 0 || strcmp(argv[2], "b") == 0) {
       pollingConfiguration = 2;
     }
-    if (strstr(argv[2], "AB") != NULL || strstr(argv[2], "ab") != NULL) {
+    if (strcmp(argv[2], "AB") == 0 || strcmp(argv[2], "ab") == 0) {
       pollingConfiguration = 3;
+    }
+    if (strcmp(argv[2], "F") == 0 || strcmp(argv[2], "f") == 0) {
+      pollingConfiguration = 4;
+    }
+    if (strcmp(argv[2], "AF") == 0 || strcmp(argv[2], "af") == 0) {
+      printf("\n AF polling combination not allowed. Select valid polling "
+             "technolgy\n ");
+      return 0;
+    }
+    if (strcmp(argv[2], "BF") == 0 || strcmp(argv[2], "bf") == 0) {
+      printf("\n BF polling combination not allowed. Select valid polling "
+             "technolgy\n ");
+      return 0;
+    }
+    if (strcmp(argv[2], "ABF") == 0 || strcmp(argv[2], "abf") == 0) {
+      pollingConfiguration = 7;
     }
   } else {
     printf("\n Select atleast one polling technolgy to enable EMVCo mode\n "
@@ -283,7 +304,7 @@ int main(int argc, char **argv) {
 
   if (pollingConfiguration == 0) {
     printf(
-        "\n Select supported polling technolgy (A/B/AB) to enable EMVCo mode\n "
+        "\n Select supported polling technolgy (A/B/F) to enable EMVCo mode\n "
         "Example#1: \"./EMVCoAidlHalComplianceTest Type A\" will enable "
         "Type A for polling \n Example#2: \"./EMVCoAidlHalComplianceTest Type "
         "AB\" will enable Type AB for polling \n \n ");
@@ -390,7 +411,7 @@ int main(int argc, char **argv) {
   psse_cb_future.at(APDU_COUNT).wait();
   APDU_COUNT++;
 
-  while (!is_aborted_) {
+  while (true) {
     // NCI_START_DISCOVERY
     if (is_end_of_test_ == false) {
       send(nxp_emvco_cl_service_, nci_start_discovery, aidl_return,
