@@ -171,6 +171,7 @@ NFCSTATUS phNxpNciHal_stop_emvco_mode() {
   int hal_close_status = phNxpNciHal_close(true);
   NXPLOG_NCIHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
 
+  (*m_p_nfc_state_cback)(true);
   return status;
 }
 void phNxpNciHal_configure_pooling_tech(const int8_t emvco_config) {

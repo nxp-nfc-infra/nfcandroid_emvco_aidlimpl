@@ -229,10 +229,6 @@ static void *phNxpNciHal_client_thread(void *arg) {
         (*nxpncihal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOPPED,
                                             HAL_NFC_STATUS_OK);
       }
-      if (nxpncihal_ctrl.p_nfc_state_cback != NULL) {
-        NXPLOG_NCIHAL_D("%s ENABLE NFC", __func__);
-        (*nxpncihal_ctrl.p_nfc_state_cback)(true);
-      }
       phNxpNciHal_kill_client_thread(&nxpncihal_ctrl);
       REENTRANCE_UNLOCK();
       break;
