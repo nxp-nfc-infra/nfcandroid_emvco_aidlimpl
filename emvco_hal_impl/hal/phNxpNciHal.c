@@ -409,7 +409,19 @@ clean_and_return:
   nxpncihal_ctrl.halStatus = HAL_STATUS_CLOSE;
   return NFCSTATUS_FAILED;
 }
-
+bool isValidPollingTechnology(int8_t emvco_config) {
+  if (emvco_config >= NFC_A_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_AF_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_BF_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_VAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_AVAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_BVAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_ABFVAS_PASSIVE_POLL_MODE) {
+    return true;
+  } else {
+    return false;
+  }
+}
 void *phNxpNciHal_doSetEMVCoModeImpl(void *vargp) {
   pthread_mutex_lock(&emvco_lock);
   const int8_t emvco_config = ((struct args *)vargp)->emvco_config;
@@ -417,9 +429,7 @@ void *phNxpNciHal_doSetEMVCoModeImpl(void *vargp) {
   NXPLOG_NCIHAL_D("%s in_isStartEMVCo:%d", __func__, in_isStartEMVCo);
 
   if (in_isStartEMVCo) {
-    if (emvco_config >= NFC_A_PASSIVE_POLL_MODE &&
-        emvco_config != NFC_AF_PASSIVE_POLL_MODE &&
-        emvco_config != NFC_BF_PASSIVE_POLL_MODE) {
+    if (isValidPollingTechnology(emvco_config)) {
       int hal_open_status = phNxpNciHal_openImpl(
           m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
       NXPLOG_NCIHAL_D("%s EMVCo HAL open status:%d", __func__, in_isStartEMVCo);

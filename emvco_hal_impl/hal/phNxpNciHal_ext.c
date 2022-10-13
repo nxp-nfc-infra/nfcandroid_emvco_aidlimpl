@@ -60,6 +60,8 @@ uint8_t cmd_start_discovery_ab[8] = {0x21, 0x03, 0x05, 0x02,
                                      0x00, 0x01, 0x01, 0x01};
 uint8_t cmd_start_discovery_abf[10] = {0x21, 0x03, 0x07, 0x03, 0x00,
                                        0x01, 0x01, 0x01, 0x02, 0x01};
+uint8_t cmd_start_discovery_abvas[10] = {0x21, 0x03, 0x07, 0x03, 0x00,
+                                         0x01, 0x01, 0x01, 0x74, 0x01};
 uint8_t cmd_start_discovery[12];
 
 extern uint32_t timeoutTimerId;
@@ -197,6 +199,10 @@ void phNxpNciHal_configure_pooling_tech(const int8_t emvco_config) {
   case NFC_ABF_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_abf,
            sizeof(cmd_start_discovery_abf));
+    break;
+  case NFC_ABVAS_PASSIVE_POLL_MODE:
+    memcpy(cmd_start_discovery, cmd_start_discovery_abvas,
+           sizeof(cmd_start_discovery_abvas));
     break;
   }
 }
@@ -543,6 +549,9 @@ static NFCSTATUS phNxpNciHal_ext_process_nfc_init_rsp(uint8_t *p_ntf,
       NXPLOG_NCIHAL_D("NxpNci> FW Version: %x.%x.%x", p_ntf[len - 2],
                       p_ntf[len - 1], p_ntf[len]);
       rom_version = p_ntf[len - 2];
+    } else if (p_ntf[3] == CORE_RESET_NTF_MODE_SWITCH_TO_NFC_FORUM ||
+               p_ntf[3] == CORE_RESET_NTF_MODE_SWITCH_TO_EMVCO) {
+      NXPLOG_NCIHAL_D("NFCC MODE SWITCH STATE: %x", p_ntf[3]);
     } else {
       uint32_t i;
       char print_buffer[*p_len * 3 + 1];

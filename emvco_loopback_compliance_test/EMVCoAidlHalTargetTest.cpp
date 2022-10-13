@@ -108,6 +108,10 @@ static volatile bool is_end_of_test_ = false;
 static volatile bool is_frgamented_apdu_ = false;
 static volatile bool is_aborted_ = false;
 static volatile uint8_t pollingConfiguration = 0;
+const int NFC_A_PASSIVE_POLL_MODE = 0;
+const int NFC_B_PASSIVE_POLL_MODE = 1;
+const int NFC_F_PASSIVE_POLL_MODE = 2;
+const int NFC_VAS_PASSIVE_POLL_MODE = 3;
 
 std::mutex data_mutex_;
 int32_t aidl_return;
@@ -261,6 +265,18 @@ void signal_callback_handler(int signum) {
   exit(signum);
   ALOGI("%s Self test App aborted", __func__);
 }
+void setRFTechnologyMode(int modeType, bool isSet) {
+  ALOGI("%s Before set pollingConfiguration:%d\n", __func__,
+        pollingConfiguration);
+  if (isSet) {
+    pollingConfiguration = 1 << modeType | pollingConfiguration;
+  } else {
+    pollingConfiguration = ~(1 << modeType) & pollingConfiguration;
+  }
+  ALOGI("%s after set pollingConfiguration:%d\n", __func__,
+        pollingConfiguration);
+}
+
 int main(int argc, char **argv) {
   ABinderProcess_startThreadPool();
 
@@ -269,30 +285,17 @@ int main(int argc, char **argv) {
     ALOGI("%s argv:", argv[i]);
   }
   if (argc == 3) {
-    if (strcmp(argv[2], "A") == 0 || strcmp(argv[2], "a") == 0) {
-      pollingConfiguration = 1;
+    if (strstr(argv[2], "A") != 0 || strstr(argv[2], "a") != 0) {
+      setRFTechnologyMode(NFC_A_PASSIVE_POLL_MODE, true);
     }
-    if (strcmp(argv[2], "B") == 0 || strcmp(argv[2], "b") == 0) {
-      pollingConfiguration = 2;
+    if (strstr(argv[2], "B") != 0 || strstr(argv[2], "b") != 0) {
+      setRFTechnologyMode(NFC_B_PASSIVE_POLL_MODE, true);
     }
-    if (strcmp(argv[2], "AB") == 0 || strcmp(argv[2], "ab") == 0) {
-      pollingConfiguration = 3;
+    if (strstr(argv[2], "F") != 0 || strstr(argv[2], "f") != 0) {
+      setRFTechnologyMode(NFC_F_PASSIVE_POLL_MODE, true);
     }
-    if (strcmp(argv[2], "F") == 0 || strcmp(argv[2], "f") == 0) {
-      pollingConfiguration = 4;
-    }
-    if (strcmp(argv[2], "AF") == 0 || strcmp(argv[2], "af") == 0) {
-      printf("\n AF polling combination not allowed. Select valid polling "
-             "technolgy\n ");
-      return 0;
-    }
-    if (strcmp(argv[2], "BF") == 0 || strcmp(argv[2], "bf") == 0) {
-      printf("\n BF polling combination not allowed. Select valid polling "
-             "technolgy\n ");
-      return 0;
-    }
-    if (strcmp(argv[2], "ABF") == 0 || strcmp(argv[2], "abf") == 0) {
-      pollingConfiguration = 7;
+    if (strstr(argv[2], "V") != 0 || strstr(argv[2], "v") != 0) {
+      setRFTechnologyMode(NFC_VAS_PASSIVE_POLL_MODE, true);
     }
   } else {
     printf("\n Select atleast one polling technolgy to enable EMVCo mode\n "
@@ -302,12 +305,12 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  if (pollingConfiguration == 0) {
-    printf(
-        "\n Select supported polling technolgy (A/B/F) to enable EMVCo mode\n "
-        "Example#1: \"./EMVCoAidlHalComplianceTest Type A\" will enable "
-        "Type A for polling \n Example#2: \"./EMVCoAidlHalComplianceTest Type "
-        "AB\" will enable Type AB for polling \n \n ");
+  if (pollingConfiguration == 3) {
+    printf("\n Valid Technology selected for polling\n ");
+  } else {
+    printf("\n Select supported polling technolgy (AB) to enable EMVCo mode\n "
+           "Example: \"./EMVCoAidlHalComplianceTest Type "
+           "AB\" will enable Type AB for polling \n \n ");
     return 0;
   }
   signal(SIGINT, signal_callback_handler);

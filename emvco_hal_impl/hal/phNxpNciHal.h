@@ -47,6 +47,9 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 
 #define CORE_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED 0x02
 #define CORE_RESET_TRIGGER_TYPE_POWERED_ON 0x01
+#define CORE_RESET_NTF_MODE_SWITCH_TO_NFC_FORUM 0xA8
+#define CORE_RESET_NTF_MODE_SWITCH_TO_EMVCO 0xA9
+
 #define NCI_MSG_CORE_RESET 0x00
 #define NCI_MSG_CORE_INIT 0x01
 #define NCI_MT_MASK 0xE0
@@ -62,6 +65,11 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 #define NFC_AF_PASSIVE_POLL_MODE 5
 #define NFC_BF_PASSIVE_POLL_MODE 6
 #define NFC_ABF_PASSIVE_POLL_MODE 7
+#define NFC_VAS_PASSIVE_POLL_MODE 8
+#define NFC_AVAS_PASSIVE_POLL_MODE 9
+#define NFC_BVAS_PASSIVE_POLL_MODE 10
+#define NFC_ABVAS_PASSIVE_POLL_MODE 11
+#define NFC_ABFVAS_PASSIVE_POLL_MODE 12
 
 sem_t nfcStatusSemaphore;
 
