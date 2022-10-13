@@ -473,7 +473,7 @@ void phNxpNciHal_doSetEMVCoMode(const int8_t emvco_config,
   modeSwitchArgs->emvco_config = emvco_config;
   modeSwitchArgs->in_isStartEMVCo = in_isStartEMVCo;
   pthread_t thread_id;
-  pthread_create(&thread_id, NULL, phNxpNciHal_doSetEMVCoModeImpl,
+  (void)pthread_create(&thread_id, NULL, phNxpNciHal_doSetEMVCoModeImpl,
                  (void *)modeSwitchArgs);
   return;
 }

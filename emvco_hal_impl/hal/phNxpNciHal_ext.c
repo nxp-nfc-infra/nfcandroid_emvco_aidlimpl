@@ -134,6 +134,7 @@ void *phNxpNciHal_process_emvco_mode_rsp_impl(void *vargp) {
         }
         break;
       }
+      break;
     case NCI_GID_RF_MANAGE:
       switch (op_code) {
       case MSG_RF_DISCOVER_RSP: {
@@ -146,6 +147,7 @@ void *phNxpNciHal_process_emvco_mode_rsp_impl(void *vargp) {
           phTmlNfc_DeferredCall(gpphTmlNfc_Context->dwCallbackThreadId, &msg);
         }
       }
+      break;
       case RF_DEACTIVATE_NTF: {
         if (p_len == 4 && isStopEMVCoMode) {
           isStopEMVCoMode = false;
@@ -157,6 +159,7 @@ void *phNxpNciHal_process_emvco_mode_rsp_impl(void *vargp) {
           phTmlNfc_DeferredCall(gpphTmlNfc_Context->dwCallbackThreadId, &msg);
         }
       }
+      break;
       }
     }
     break;
@@ -218,8 +221,14 @@ NFCSTATUS phNxpNciHal_start_emvco_mode(const int8_t emvco_config) {
 NFCSTATUS
 phNxpNciHal_process_emvco_mode_rsp(phTmlNfc_TransactInfo_t *pTransactionInfo) {
   pthread_t thread_id;
-  pthread_create(&thread_id, NULL, phNxpNciHal_process_emvco_mode_rsp_impl,
-                 pTransactionInfo);
+  int pthread_create_status = 0;
+
+  pthread_create_status = pthread_create(&thread_id, NULL, phNxpNciHal_process_emvco_mode_rsp_impl,
+                                          pTransactionInfo);
+  if (0 != pthread_create_status) {
+    /* thread create failed */
+     return NFCSTATUS_FAILED;
+   }
   return NFCSTATUS_SUCCESS;
 }
 /*******************************************************************************
@@ -986,7 +995,7 @@ NFCSTATUS phNxpNciHal_write_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
       p_cmd_data[1] == 0x02) {
     uint8_t temp;
     uint8_t *p = p_cmd_data + 4;
-    uint8_t *end = p_cmd_data + *cmd_len;
+    uint8_t *end = p_cmd_data + *cmd_len- 1;  // -1 : To adjust the index of buffer. as buffer index from zero
     while (p < end) {
       if (*p == 0x53) // LF_T3T_FLAGS
       {

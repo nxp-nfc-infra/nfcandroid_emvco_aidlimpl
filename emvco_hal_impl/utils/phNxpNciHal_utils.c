@@ -115,7 +115,6 @@ int listAdd(struct listHead *pList, void *pData) {
   result = 1;
 
 clean_and_return:
-  phOsalNfc_Thread_unlock_mutex(&pList->mutex);
   return result;
 }
 
