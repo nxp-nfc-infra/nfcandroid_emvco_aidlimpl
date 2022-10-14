@@ -69,7 +69,10 @@ typedef void(phNxpNciHal_control_granted_callback_t)();
 #define NFC_AVAS_PASSIVE_POLL_MODE 9
 #define NFC_BVAS_PASSIVE_POLL_MODE 10
 #define NFC_ABVAS_PASSIVE_POLL_MODE 11
-#define NFC_ABFVAS_PASSIVE_POLL_MODE 12
+#define NFC_FVAS_PASSIVE_POLL_MODE 12
+#define NFC_AFVAS_PASSIVE_POLL_MODE 13
+#define NFC_BFVAS_PASSIVE_POLL_MODE 14
+#define NFC_ABFVAS_PASSIVE_POLL_MODE 15
 
 sem_t nfcStatusSemaphore;
 

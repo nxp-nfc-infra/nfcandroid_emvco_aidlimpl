@@ -53,8 +53,6 @@ extern uint16_t wFwVer;
 
 uint16_t rom_version;
 
-uint8_t cmd_start_discovery_a[6] = {0x21, 0x03, 0x03, 0x01, 0x00, 0x01};
-uint8_t cmd_start_discovery_b[6] = {0x21, 0x03, 0x03, 0x01, 0x01, 0x01};
 uint8_t cmd_start_discovery_f[6] = {0x21, 0x03, 0x03, 0x01, 0x02, 0x01};
 uint8_t cmd_start_discovery_ab[8] = {0x21, 0x03, 0x05, 0x02,
                                      0x00, 0x01, 0x01, 0x01};
@@ -62,6 +60,8 @@ uint8_t cmd_start_discovery_abf[10] = {0x21, 0x03, 0x07, 0x03, 0x00,
                                        0x01, 0x01, 0x01, 0x02, 0x01};
 uint8_t cmd_start_discovery_abvas[10] = {0x21, 0x03, 0x07, 0x03, 0x00,
                                          0x01, 0x01, 0x01, 0x74, 0x01};
+uint8_t cmd_start_discovery_abfvas[12] = {0x21, 0x03, 0x09, 0x04, 0x00, 0x01,
+                                          0x01, 0x01, 0x02, 0x01, 0x74, 0x01};
 uint8_t cmd_start_discovery[12];
 
 extern uint32_t timeoutTimerId;
@@ -180,32 +180,30 @@ NFCSTATUS phNxpNciHal_stop_emvco_mode() {
   return status;
 }
 void phNxpNciHal_configure_pooling_tech(const int8_t emvco_config) {
-  NXPLOG_NCIHAL_D("phNxpNciHal_configure_pooling_tech emvco_config:%d",
-                  emvco_config);
+  NXPLOG_NCIHAL_D("%s emvco_config:%d", __func__, emvco_config);
   switch (emvco_config) {
-  case NFC_A_PASSIVE_POLL_MODE:
-    memcpy(cmd_start_discovery, cmd_start_discovery_a,
-           sizeof(cmd_start_discovery_a));
-    break;
-  case NFC_B_PASSIVE_POLL_MODE:
-    memcpy(cmd_start_discovery, cmd_start_discovery_b,
-           sizeof(cmd_start_discovery_b));
-    break;
   case NFC_F_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_f,
-           sizeof(cmd_start_discovery_f));
+           sizeof(cmd_start_discovery_f) / sizeof(uint8_t));
     break;
   case NFC_AB_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_ab,
-           sizeof(cmd_start_discovery_ab));
+           sizeof(cmd_start_discovery_ab) / sizeof(uint8_t));
     break;
   case NFC_ABF_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_abf,
-           sizeof(cmd_start_discovery_abf));
+           sizeof(cmd_start_discovery_abf) / sizeof(uint8_t));
     break;
   case NFC_ABVAS_PASSIVE_POLL_MODE:
     memcpy(cmd_start_discovery, cmd_start_discovery_abvas,
-           sizeof(cmd_start_discovery_abvas));
+           sizeof(cmd_start_discovery_abvas) / sizeof(uint8_t));
+    break;
+  case NFC_ABFVAS_PASSIVE_POLL_MODE:
+    memcpy(cmd_start_discovery, cmd_start_discovery_abfvas,
+           sizeof(cmd_start_discovery_abfvas) / sizeof(uint8_t));
+    break;
+  default:
+    NXPLOG_NCIHAL_D("%s default case", __func__);
     break;
   }
 }

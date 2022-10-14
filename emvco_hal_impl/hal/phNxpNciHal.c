@@ -411,12 +411,17 @@ clean_and_return:
 }
 bool isValidPollingTechnology(int8_t emvco_config) {
   if (emvco_config >= NFC_A_PASSIVE_POLL_MODE &&
+      emvco_config <= NFC_ABFVAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_A_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_B_PASSIVE_POLL_MODE &&
       emvco_config != NFC_AF_PASSIVE_POLL_MODE &&
       emvco_config != NFC_BF_PASSIVE_POLL_MODE &&
       emvco_config != NFC_VAS_PASSIVE_POLL_MODE &&
       emvco_config != NFC_AVAS_PASSIVE_POLL_MODE &&
       emvco_config != NFC_BVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_ABFVAS_PASSIVE_POLL_MODE) {
+      emvco_config != NFC_FVAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_AFVAS_PASSIVE_POLL_MODE &&
+      emvco_config != NFC_BFVAS_PASSIVE_POLL_MODE) {
     return true;
   } else {
     return false;
