@@ -993,7 +993,7 @@ NFCSTATUS phNxpNciHal_write_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
       p_cmd_data[1] == 0x02) {
     uint8_t temp;
     uint8_t *p = p_cmd_data + 4;
-    uint8_t *end = p_cmd_data + *cmd_len- 1;  // -1 : To adjust the index of buffer. as buffer index from zero
+    uint8_t *end = p_cmd_data + (*cmd_len- 1);  // -1 : To adjust the index of buffer. as buffer index from zero
     while (p < end) {
       if (*p == 0x53) // LF_T3T_FLAGS
       {
@@ -1017,7 +1017,7 @@ NFCSTATUS phNxpNciHal_write_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
       (p_cmd_data[0] == 0x20 && p_cmd_data[1] == 0x02)) {
     uint8_t temp;
     uint8_t *p = p_cmd_data + 4;
-    uint8_t *end = p_cmd_data + *cmd_len;
+    uint8_t *end = p_cmd_data + (*cmd_len - 1) ; // -1 : To adjust the index of buffer. as buffer index from zero
     while (p < end) {
       if (*p == 0x53) // LF_T3T_FLAGS
       {
