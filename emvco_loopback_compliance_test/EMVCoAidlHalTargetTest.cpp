@@ -113,6 +113,12 @@ const int NFC_B_PASSIVE_POLL_MODE = 1;
 const int NFC_F_PASSIVE_POLL_MODE = 2;
 const int NFC_VAS_PASSIVE_POLL_MODE = 3;
 
+const int NFC_AB_PASSIVE_POLL_MODE_SUPPORTED = 3;
+const int NFC_F_PASSIVE_POLL_MODE_SUPPORTED = 4;
+const int NFC_ABF_PASSIVE_POLL_MODE_SUPPORTED = 7;
+const int NFC_ABVAS_PASSIVE_POLL_MODE_SUPPORTED = 11;
+const int NFC_ABFVAS_PASSIVE_POLL_MODE_SUPPORTED = 15;
+
 std::mutex data_mutex_;
 int32_t aidl_return;
 
@@ -305,7 +311,11 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  if (pollingConfiguration == 3) {
+  if (pollingConfiguration == NFC_AB_PASSIVE_POLL_MODE_SUPPORTED ||
+      pollingConfiguration == NFC_F_PASSIVE_POLL_MODE_SUPPORTED ||
+      pollingConfiguration == NFC_ABF_PASSIVE_POLL_MODE_SUPPORTED ||
+      pollingConfiguration == NFC_ABVAS_PASSIVE_POLL_MODE_SUPPORTED ||
+      pollingConfiguration == NFC_ABFVAS_PASSIVE_POLL_MODE_SUPPORTED) {
     printf("\n Valid Technology selected for polling\n ");
   } else {
     printf("\n Select supported polling technolgy (AB) to enable EMVCo mode\n "

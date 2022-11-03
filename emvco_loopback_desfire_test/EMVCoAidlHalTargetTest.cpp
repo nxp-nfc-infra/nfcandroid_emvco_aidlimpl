@@ -68,7 +68,7 @@ using ndk::SpAIBinder;
         0x2E, 0x53, 0x59, 0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31, 0x00       \
   }
 
-#define PPSE_SEND_MAX_TIMES 1000
+#define PPSE_SEND_MAX_TIMES 250
 
 std::shared_ptr<INxpEmvco> iINxpEmvco_;
 std::shared_ptr<INxpEmvcoContactlessCard> iNxpEmvcoContactlessCard_;
@@ -78,7 +78,6 @@ static std::vector<std::promise<void>> psse_cb_promise;
 unsigned long long start_ts, end_ts;
 static volatile bool is_aborted_ = false;
 static volatile uint8_t pollingConfiguration = 0;
-static int mTagTypeConfiguration = 0;
 const int NFC_A_PASSIVE_POLL_MODE = 0;
 const int NFC_B_PASSIVE_POLL_MODE = 1;
 const int NFC_F_PASSIVE_POLL_MODE = 2;
@@ -125,15 +124,15 @@ void signal_callback_handler(int signum) {
 }
 
 void setRFTechnologyMode(int modeType, bool isSet) {
-  ALOGI("%s Before set mTagTypeConfiguration:%d\n", __func__,
-        mTagTypeConfiguration);
+  ALOGI("%s Before set pollingConfiguration:%d\n", __func__,
+        pollingConfiguration);
   if (isSet) {
-    mTagTypeConfiguration = 1 << modeType | mTagTypeConfiguration;
+    pollingConfiguration = 1 << modeType | pollingConfiguration;
   } else {
-    mTagTypeConfiguration = ~(1 << modeType) & mTagTypeConfiguration;
+    pollingConfiguration = ~(1 << modeType) & pollingConfiguration;
   }
-  ALOGI("%s after set mTagTypeConfiguration:%d\n", __func__,
-        mTagTypeConfiguration);
+  ALOGI("%s after set pollingConfiguration:%d\n", __func__,
+        pollingConfiguration);
 }
 
 int main(int argc, char **argv) {
@@ -144,16 +143,16 @@ int main(int argc, char **argv) {
     ALOGI("%s argv:", argv[i]);
   }
   if (argc == 3) {
-    if (strstr(argv[2], "A") == 0 || strstr(argv[2], "a") == 0) {
+    if (strstr(argv[2], "A") != 0 || strstr(argv[2], "a") != 0) {
       setRFTechnologyMode(NFC_A_PASSIVE_POLL_MODE, true);
     }
-    if (strstr(argv[2], "B") == 0 || strstr(argv[2], "b") == 0) {
+    if (strstr(argv[2], "B") != 0 || strstr(argv[2], "b") != 0) {
       setRFTechnologyMode(NFC_B_PASSIVE_POLL_MODE, true);
     }
-    if (strstr(argv[2], "F") == 0 || strstr(argv[2], "f") == 0) {
+    if (strstr(argv[2], "F") != 0 || strstr(argv[2], "f") != 0) {
       setRFTechnologyMode(NFC_F_PASSIVE_POLL_MODE, true);
     }
-    if (strstr(argv[2], "V") == 0 || strstr(argv[2], "v") == 0) {
+    if (strstr(argv[2], "V") != 0 || strstr(argv[2], "v") != 0) {
       setRFTechnologyMode(NFC_VAS_PASSIVE_POLL_MODE, true);
     }
   } else {
@@ -164,7 +163,7 @@ int main(int argc, char **argv) {
     return 0;
   }
 
-  if (mTagTypeConfiguration == 0) {
+  if (pollingConfiguration == 0) {
     printf(
         "\n Select supported polling technolgy (A/B/F) to enable EMVCo mode\n "
         "Example#1: \"./EMVCoAidlHalDesfireTest Type A\" will enable "
