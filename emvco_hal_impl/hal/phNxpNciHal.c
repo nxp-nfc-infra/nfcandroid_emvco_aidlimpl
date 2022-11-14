@@ -103,7 +103,6 @@ static void *phNxpNciHal_client_thread(void *arg);
 static void phNxpNciHal_hci_network_reset(void);
 static NFCSTATUS phNxpNciHal_do_se_session_reset(void);
 static void phNxpNciHal_print_res_status(uint8_t *p_rx_data, uint16_t *p_len);
-static void phNxpNciHal_enable_i2c_fragmentation();
 static NFCSTATUS phNxpNciHal_get_mw_eeprom(void);
 NFCSTATUS phNxpNciHal_check_clock_config(void);
 NFCSTATUS phNxpNciHal_china_tianjin_rf_setting(void);
@@ -666,7 +665,6 @@ init_retry:
     wConfigStatus = NFCSTATUS_FAILED;
     goto clean_and_return;
   }
-  phNxpNciHal_enable_i2c_fragmentation();
   /* Call open complete */
   phNxpNciHal_MinOpen_complete(wConfigStatus);
   NXPLOG_NCIHAL_D("phNxpNciHal_MinOpen(): exit");
@@ -2210,85 +2208,6 @@ int check_config_parameter() {
     NXPLOG_NCIHAL_E("Wrong clock source. Don't apply any modification")
   }
   return param_clock_src;
-}
-/******************************************************************************
- * Function         phNxpNciHal_enable_i2c_fragmentation
- *
- * Description      This function is called to process the response status
- *                  and print the status byte.
- *
- * Returns          void.
- *
- ******************************************************************************/
-void phNxpNciHal_enable_i2c_fragmentation() {
-  NFCSTATUS status = NFCSTATUS_FAILED;
-  static uint8_t fragmentation_enable_config_cmd[] = {0x20, 0x02, 0x05, 0x01,
-                                                      0xA0, 0x05, 0x01, 0x10};
-  long i2c_status = 0x00;
-  long config_i2c_vlaue = 0xff;
-  /*NCI_RESET_CMD*/
-  static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
-  /*NCI_INIT_CMD*/
-  static uint8_t cmd_init_nci[] = {0x20, 0x01, 0x00};
-  static uint8_t cmd_init_nci2_0[] = {0x20, 0x01, 0x02, 0x00, 0x00};
-  static uint8_t get_i2c_fragmentation_cmd[] = {0x20, 0x03, 0x03,
-                                                0x01, 0xA0, 0x05};
-  if (GetNxpNumValue(NAME_NXP_I2C_FRAGMENTATION_ENABLED, (void *)&i2c_status,
-                     sizeof(i2c_status)) == true) {
-    NXPLOG_FWDNLD_D("I2C status : %ld", i2c_status);
-  } else {
-    NXPLOG_FWDNLD_E("I2C status read not succeeded. Default value : %ld",
-                    i2c_status);
-  }
-  status = phNxpNciHal_send_ext_cmd(sizeof(get_i2c_fragmentation_cmd),
-                                    get_i2c_fragmentation_cmd);
-  if (status != NFCSTATUS_SUCCESS) {
-    NXPLOG_NCIHAL_E("unable to retrieve  get_i2c_fragmentation_cmd");
-  } else {
-    if (nxpncihal_ctrl.p_rx_data[8] == 0x10) {
-      config_i2c_vlaue = 0x01;
-      phNxpNciHal_notify_i2c_fragmentation();
-      // phTmlNfc_set_fragmentation_enabled(I2C_FRAGMENTATION_ENABLED);
-    } else if (nxpncihal_ctrl.p_rx_data[8] == 0x00) {
-      config_i2c_vlaue = 0x00;
-    }
-    // if the value already matches, nothing to be done
-    if (config_i2c_vlaue != i2c_status) {
-      if (i2c_status == 0x01) {
-        /* NXP I2C fragmenation enabled*/
-        status =
-            phNxpNciHal_send_ext_cmd(sizeof(fragmentation_enable_config_cmd),
-                                     fragmentation_enable_config_cmd);
-        if (status != NFCSTATUS_SUCCESS) {
-          NXPLOG_NCIHAL_E("NXP fragmentation enable failed");
-        }
-      } else if (i2c_status == 0x00 || config_i2c_vlaue == 0xff) {
-        fragmentation_enable_config_cmd[7] = 0x00;
-        /* NXP I2C fragmentation disabled*/
-        status =
-            phNxpNciHal_send_ext_cmd(sizeof(fragmentation_enable_config_cmd),
-                                     fragmentation_enable_config_cmd);
-        if (status != NFCSTATUS_SUCCESS) {
-          NXPLOG_NCIHAL_E("NXP fragmentation disable failed");
-        }
-      }
-      status = phNxpNciHal_send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
-      if (status != NFCSTATUS_SUCCESS) {
-        NXPLOG_NCIHAL_E("NCI_CORE_RESET: Failed");
-      }
-      if (nxpncihal_ctrl.nci_info.nci_version == NCI_VERSION_2_0) {
-        status =
-            phNxpNciHal_send_ext_cmd(sizeof(cmd_init_nci2_0), cmd_init_nci2_0);
-      } else {
-        status = phNxpNciHal_send_ext_cmd(sizeof(cmd_init_nci), cmd_init_nci);
-      }
-      if (status != NFCSTATUS_SUCCESS) {
-        NXPLOG_NCIHAL_E("NCI_CORE_INIT : Failed");
-      } else if (i2c_status == 0x01) {
-        phNxpNciHal_notify_i2c_fragmentation();
-      }
-    }
-  }
 }
 /******************************************************************************
  * Function         phNxpNciHal_do_se_session_reset
