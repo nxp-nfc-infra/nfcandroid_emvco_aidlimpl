@@ -131,35 +131,26 @@ void phNxpNciHal_led_switch_control(phNxpNci_EMVCoStatus emvcoStatus) {
   NXPLOG_NCIHAL_D("%s emvcoStatus:%d", __func__, emvcoStatus);
   NFCSTATUS status = NFCSTATUS_FAILED;
   switch (emvcoStatus) {
-  case EMVCO_MODE_ON: {
-    status = phTmlNfc_IoCtl(phTmlNfc_e_RedLedOff);
-    if (NFCSTATUS_SUCCESS == status) {
-      NXPLOG_NCIHAL_D("RED LED OFF - SUCCESS\n");
-    } else {
-      NXPLOG_NCIHAL_D("RED LED OFF  - FAILED\n");
+    case EMVCO_MODE_ON: {
+      status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOn);
+      if (NFCSTATUS_SUCCESS == status) {
+        NXPLOG_NCIHAL_D("GREEN LED ON - SUCCESS\n");
+      } else {
+        NXPLOG_NCIHAL_D("GREEN LED ON - FAILED\n");
+      }
+      break;
     }
-    status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOn);
-    if (NFCSTATUS_SUCCESS == status) {
-      NXPLOG_NCIHAL_D("GREEN LED ON - SUCCESS\n");
-    } else {
-      NXPLOG_NCIHAL_D("GREEN LED ON - FAILED\n");
+    case EMVCO_MODE_OFF: {
+      status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOff);
+      if (NFCSTATUS_SUCCESS == status) {
+        NXPLOG_NCIHAL_D("GREEN LED OFF - SUCCESS\n");
+      } else {
+        NXPLOG_NCIHAL_D("GREEN LED OFF  - FAILED\n");
+      }
+      break;
     }
+    default:
     break;
-  }
-  case EMVCO_MODE_OFF: {
-    status = phTmlNfc_IoCtl(phTmlNfc_e_GreenLedOff);
-    if (NFCSTATUS_SUCCESS == status) {
-      NXPLOG_NCIHAL_D("GREEN LED OFF - SUCCESS\n");
-    } else {
-      NXPLOG_NCIHAL_D("GREEN LED OFF  - FAILED\n");
-    }
-    status = phTmlNfc_IoCtl(phTmlNfc_e_RedLedOn);
-    if (NFCSTATUS_SUCCESS == status) {
-      NXPLOG_NCIHAL_D("RED LED ON - SUCCESS\n");
-    } else {
-      NXPLOG_NCIHAL_D("RED LED ON - FAILED\n");
-    }
-  }
   }
 }
 /******************************************************************************
