@@ -68,9 +68,9 @@ using ndk::SpAIBinder;
 
 #define NCI_START_DISCOVERY                                                    \
   { 0x21, 0x03, 0x05, 0x02, 0x00, 0x01, 0x01, 0x01 }
-// TODO: Passing 0x03 (discover) mode is temporary. once FW has fix, we will
-// change to 0x00 (IDLE) mode
-#define NCI_STOP_DISCOVERY                                                     \
+#define NCI_STOP_DISCOVERY_IDLE                                                \
+  { 0x21, 0x06, 0x01, 0x00 }
+#define NCI_STOP_DISCOVERY_DISCOVER                                            \
   { 0x21, 0x06, 0x01, 0x03 }
 #define NCI_SEND_PPSE                                                          \
   {                                                                            \
@@ -79,7 +79,9 @@ using ndk::SpAIBinder;
   }
 
 const std::vector<uint8_t> nci_start_discovery = NCI_START_DISCOVERY;
-const std::vector<uint8_t> nci_stop_discovery = NCI_STOP_DISCOVERY;
+const std::vector<uint8_t> nci_stop_discovery_idle = NCI_STOP_DISCOVERY_IDLE;
+const std::vector<uint8_t> nci_stop_discovery_discover =
+    NCI_STOP_DISCOVERY_DISCOVER;
 const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
 
 // 638 test case *7 APDU including start discovery + 638 discovery = 5104
@@ -107,6 +109,7 @@ static std::vector<uint8_t> nci_send_loopback_;
 static volatile bool is_end_of_test_ = false;
 static volatile bool is_frgamented_apdu_ = false;
 static volatile bool is_aborted_ = false;
+static volatile bool is_removal_procedure = false;
 static volatile uint8_t pollingConfiguration = 0;
 const int NFC_A_PASSIVE_POLL_MODE = 0;
 const int NFC_B_PASSIVE_POLL_MODE = 1;
@@ -158,38 +161,19 @@ private:
 static bool isEndOfTest(std::vector<unsigned char> &data) {
   ALOGI("%s\n", __func__);
   bool isEOT = false;
-  if (data.at(0) == 0x60 && data.at(1) == 0x08) {
-    ALOGI("Device Error");
-    switch (data.at(3)) {
-    case 0xB0:
-      ALOGI("Device lost - transmission error\n");
-      starting_index_ = 0;
-      is_frgamented_apdu_ = false;
-      isEOT = true;
-      break;
-    case 0xB1:
-      ALOGI("Device lost - protocol error\n");
-      starting_index_ = 0;
-      is_frgamented_apdu_ = false;
-      isEOT = true;
-      break;
-    case 0xB2:
-      ALOGI("Device lost - timeout error\n");
-      starting_index_ = 0;
-      is_frgamented_apdu_ = false;
-      isEOT = true;
-      break;
-    default:
-      ALOGI("Default\n");
-      break;
-    }
-  } else if ((data.at(0) == 0x61) && (data.at(1) == 0x06)) {
+  if ((data.at(0) == 0x61) && (data.at(1) == 0x06)) {
     ALOGI("RF Deactivated\n");
+    starting_index_ = 0;
+    is_frgamented_apdu_ = false;
     isEOT = true;
   } else if ((received_data_length_ > 7) &&
-             (data.at(3) == 0x00 && data.at(4) == 0x70 && data.at(5) == 0x04 &&
-              data.at(6) == 0x04 && data.at(7) == 0x00)) {
+             (data.at(3) == 0x00 &&
+              (data.at(4) == 0x70 || data.at(4) == 0x72) &&
+              data.at(5) == 0x04 && data.at(6) == 0x04 && data.at(7) == 0x00)) {
     ALOGI("Device lost APDU received\n");
+    if (data.at(4) == 0x70) {
+      is_removal_procedure = true;
+    }
     isEOT = true;
   }
   return isEOT;
@@ -453,9 +437,15 @@ int main(int argc, char **argv) {
       ALOGI("EOT RECEIVED ");
       received_data_length_ = 0;
     }
-
-    send(nxp_emvco_cl_service_, nci_stop_discovery, aidl_return,
-         "NCI_STOP_DISCOVERY");
+    if (is_removal_procedure) {
+      is_removal_procedure = false;
+      send(nxp_emvco_cl_service_, nci_stop_discovery_discover, aidl_return,
+           "NCI_STOP_DISCOVERY_DISCOVER_DISCOVER");
+    } else {
+      send(nxp_emvco_cl_service_, nci_stop_discovery_idle, aidl_return,
+           "NCI_STOP_DISCOVERY_IDLE");
+      usleep(15000);
+    }
     psse_cb_future.at(APDU_COUNT).wait_for(5 * timeout);
     ++APDU_COUNT;
     is_end_of_test_ =

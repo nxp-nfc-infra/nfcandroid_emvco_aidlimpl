@@ -500,6 +500,9 @@ int phNxpNciHal_MinOpen() {
   static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
   /*NCI2_0_INIT_CMD*/
   static uint8_t cmd_init_nci2_0[] = {0x20, 0x01, 0x02, 0x00, 0x00};
+  /*SET_CONFIG_IDLE_POWER_OFF_CMD*/
+  static uint8_t cmd_set_config_deactivate_idle_power_off[] = {
+      0x20, 0x02, 0x05, 0x01, 0xA0, 0x44, 0x01, 0x02};
 
   if (nxpncihal_ctrl.halStatus == HAL_STATUS_MIN_OPEN) {
     NXPLOG_NCIHAL_D("phNxpNciHal_MinOpen(): already open");
@@ -644,6 +647,14 @@ init_retry:
       }
     }
   }
+  status =
+      phNxpNciHal_send_ext_cmd(sizeof(cmd_set_config_deactivate_idle_power_off),
+                               cmd_set_config_deactivate_idle_power_off);
+  if (status != NFCSTATUS_SUCCESS) {
+    NXPLOG_NCIHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
+    goto init_retry;
+  }
+
   if (status != NFCSTATUS_SUCCESS) {
     NXPLOG_NCIHAL_E("NCI_CORE_INIT : Failed");
     if (init_retry_cnt < 3) {
