@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "NxpEmvco.h"
+#include "Emvco.h"
 #include "LinkedCallback.h"
 #include "phNfcStatus.h"
 #include <phNxpNciHal_Adaptation.h>
@@ -32,22 +32,22 @@ namespace emvco {
 using ::aidl::android::hardware::emvco::EmvcoEvent;
 using ::aidl::android::hardware::emvco::EmvcoStatus;
 
-std::vector<std::unique_ptr<LinkedCallback>> NxpEmvco::callbacks_;
-std::mutex NxpEmvco::callbacks_lock_;
-std::shared_ptr<NxpEmvco> NxpEmvco::emvco_service_;
-std::shared_ptr<INfcStateChangeCallback> NxpEmvco::nfc_State_change_callback =
-    nullptr;
+std::vector<std::unique_ptr<LinkedCallback>> Emvco::callbacks_;
+std::mutex Emvco::callbacks_lock_;
+std::shared_ptr<Emvco> Emvco::emvco_service_;
+std::shared_ptr<INfcStateChangeRequestCallback>
+    Emvco::nfc_State_change_callback = nullptr;
 
-void NxpEmvco::setNfcState(bool enableNfc) {
-  if (NxpEmvco::nfc_State_change_callback != nullptr) {
-    auto ret = NxpEmvco::nfc_State_change_callback->setNfcState(enableNfc);
+void Emvco::setNfcState(bool enableNfc) {
+  if (Emvco::nfc_State_change_callback != nullptr) {
+    auto ret = Emvco::nfc_State_change_callback->enableNfc(enableNfc);
     if (!ret.isOk()) {
       LOG(ERROR) << "Failed to send event!";
     }
   }
 }
 
-void NxpEmvco::eventCallback(uint8_t event, uint8_t status) {
+void Emvco::eventCallback(uint8_t event, uint8_t status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::lock_guard<std::mutex> lock(callbacks_lock_);
   for (auto &it : callbacks_) {
@@ -56,7 +56,7 @@ void NxpEmvco::eventCallback(uint8_t event, uint8_t status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
 }
 
-void NxpEmvco::dataCallback(uint16_t data_len, uint8_t *p_data) {
+void Emvco::dataCallback(uint16_t data_len, uint8_t *p_data) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::lock_guard<std::mutex> lock(callbacks_lock_);
   std::vector<uint8_t> data(p_data, p_data + data_len);
@@ -73,53 +73,53 @@ void OnCallbackDiedWrapped(void *cookie) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
 }
 
-std::shared_ptr<NxpEmvco> NxpEmvco::getInstance() {
+std::shared_ptr<Emvco> Emvco::getInstance() {
   if (emvco_service_ == nullptr) {
-    emvco_service_ = ::ndk::SharedRefBase::make<NxpEmvco>();
+    emvco_service_ = ::ndk::SharedRefBase::make<Emvco>();
     ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   }
   return emvco_service_;
 }
 
-NxpEmvco::NxpEmvco()
+Emvco::Emvco()
     : death_recipient_(AIBinder_DeathRecipient_new(&OnCallbackDiedWrapped)) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
 }
 
-::ndk::ScopedAStatus NxpEmvco::getEmvcoProfileDiscoveryInterface(
-    std::shared_ptr<::aidl::android::hardware::emvco::INxpEmvcoProfileDiscovery>
+::ndk::ScopedAStatus Emvco::getEmvcoProfileDiscoveryInterface(
+    std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoProfileDiscovery>
         *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (nxp_emvco_profile_discovery_ == nullptr) {
     nxp_emvco_profile_discovery_ =
-        ::ndk::SharedRefBase::make<NxpEmvcoProfileDiscovery>();
+        ::ndk::SharedRefBase::make<EmvcoProfileDiscovery>();
   }
   *_aidl_return = nxp_emvco_profile_discovery_;
   return ndk::ScopedAStatus::ok();
 }
-::ndk::ScopedAStatus NxpEmvco::getNxpEmvcoContactlessCard(
-    std::shared_ptr<::aidl::android::hardware::emvco::INxpEmvcoContactlessCard>
+::ndk::ScopedAStatus Emvco::getEmvcoContactlessCard(
+    std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoContactlessCard>
         *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (nxp_emvco_contactless_card == nullptr) {
     nxp_emvco_contactless_card =
-        ::ndk::SharedRefBase::make<NxpEmvcoContactlessCard>();
+        ::ndk::SharedRefBase::make<EmvcoContactlessCard>();
   }
   *_aidl_return = nxp_emvco_contactless_card;
   return ndk::ScopedAStatus::ok();
 }
-::ndk::ScopedAStatus NxpEmvco::getNxpEmvcoContactCard(
-    std::shared_ptr<::aidl::android::hardware::emvco::INxpEmvcoContactCard>
+::ndk::ScopedAStatus Emvco::getEmvcoContactCard(
+    std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoContactCard>
         *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (nxp_emvco_contact_card_ == nullptr) {
-    nxp_emvco_contact_card_ = ::ndk::SharedRefBase::make<NxpEmvcoContactCard>();
+    nxp_emvco_contact_card_ = ::ndk::SharedRefBase::make<EmvcoContactCard>();
   }
   *_aidl_return = nxp_emvco_contact_card_;
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus NxpEmvco::doRegisterEMVCoEventListener(
+::ndk::ScopedAStatus Emvco::registerEMVCoEventListener(
     const std::shared_ptr<
         ::aidl::android::hardware::emvco::IEmvcoClientCallback>
         &in_clientCallback,
@@ -130,7 +130,7 @@ NxpEmvco::NxpEmvco()
   return ndk::ScopedAStatus::ok();
 }
 
-binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
+binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s", __func__);
   (void)fd;
   (void)p;
@@ -138,25 +138,25 @@ binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
   return STATUS_OK;
 }
 
-::ndk::ScopedAStatus NxpEmvco::handleNfcStateChange(int32_t in_nfcState) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s handleNfcStateChanged nfcState:%d", __func__,
-           in_nfcState);
-  phNxpNciHal_handleNfcStateChanged(in_nfcState);
+::ndk::ScopedAStatus Emvco::onNfcStateChange(NfcState in_nfcState) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s onNfcStateChange nfcState:%d", __func__,
+           (int)in_nfcState);
+  phNxpNciHal_handleNfcStateChanged((int)in_nfcState);
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus NxpEmvco::doRegisterNFCStateChangeCallback(
+::ndk::ScopedAStatus Emvco::registerNFCStateChangeCallback(
     const std::shared_ptr<
-        ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+        ::aidl::android::hardware::emvco::INfcStateChangeRequestCallback>
         &in_nfcStateChangeCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s", __func__);
-  NxpEmvco::nfc_State_change_callback = in_nfcStateChangeCallback;
+  Emvco::nfc_State_change_callback = in_nfcStateChangeCallback;
   *_aidl_return = true;
   return ndk::ScopedAStatus::ok();
 }
-::ndk::ScopedAStatus NxpEmvco::doSetEMVCoMode(int8_t in_config,
-                                              bool in_isStartEMVCo) {
+::ndk::ScopedAStatus Emvco::setEMVCoMode(int8_t in_config,
+                                         bool in_isStartEMVCo) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_config:%d", __func__, in_config);
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_open called check return",
            __func__);
@@ -171,22 +171,22 @@ binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus NxpEmvco::open() {
+::ndk::ScopedAStatus Emvco::open() {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   NFCSTATUS status = phNxpNciHal_open(eventCallback, dataCallback, setNfcState);
 
   return CHK_STATUS(status);
 }
-::ndk::ScopedAStatus NxpEmvco::transceive(const std::vector<uint8_t> &in_data,
-                                          int32_t *_aidl_return) {
+::ndk::ScopedAStatus Emvco::transceive(const std::vector<uint8_t> &in_data,
+                                       int32_t *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::vector<uint8_t> data(in_data.begin(), in_data.end());
   *_aidl_return = phNxpNciHal_write(data.size(), (uint8_t *)data.data());
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus NxpEmvco::close(
-    const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback) {
+::ndk::ScopedAStatus
+Emvco::close(const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (in_clientCallback == nullptr) {
     LOG(ERROR) << __func__ << "Client callback is NULL";
@@ -197,7 +197,7 @@ binder_status_t NxpEmvco::dump(int fd, const char **p, uint32_t q) {
   return CHK_STATUS(status);
 }
 
-void NxpEmvco::registerCallback(
+void Emvco::registerCallback(
     const std::shared_ptr<IEmvcoClientCallback> &callback) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (callback == nullptr) {
@@ -206,13 +206,13 @@ void NxpEmvco::registerCallback(
   }
   {
     std::lock_guard<std::mutex> lock(callbacks_lock_);
-    callbacks_.emplace_back(LinkedCallback::Make(ref<NxpEmvco>(), callback));
+    callbacks_.emplace_back(LinkedCallback::Make(ref<Emvco>(), callback));
     ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients=%d", (int)callbacks_.size());
   }
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
 }
 
-void NxpEmvco::unregisterCallback(
+void Emvco::unregisterCallback(
     const std::shared_ptr<IEmvcoClientCallback> &callback) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   if (callback == nullptr) {

@@ -20,10 +20,10 @@
 
 #include <aidl/Gtest.h>
 #include <aidl/Vintf.h>
+#include <aidl/android/hardware/emvco/BnEmvco.h>
 #include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/BnNxpEmvco.h>
-#include <aidl/android/hardware/emvco/INxpEmvco.h>
-#include <aidl/android/hardware/emvco/INxpEmvcoContactlessCard.h>
+#include <aidl/android/hardware/emvco/IEmvco.h>
+#include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
@@ -44,9 +44,9 @@
 
 using aidl::android::hardware::emvco::EmvcoEvent;
 using aidl::android::hardware::emvco::EmvcoStatus;
+using aidl::android::hardware::emvco::IEmvco;
 using aidl::android::hardware::emvco::IEmvcoClientCallback;
-using aidl::android::hardware::emvco::INxpEmvco;
-using aidl::android::hardware::emvco::INxpEmvcoContactlessCard;
+using aidl::android::hardware::emvco::IEmvcoContactlessCard;
 
 using ndk::ScopedAStatus;
 using ndk::SharedRefBase;
@@ -70,8 +70,8 @@ using ndk::SpAIBinder;
 
 #define PPSE_SEND_MAX_TIMES 250
 
-std::shared_ptr<INxpEmvco> iINxpEmvco_;
-std::shared_ptr<INxpEmvcoContactlessCard> iNxpEmvcoContactlessCard_;
+std::shared_ptr<IEmvco> iIEmvco_;
+std::shared_ptr<IEmvcoContactlessCard> iEmvcoContactlessCard_;
 constexpr static int kCallbackTimeoutMs = 100;
 volatile static int index = 0;
 static std::vector<std::promise<void>> psse_cb_promise;
@@ -116,8 +116,8 @@ private:
 void signal_callback_handler(int signum) {
   ALOGI("%s Self test App abort requested, signum:%d", __func__, signum);
   is_aborted_ = true;
-  if (iNxpEmvcoContactlessCard_ != nullptr) {
-    iNxpEmvcoContactlessCard_->doSetEMVCoMode(pollingConfiguration, false);
+  if (iEmvcoContactlessCard_ != nullptr) {
+    iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, false);
   }
   exit(signum);
   ALOGI("%s Self test App aborted", __func__);
@@ -224,21 +224,20 @@ int main(int argc, char **argv) {
         }
       });
 
-  const std::string instance =
-      std::string() + INxpEmvco::descriptor + "/default";
+  const std::string instance = std::string() + IEmvco::descriptor + "/default";
   SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
-  iINxpEmvco_ = INxpEmvco::fromBinder(binder);
+  iIEmvco_ = IEmvco::fromBinder(binder);
 
-  iINxpEmvco_->getNxpEmvcoContactlessCard(&iNxpEmvcoContactlessCard_);
+  iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
 
   // Open and wait for OPEN_CPLT
-  ALOGI("doRegisterEMVCoEventListener");
+  ALOGI("registerEMVCoEventListener");
   bool register_status;
-  EXPECT_TRUE((*(iNxpEmvcoContactlessCard_))
-                  .doRegisterEMVCoEventListener(mCallback, &register_status)
+  EXPECT_TRUE((*(iEmvcoContactlessCard_))
+                  .registerEMVCoEventListener(mCallback, &register_status)
                   .isOk());
 
-  iNxpEmvcoContactlessCard_->doSetEMVCoMode(pollingConfiguration, true);
+  iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, true);
   start_discovery_emvco_cb_future.wait();
 
   // NCI_SEND_PPSE
@@ -251,7 +250,7 @@ int main(int argc, char **argv) {
       clock_gettime(CLOCK_MONOTONIC, &tm);
       start_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
       ALOGI("%s PPSE command Sent at:%llu", __func__, start_ts);
-      iNxpEmvcoContactlessCard_->transceive(data6, &ppse_aidl_return1);
+      iEmvcoContactlessCard_->transceive(data6, &ppse_aidl_return1);
       EXPECT_EQ(psse_cb_future.at(index).wait_for(3 * timeout),
                 std::future_status::ready);
       clock_gettime(CLOCK_MONOTONIC, &tm);
@@ -266,7 +265,7 @@ int main(int argc, char **argv) {
     }
   }
 
-  iNxpEmvcoContactlessCard_->doSetEMVCoMode(pollingConfiguration, false);
+  iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, false);
 
   ALOGI("TEST APP EXITED");
 }

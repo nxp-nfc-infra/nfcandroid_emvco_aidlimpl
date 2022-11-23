@@ -18,22 +18,27 @@
 
 package android.hardware.emvco;
 
+/** \addtogroup EMVCO_HAL_API_INTERFACE
+ *  @{
+ */
 
+/**
+ * @brief Event codes to be handled by Application
+ *
+ * The EMVCo Hal notifies application with below event codes.
+ */
 @VintfStability
 @Backing(type="int")
 enum EmvcoEvent {
-    EMVCO_EVENT_OPEN_CPLT         = 0,
-    EMVCO_EVENT_CLOSE_CPLT        = 1,
-    EMVCO_EVENT_POST_INIT_CPLT    = 2,
-    EMVCO_EVENT_PRE_DISCOVER_CPLT = 3,
-    EMVCO_EVENT_HCI_NETWORK_RESET = 4,
-    EMVCO_EVENT_ERROR             = 5,
-    EMVCO_EVENT_START_CONFIG      = 6,
-    EMVCO_EVENT_START_IN_PROGRESS = 7,
-    EMVCO_EVENT_START_SUCCESS     = 8,
-    EMVCO_EVENT_ACTIVATED         = 9,
-    EMVCO_EVENT_STOP_CONFIG       = 10,
-    EMVCO_EVENT_STOP_IN_PROGRESS  = 11,
-    EMVCO_EVENT_STOP_SUCCESS      = 12,
-    EMVCO_EVENT_STOPPED           = 13,
+    /** Event to indicate EMVCo HAL open complete state*/
+    EMVCO_HAL_OPEN_CPLT_EVT          = 0,
+    /** Event to indicate EMVCo HAL close complete state*/
+    EMVCO_HAL_CLOSE_CPLT_EVT         = 1,
+    /** Event to indicate the start of EMVCo mode*/
+    EMVCO_MODE_START_EVT             = 2,
+    /** Event to indicate EMVCo polling activated state*/
+    EMVCO_POLL_ACTIVATE_EVT          = 3,
+    /** Event to indicate the stop of EMVCo mode*/
+    EMVCO_MODE_STOP_EVT              = 4,
 }
+/** @}*/

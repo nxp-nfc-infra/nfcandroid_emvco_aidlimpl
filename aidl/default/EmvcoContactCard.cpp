@@ -15,15 +15,25 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include "EmvcoContactCard.h"
+#include "Emvco.h"
 
-package android.hardware.emvco;
+namespace aidl {
+namespace android {
+namespace hardware {
+namespace emvco {
 
-import android.hardware.emvco.IEmvcoClientCallback;
-import android.hardware.emvco.INfcStateChangeCallback;
-@VintfStability
-interface INxpEmvcoProfileDiscovery {
-    boolean doRegisterEMVCoEventListener(in IEmvcoClientCallback emvcoClientCallback);
-    oneway void doSetEMVCoMode(in byte config, boolean isStartEMVCo);
-    oneway void handleNfcStateChange(int nfcState);
-    boolean doRegisterNFCStateChangeCallback(in INfcStateChangeCallback nfcStateChangeCallback);
+::ndk::ScopedAStatus EmvcoContactCard::registerEMVCoEventListener(
+    const std::shared_ptr<
+        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
+        &in_clientCallback,
+    bool *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
+                                                          _aidl_return);
 }
+
+} // namespace emvco
+} // namespace hardware
+} // namespace android
+} // namespace aidl

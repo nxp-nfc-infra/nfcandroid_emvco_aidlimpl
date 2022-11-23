@@ -35,8 +35,6 @@
 
 package android.hardware.emvco;
 @VintfStability
-interface INxpEmvco {
-  android.hardware.emvco.INxpEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
-  android.hardware.emvco.INxpEmvcoContactlessCard getNxpEmvcoContactlessCard();
-  android.hardware.emvco.INxpEmvcoContactCard getNxpEmvcoContactCard();
+interface INfcStateChangeRequestCallback {
+  oneway void enableNfc(boolean turnOn);
 }

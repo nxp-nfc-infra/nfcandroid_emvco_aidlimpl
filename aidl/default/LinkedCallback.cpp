@@ -38,7 +38,7 @@ LinkedCallback::~LinkedCallback() {
 }
 
 std::unique_ptr<LinkedCallback>
-LinkedCallback::Make(std::shared_ptr<NxpEmvco> service,
+LinkedCallback::Make(std::shared_ptr<Emvco> service,
                      std::shared_ptr<IEmvcoClientCallback> callback) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::unique_ptr<LinkedCallback> ret(new LinkedCallback());
@@ -54,7 +54,7 @@ LinkedCallback::Make(std::shared_ptr<NxpEmvco> service,
   return ret;
 }
 
-std::shared_ptr<NxpEmvco> LinkedCallback::service() {
+std::shared_ptr<Emvco> LinkedCallback::service() {
   auto service_sp = service_.lock();
   CHECK_NE(nullptr, service_sp);
   return service_sp;

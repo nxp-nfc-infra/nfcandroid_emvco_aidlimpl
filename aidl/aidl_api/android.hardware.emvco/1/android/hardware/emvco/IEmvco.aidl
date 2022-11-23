@@ -35,9 +35,8 @@
 
 package android.hardware.emvco;
 @VintfStability
-interface INxpEmvcoProfileDiscovery {
-  boolean doRegisterEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback emvcoClientCallback);
-  oneway void doSetEMVCoMode(in byte config, boolean isStartEMVCo);
-  oneway void handleNfcStateChange(int nfcState);
-  boolean doRegisterNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeCallback nfcStateChangeCallback);
+interface IEmvco {
+  android.hardware.emvco.IEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
+  android.hardware.emvco.IEmvcoContactlessCard getEmvcoContactlessCard();
+  android.hardware.emvco.IEmvcoContactCard getEmvcoContactCard();
 }

@@ -37,7 +37,7 @@ package android.hardware.emvco;
 @Backing(type="int") @VintfStability
 enum NfcState {
   STATE_OFF = 1,
-  STATE_TURNING_ON = 1,
-  STATE_ON = 2,
-  STATE_TURNING_OFF = 3,
+  STATE_TURNING_ON = 2,
+  STATE_ON = 3,
+  STATE_TURNING_OFF = 4,
 }

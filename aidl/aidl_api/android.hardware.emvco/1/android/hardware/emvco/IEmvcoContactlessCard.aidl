@@ -35,6 +35,8 @@
 
 package android.hardware.emvco;
 @VintfStability
-interface INxpEmvcoContactCard {
-  boolean doRegisterEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
+interface IEmvcoContactlessCard {
+  boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
+  int transceive(in byte[] in_data);
+  oneway void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
 }

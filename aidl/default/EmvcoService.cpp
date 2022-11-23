@@ -16,13 +16,13 @@
  *
  ******************************************************************************/
 
-#include "NxpEmvco.h"
+#include "Emvco.h"
 #include <android-base/logging.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
 //#include <cstring>
 
-using ::aidl::android::hardware::emvco::NxpEmvco;
+using ::aidl::android::hardware::emvco::Emvco;
 
 int main() {
   LOG(INFO) << "EMVCO HAL starting up";
@@ -30,11 +30,9 @@ int main() {
     LOG(INFO) << "failed to set thread pool max thread count";
     return 1;
   }
-  std::shared_ptr<NxpEmvco> emvco_service =
-      ndk::SharedRefBase::make<NxpEmvco>();
+  std::shared_ptr<Emvco> emvco_service = ndk::SharedRefBase::make<Emvco>();
 
-  const std::string instance =
-      std::string() + NxpEmvco::descriptor + "/default";
+  const std::string instance = std::string() + Emvco::descriptor + "/default";
   ALOGD_IF(EMVCO_HAL_DEBUG, "EMVCo Registering service: %s", instance.c_str());
   binder_status_t status = AServiceManager_addService(
       emvco_service->asBinder().get(), instance.c_str());

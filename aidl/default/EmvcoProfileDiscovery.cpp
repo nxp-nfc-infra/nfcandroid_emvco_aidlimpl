@@ -15,43 +15,42 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "NxpEmvcoProfileDiscovery.h"
+#include "EmvcoProfileDiscovery.h"
 
 namespace aidl {
 namespace android {
 namespace hardware {
 namespace emvco {
 
-::ndk::ScopedAStatus NxpEmvcoProfileDiscovery::doRegisterEMVCoEventListener(
+::ndk::ScopedAStatus EmvcoProfileDiscovery::registerEMVCoEventListener(
     const std::shared_ptr<
         ::aidl::android::hardware::emvco::IEmvcoClientCallback>
         &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return NxpEmvco::getInstance()->doRegisterEMVCoEventListener(
-      in_clientCallback, _aidl_return);
+  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
+                                                          _aidl_return);
 }
 
-::ndk::ScopedAStatus
-NxpEmvcoProfileDiscovery::doSetEMVCoMode(int8_t in_config,
-                                         bool in_isStartEMVCo) {
+::ndk::ScopedAStatus EmvcoProfileDiscovery::setEMVCoMode(int8_t in_config,
+                                                         bool in_isStartEMVCo) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return NxpEmvco::getInstance()->doSetEMVCoMode(in_config, in_isStartEMVCo);
+  return Emvco::getInstance()->setEMVCoMode(in_config, in_isStartEMVCo);
 }
 
-::ndk::ScopedAStatus NxpEmvcoProfileDiscovery::doRegisterNFCStateChangeCallback(
+::ndk::ScopedAStatus EmvcoProfileDiscovery::registerNFCStateChangeCallback(
     const std::shared_ptr<
-        ::aidl::android::hardware::emvco::INfcStateChangeCallback>
+        ::aidl::android::hardware::emvco::INfcStateChangeRequestCallback>
         &in_nfcStateChangeCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return NxpEmvco::getInstance()->doRegisterNFCStateChangeCallback(
+  return Emvco::getInstance()->registerNFCStateChangeCallback(
       in_nfcStateChangeCallback, _aidl_return);
 }
 ::ndk::ScopedAStatus
-NxpEmvcoProfileDiscovery::handleNfcStateChange(int32_t in_nfcState) {
+EmvcoProfileDiscovery::onNfcStateChange(NfcState in_nfcState) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return NxpEmvco::getInstance()->handleNfcStateChange(in_nfcState);
+  return Emvco::getInstance()->onNfcStateChange(in_nfcState);
 }
 } // namespace emvco
 } // namespace hardware

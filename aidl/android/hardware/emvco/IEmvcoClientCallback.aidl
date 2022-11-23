@@ -21,9 +21,22 @@ package android.hardware.emvco;
 import android.hardware.emvco.EmvcoEvent;
 import android.hardware.emvco.EmvcoStatus;
 
+/** \addtogroup EMVCO_HAL_API_INTERFACE
+ *  @{
+ */
+
+/**
+ * @brief Provides a callback functionality to App.
+ */
 @VintfStability
 interface IEmvcoClientCallback {
-  
+   /**
+    * EMVCo Data Callback Function
+    */
     oneway void sendData(in byte[] data);
+    /**
+    * EMVCo Event Callback Function
+    */
     oneway void sendEvent(in EmvcoEvent event, in EmvcoStatus status);
 }
+/** @}*/

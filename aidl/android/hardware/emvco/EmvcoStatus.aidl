@@ -18,6 +18,13 @@
 
 package android.hardware.emvco;
 
+/** \addtogroup EMVCO_HAL_API_INTERFACE
+ *  @{
+ */
+
+/**
+ * @brief EMVCo Hal return status code as below
+ */
 @VintfStability
 @Backing(type="int")
 enum EmvcoStatus {
@@ -42,3 +49,5 @@ enum EmvcoStatus {
      */
     EMVCO_STATUS_REFUSED = 4,
 }
+
+/** @}*/

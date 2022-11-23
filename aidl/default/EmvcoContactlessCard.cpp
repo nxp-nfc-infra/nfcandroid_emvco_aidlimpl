@@ -15,22 +15,35 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "NxpEmvcoContactCard.h"
-#include "NxpEmvco.h"
+#include "EmvcoContactlessCard.h"
+#include "Emvco.h"
 
 namespace aidl {
 namespace android {
 namespace hardware {
 namespace emvco {
 
-::ndk::ScopedAStatus NxpEmvcoContactCard::doRegisterEMVCoEventListener(
+::ndk::ScopedAStatus EmvcoContactlessCard::registerEMVCoEventListener(
     const std::shared_ptr<
         ::aidl::android::hardware::emvco::IEmvcoClientCallback>
         &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return NxpEmvco::getInstance()->doRegisterEMVCoEventListener(
-      in_clientCallback, _aidl_return);
+  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
+                                                          _aidl_return);
+}
+
+::ndk::ScopedAStatus
+EmvcoContactlessCard::transceive(const std::vector<uint8_t> &in_data,
+                                 int32_t *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->transceive(in_data, _aidl_return);
+}
+
+::ndk::ScopedAStatus EmvcoContactlessCard::setEMVCoMode(int8_t in_config,
+                                                        bool in_isStartEMVCo) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_config:%d", __func__, in_config);
+  return Emvco::getInstance()->setEMVCoMode(in_config, in_isStartEMVCo);
 }
 
 } // namespace emvco

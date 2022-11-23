@@ -18,26 +18,35 @@
 
 package android.hardware.emvco;
 
+/** \addtogroup EMVCO_HAL_API_INTERFACE
+ *  @{
+ */
 
+/**
+ * @brief Event codes to be handled by EMVCo HAL
+ *
+ * The EMVCo Hal uses this event codes to map the NFC event codes.
+ */
 @VintfStability
 @Backing(type="int")
 enum NfcState {
     /**
-     * STATE_OFF event to notify NFC state off event to EMVCo HAL 
-     * 
+     * STATE_OFF event to notify NFC state off event to EMVCo HAL
+     *
      */
-    STATE_OFF              = 1,
+    STATE_OFF                       = 1,
     /**
-     * STATE_TURNING_ON event to notify NFC state turning on event to EMVCo HAL 
+     * STATE_TURNING_ON event to notify NFC state turning on event to EMVCo HAL
      */
-    STATE_TURNING_ON             = 1,
+    STATE_TURNING_ON                = 2,
     /**
-     * STATE_ON event to notify NFC state on event to EMVCo HAL 
+     * STATE_ON event to notify NFC state on event to EMVCo HAL
      */
-    STATE_ON             = 2,
+    STATE_ON                       = 3,
     /**
-     * STATE_TURNING_OFF event to notify NFC state turning OFF event to EMVCo HAL 
+     * STATE_TURNING_OFF event to notify NFC state turning OFF event to EMVCo HAL
      */
-    STATE_TURNING_OFF              = 3,
+    STATE_TURNING_OFF              = 4,
 
 }
+/** @}*/

@@ -21,10 +21,17 @@ package android.hardware.emvco;
 import android.hardware.emvco.IEmvcoClientCallback;
 
 @VintfStability
-interface INxpEmvcoContactlessCard {
-    boolean doRegisterEMVCoEventListener(in IEmvcoClientCallback clientCallback);
-    int transceive(in byte[] data);
-    oneway void open();
-    oneway void close(in IEmvcoClientCallback clientCallback);
-    oneway void doSetEMVCoMode(in byte config,boolean isStartEMVCo);
+interface IEmvcoContactCard {
+    /**
+    *
+    * @brief Register EMVCo callback function to receive the events from a listener device.
+    *
+    * @note This function is must to call before invoking any other api.
+    *
+    * @param[in]  *in_clientCallback has EMVCo client HAL callback
+    * @param[in]  *in_aidl_return indicates register status in return to caller
+    *
+    * @return ::ndk::ScopedAStatus indicates doRegisterEMVCoEventListener request processed by EMVCo HAL successfully or not
+    */
+    boolean registerEMVCoEventListener(in IEmvcoClientCallback clientCallback);
 }

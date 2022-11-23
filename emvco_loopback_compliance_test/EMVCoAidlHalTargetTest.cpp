@@ -20,10 +20,10 @@
 
 #include <aidl/Gtest.h>
 #include <aidl/Vintf.h>
+#include <aidl/android/hardware/emvco/BnEmvco.h>
 #include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/BnNxpEmvco.h>
-#include <aidl/android/hardware/emvco/INxpEmvco.h>
-#include <aidl/android/hardware/emvco/INxpEmvcoContactlessCard.h>
+#include <aidl/android/hardware/emvco/IEmvco.h>
+#include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
@@ -48,9 +48,9 @@
 
 using aidl::android::hardware::emvco::EmvcoEvent;
 using aidl::android::hardware::emvco::EmvcoStatus;
+using aidl::android::hardware::emvco::IEmvco;
 using aidl::android::hardware::emvco::IEmvcoClientCallback;
-using aidl::android::hardware::emvco::INxpEmvco;
-using aidl::android::hardware::emvco::INxpEmvcoContactlessCard;
+using aidl::android::hardware::emvco::IEmvcoContactlessCard;
 
 using ndk::ScopedAStatus;
 using ndk::SharedRefBase;
@@ -125,8 +125,8 @@ const int NFC_ABFVAS_PASSIVE_POLL_MODE_SUPPORTED = 15;
 std::mutex data_mutex_;
 int32_t aidl_return;
 
-std::shared_ptr<INxpEmvco> nxp_emvco_service_;
-std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_;
+std::shared_ptr<IEmvco> nxp_emvco_service_;
+std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_;
 
 class EmvcoClientCallback
     : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
@@ -191,16 +191,15 @@ static std::vector<uint8_t> getNCILoopbackData(uint8_t packetBoundaryFlag,
   return nci_send_loopback_;
 }
 
-static void
-send(std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_,
-     const std::vector<uint8_t> data, int32_t aidl_return,
-     std::string dataTag) {
+static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
+                 const std::vector<uint8_t> data, int32_t aidl_return,
+                 std::string dataTag) {
   ALOGI("%s\n transceive data:%s", __func__, dataTag.c_str());
   nxp_emvco_cl_service_->transceive(data, &aidl_return);
 }
 
 static void
-transceive(std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_,
+transceive(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
            uint8_t packetBoundaryFlag, int32_t dataLength, char *pTemp,
            char *orgpTemp, std::string dataTag, int32_t aidl_return) {
   ALOGI("%s %s\n", __func__, dataTag.c_str());
@@ -250,7 +249,7 @@ void signal_callback_handler(int signum) {
   ALOGI("%s Self test App abort requested, signum:%d", __func__, signum);
   is_aborted_ = true;
   if (nxp_emvco_cl_service_ != nullptr) {
-    nxp_emvco_cl_service_->doSetEMVCoMode(pollingConfiguration, false);
+    nxp_emvco_cl_service_->setEMVCoMode(pollingConfiguration, false);
   }
   exit(signum);
   ALOGI("%s Self test App aborted", __func__);
@@ -324,12 +323,11 @@ int main(int argc, char **argv) {
     psse_cb_promise_.push_back(std::move(ppse_promise));
   }
 
-  const std::string instance =
-      std::string() + INxpEmvco::descriptor + "/default";
+  const std::string instance = std::string() + IEmvco::descriptor + "/default";
   SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
-  nxp_emvco_service_ = INxpEmvco::fromBinder(binder);
+  nxp_emvco_service_ = IEmvco::fromBinder(binder);
 
-  nxp_emvco_service_->getNxpEmvcoContactlessCard(&nxp_emvco_cl_service_);
+  nxp_emvco_service_->getEmvcoContactlessCard(&nxp_emvco_cl_service_);
 
   auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
       [](auto event, auto status) {
@@ -397,9 +395,9 @@ int main(int argc, char **argv) {
       });
   bool register_status;
   EXPECT_TRUE((*(nxp_emvco_cl_service_))
-                  .doRegisterEMVCoEventListener(mCallback, &register_status)
+                  .registerEMVCoEventListener(mCallback, &register_status)
                   .isOk());
-  nxp_emvco_cl_service_->doSetEMVCoMode(pollingConfiguration, true);
+  nxp_emvco_cl_service_->setEMVCoMode(pollingConfiguration, true);
 
   psse_cb_future.at(APDU_COUNT).wait();
   APDU_COUNT++;
@@ -452,7 +450,7 @@ int main(int argc, char **argv) {
         false; // Reset is_end_of_test_ to send the PPSE in loop next time
     ALOGI("NCI_STOP_DISCOVERY completed");
   }
-  nxp_emvco_cl_service_->doSetEMVCoMode(pollingConfiguration, false);
+  nxp_emvco_cl_service_->setEMVCoMode(pollingConfiguration, false);
 
   ALOGI("TEST APP EXITED");
 }

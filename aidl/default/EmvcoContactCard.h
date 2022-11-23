@@ -16,7 +16,13 @@
  *
  ******************************************************************************/
 #pragma once
-#include <aidl/android/hardware/emvco/BnNxpEmvcoContactCard.h>
+
+/** \addtogroup EMVCO_STACK_HAL_CT_API_INTERFACE
+ *  @brief The android application calls this interface to use the EMVCo Contact
+ *   card functionality.
+ *  @{
+ */
+#include <aidl/android/hardware/emvco/BnEmvcoContactCard.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
 #include <android-base/logging.h>
 #include <log/log.h>
@@ -26,10 +32,23 @@ namespace android {
 namespace hardware {
 namespace emvco {
 
-class NxpEmvcoContactCard : public BnNxpEmvcoContactCard {
+class EmvcoContactCard : public BnEmvcoContactCard {
 
 public:
-  ::ndk::ScopedAStatus doRegisterEMVCoEventListener(
+  /**
+   *
+   * @brief Register EMVCo callback function to receive the events from a
+   * listener device.
+   *
+   * @note This function is must to call before invoking any other api.
+   *
+   * @param[in]  *in_clientCallback has EMVCo client HAL callback
+   * @param[in]  *in_aidl_return indicates register status in return to caller
+   *
+   * @return ::ndk::ScopedAStatus indicates registerEMVCoEventListener request
+   * processed by EMVCo HAL successfully or not
+   */
+  ::ndk::ScopedAStatus registerEMVCoEventListener(
       const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
       bool *_aidl_return) override;
 };
@@ -38,3 +57,4 @@ public:
 } // namespace hardware
 } // namespace android
 } // namespace aidl
+  /** @}*/

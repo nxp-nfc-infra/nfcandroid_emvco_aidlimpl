@@ -18,13 +18,25 @@
 
 package android.hardware.emvco;
 
-import android.hardware.emvco.INxpEmvcoProfileDiscovery;
-import android.hardware.emvco.INxpEmvcoContactlessCard;
-import android.hardware.emvco.INxpEmvcoContactCard;
+/** \addtogroup EMVCO_HAL_API_INTERFACE
+ *  @{
+ */
 
+/**
+ * @brief Provides a callback functionality to App.
+ */
 @VintfStability
-interface INxpEmvco {
-    INxpEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
-    INxpEmvcoContactlessCard getNxpEmvcoContactlessCard();
-    INxpEmvcoContactCard getNxpEmvcoContactCard();
+interface INfcStateChangeRequestCallback {
+    /**
+    *
+    * @brief request NFC module to turn ON or OFF the NFC
+    *
+    *
+    * @param[in]  turnOn true to turn on NFC. False to turn off NFC
+    *
+    * @return void
+    */
+    oneway void enableNfc(boolean turnOn);
+
 }
+/** @}*/

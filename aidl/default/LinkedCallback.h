@@ -17,7 +17,7 @@
  ******************************************************************************/
 #pragma once
 
-#include <NxpEmvco.h>
+#include <Emvco.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
 #include <android-base/macros.h>
 #include <android/binder_auto_utils.h>
@@ -28,7 +28,7 @@ namespace aidl::android::hardware::emvco {
 class LinkedCallback {
 public:
   static std::unique_ptr<LinkedCallback>
-  Make(std::shared_ptr<NxpEmvco> service,
+  Make(std::shared_ptr<Emvco> service,
        std::shared_ptr<IEmvcoClientCallback> callback);
   ~LinkedCallback();
   const std::shared_ptr<IEmvcoClientCallback> &callback() const {
@@ -39,8 +39,8 @@ public:
 private:
   LinkedCallback();
   DISALLOW_COPY_AND_ASSIGN(LinkedCallback);
-  std::shared_ptr<NxpEmvco> service();
-  std::weak_ptr<NxpEmvco> service_;
+  std::shared_ptr<Emvco> service();
+  std::weak_ptr<Emvco> service_;
   std::shared_ptr<IEmvcoClientCallback> callback_;
 };
 
