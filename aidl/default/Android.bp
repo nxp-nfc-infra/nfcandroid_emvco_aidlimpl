@@ -6,9 +6,7 @@ cc_binary {
     vendor: true,
 
     include_dirs: [
-        "hardware/nxp/emvco/emvco_hal_impl/hal",
-        "hardware/nxp/emvco/emvco_hal_impl/utils",
-        "hardware/nxp/emvco/emvco_hal_impl/inc/common",
+        "hardware/nxp/emvco/emvco_hal_impl/api",
     ],
 
     local_include_dirs: ["."],

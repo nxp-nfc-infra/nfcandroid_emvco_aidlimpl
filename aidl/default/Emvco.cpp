@@ -17,10 +17,9 @@
  ******************************************************************************/
 #include "Emvco.h"
 #include "LinkedCallback.h"
-#include "phNfcStatus.h"
-#include <phNxpNciHal_Adaptation.h>
+#include <emvco_hal.h>
 #define CHK_STATUS(x)                                                          \
-  ((x) == NFCSTATUS_SUCCESS)                                                   \
+  ((x) == EMVCO_STATUS_SUCCESS)                                                \
       ? (::ndk::ScopedAStatus::ok())                                           \
       : (::ndk::ScopedAStatus::fromStatus(STATUS_FAILED_TRANSACTION))
 
@@ -141,7 +140,7 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
 ::ndk::ScopedAStatus Emvco::onNfcStateChange(NfcState in_nfcState) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s onNfcStateChange nfcState:%d", __func__,
            (int)in_nfcState);
-  phNxpNciHal_handleNfcStateChanged((int)in_nfcState);
+  on_nfc_state_change((int)in_nfcState);
   return ndk::ScopedAStatus::ok();
 }
 
@@ -161,11 +160,11 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_open called check return",
            __func__);
 
-  phNxpNciHal_open(eventCallback, dataCallback, setNfcState);
+  open_emvco_app_data_channel(eventCallback, dataCallback, setNfcState);
 
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_isStartEMVCo:%d", __func__,
            in_isStartEMVCo);
-  phNxpNciHal_doSetEMVCoMode(in_config, in_isStartEMVCo);
+  set_emvco_mode(in_config, in_isStartEMVCo);
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_doSetEMVCoMode returned",
            __func__);
   return ndk::ScopedAStatus::ok();
@@ -173,7 +172,8 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
 
 ::ndk::ScopedAStatus Emvco::open() {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  NFCSTATUS status = phNxpNciHal_open(eventCallback, dataCallback, setNfcState);
+  EMVCO_STATUS status =
+      open_emvco_app_data_channel(eventCallback, dataCallback, setNfcState);
 
   return CHK_STATUS(status);
 }
@@ -181,7 +181,7 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
                                        int32_t *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::vector<uint8_t> data(in_data.begin(), in_data.end());
-  *_aidl_return = phNxpNciHal_write(data.size(), (uint8_t *)data.data());
+  *_aidl_return = send_emvco_app_data(data.size(), (uint8_t *)data.data());
   return ndk::ScopedAStatus::ok();
 }
 
@@ -193,7 +193,7 @@ Emvco::close(const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback) {
   } else {
     unregisterCallback(in_clientCallback);
   }
-  NFCSTATUS status = phNxpNciHal_close(false);
+  EMVCO_STATUS status = close_emvco_app_data_channel(false);
   return CHK_STATUS(status);
 }
 
