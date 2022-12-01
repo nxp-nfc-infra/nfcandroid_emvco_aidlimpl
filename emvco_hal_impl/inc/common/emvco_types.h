@@ -69,7 +69,7 @@ typedef enum {
  * thread
  * to notify that a deferred call must be invoked.
  */
-#define LIB_EMVCO_DEFERREDCALL_MSG (0x311)
+#define EMVCO_DEFERRED_CALL_MSG (0x311)
 
 /*
  * Deferred call declaration.
@@ -112,7 +112,7 @@ typedef struct lib_emvco_message {
 /*
  * Deferred message specific info declaration.
  * This type of information is packed as message data when
- * LIB_EMVCO_DEFERREDCALL_MSG
+ * EMVCO_DEFERRED_CALL_MSG
  * type message is posted to message handler thread.
  */
 typedef struct lib_emvco_deferred_call {

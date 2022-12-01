@@ -77,34 +77,19 @@ typedef void(control_granted_callback_t)();
 sem_t nfc_status_semaphore;
 
 enum {
-  HAL_EMVCO_OPEN_CPLT_EVT = 0u,
-  HAL_EMVCO_CLOSE_CPLT_EVT = 1u,
-  HAL_EMVCO_POST_INIT_CPLT_EVT = 2u,
-  HAL_EMVCO_PRE_DISCOVER_CPLT_EVT = 3u,
-  HAL_EMVCO_REQUEST_CONTROL_EVT = 4u,
-  HAL_EMVCO_RELEASE_CONTROL_EVT = 5u,
-  HAL_EMVCO_ERROR_EVT = 6u,
-  HAL_HCI_NETWORK_RESET = 7u,
-};
-enum {
-  EMVCO_EVENT_START_CONFIG = 6u,
-  EMVCO_EVENT_START_IN_PROGRESS = 7u,
-  EMVCO_EVENT_START_SUCCESS = 8u,
-  EMVCO_EVENT_ACTIVATED = 9u,
-  EMVCO_EVENT_STOP_CONFIG = 10u,
-  EMVCO_EVENT_STOP_IN_PROGRESS = 11u,
-  EMVCO_EVENT_STOP_SUCCESS = 12u,
-  EMVCO_EVENT_STOPPED = 13u,
-  EMVCO_EVENT_UNKNOWN = 14u,
-};
-enum {
-  HAL_EMVCO_STATUS_OK = 0u,
-  HAL_EMVCO_STATUS_FAILED = 1u,
-  HAL_EMVCO_STATUS_ERR_TRANSPORT = 2u,
-  HAL_EMVCO_STATUS_ERR_CMD_TIMEOUT = 3u,
-  HAL_EMVCO_STATUS_REFUSED = 4u,
+  EMVCO_OPEN_CHNL_CPLT_EVT = 0u,
+  EMVCO_OPEN_CHNL_ERROR_EVT = 1u,
+  EMVCO_CLOSE_CHNL_CPLT_EVT = 2u,
+  EMVCO_POOLING_START_EVT = 3u,
+  EMVCO_POLLING_STARTED_EVT = 4u,
+  EMVCO_POLLING_STOP_EVT = 5u,
+  EMVCO_UN_SUPPORTED_CARD_EVT = 6u,
 };
 
+enum {
+  STATUS_OK = 0u,
+  STATUS_FAILED = 1u,
+};
 typedef enum {
   STATE_OFF = 1,
   STATE_TURNING_ON,
@@ -157,7 +142,7 @@ typedef struct nci_info {
 /* NCI Control structure */
 typedef struct nci_hal_ctrl {
   emvco_hal_status halStatus;  /* Indicate if hal is open or closed */
-  pthread_t hal_client_thread; /* Integration thread handle */
+  pthread_t emvco_hal_client_thread; /* Integration thread handle */
   uint8_t thread_running;      /* Thread running if set to 1, else set to 0 */
   driver_config_data gDrvCfg;  /* Driver config data */
 
@@ -233,19 +218,14 @@ typedef struct nci_profile_Control {
 } nci_profile_Control_t;
 
 /* Internal messages to handle callbacks */
-#define NCI_HAL_OPEN_CPLT_MSG 0x411
-#define NCI_HAL_CLOSE_CPLT_MSG 0x412
-#define NCI_HAL_POST_INIT_CPLT_MSG 0x413
-#define NCI_HAL_PRE_DISCOVER_CPLT_MSG 0x414
-#define NCI_HAL_ERROR_MSG 0x415
-#define NCI_HAL_HCI_NETWORK_RESET_MSG 0x416
-#define NCI_HAL_RX_MSG 0xF01
-#define EMVCO_EVENT_START_MSG 0xF02
-#define EMVCO_EVENT_START_FAILED_MSG 0xF03
-#define EMVCO_POLLING_STARTED_MSG 0xF04
-#define EMVCO_EVENT_STOP_MSG 0xF05
-#define EMVCO_EVENT_STOPPED_MSG 0xF06
-#define EMVCO_EVENT_STOP_FAILED_MSG 0xF07
+#define EMVCO_OPEN_CHNL_CPLT_MSG 0x411
+#define EMVCO_OPEN_CHNL_ERROR_MSG 0x412
+#define EMVCO_CLOSE_CHNL_CPLT_MSG 0x413
+#define EMVCO_POOLING_STARTING_MSG 0x414
+#define EMVCO_POOLING_START_FAILED_MSG 0x415
+#define EMVCO_POLLING_STARTED_MSG 0x416
+
+#define EMVCO_DATA_RX_EVT 0xF01
 
 #define NCIHAL_CMD_CODE_LEN_BYTE_OFFSET (2U)
 #define NCIHAL_CMD_CODE_BYTE_LEN (3U)

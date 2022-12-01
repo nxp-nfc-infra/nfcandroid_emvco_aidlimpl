@@ -233,7 +233,7 @@ static void *tml_writer_thread(void *pParam) {
         tDeferredInfo.p_parameter = &tTransactionInfo;
         /* Write operation completed successfully. Post a Message onto Callback
          * Thread*/
-        tMsg.e_msgType = LIB_EMVCO_DEFERREDCALL_MSG;
+        tMsg.e_msgType = EMVCO_DEFERRED_CALL_MSG;
         tMsg.p_msg_data = &tDeferredInfo;
         tMsg.size = sizeof(tDeferredInfo);
 
@@ -478,7 +478,7 @@ static void *emvco_tml_thread(void *pParam) {
           /* Prepare the message to be posted on User thread */
           tDeferredInfo.p_callback = &tml_readDeferredCb;
           tDeferredInfo.p_parameter = &tTransactionInfo;
-          tMsg.e_msgType = LIB_EMVCO_DEFERREDCALL_MSG;
+          tMsg.e_msgType = EMVCO_DEFERRED_CALL_MSG;
           tMsg.p_msg_data = &tDeferredInfo;
           tMsg.size = sizeof(tDeferredInfo);
           // pthread_mutex_unlock(&gptml_emvco_context->read_info_update_mutex);

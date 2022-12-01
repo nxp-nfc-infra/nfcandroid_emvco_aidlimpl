@@ -386,7 +386,7 @@ static void osal_emvco_timer_expired(union sigval sv) {
   pTimerHandle->tDeferedCallInfo.pDeferedCall = &osal_emvco_deferred_call;
   pTimerHandle->tDeferedCallInfo.pParam = (void *)((intptr_t)(sv.sival_int));
 
-  pTimerHandle->tOsalMessage.e_msgType = LIB_EMVCO_DEFERREDCALL_MSG;
+  pTimerHandle->tOsalMessage.e_msgType = EMVCO_DEFERRED_CALL_MSG;
   pTimerHandle->tOsalMessage.p_msg_data =
       (void *)&pTimerHandle->tDeferedCallInfo;
 

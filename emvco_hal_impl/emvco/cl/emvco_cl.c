@@ -143,7 +143,7 @@ void *process_emvco_mode_rsp_impl(void *vargp) {
           is_stop_emvco_mode = false;
           LOG_EMVCOHAL_D("RF_DEACTIVATE_RSP");
           lib_emvco_message_t msg;
-          msg.e_msgType = EMVCO_EVENT_STOPPED_MSG;
+          msg.e_msgType = EMVCO_POLLING_STOP_EVT;
           msg.p_msg_data = NULL;
           msg.size = 0;
           tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);

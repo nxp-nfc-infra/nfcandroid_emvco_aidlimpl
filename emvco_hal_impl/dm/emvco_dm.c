@@ -93,13 +93,11 @@ static void read_app_data_complete(void *p_context,
                                    osal_transact_info_t *pInfo);
 static void close_app_data_channel_complete(EMVCO_STATUS status);
 static void power_cycle_complete(EMVCO_STATUS status);
-static void kill_hal_client_thread(nci_hal_ctrl_t *p_nxpncihal_ctrl);
-static void *hal_client_thread(void *arg);
+static void kill_emvco_hal_client_thread(nci_hal_ctrl_t *p_nxpncihal_ctrl);
+static void *emvco_hal_client_thread(void *arg);
 static void print_res_status(uint8_t *p_rx_data, uint16_t *p_len);
 
 static void initialize_debug_enabled_flag();
-EMVCO_STATUS nfcc_core_reset_init();
-EMVCO_STATUS get_chip_info_in_fw_dnld_mode(void);
 
 /******************************************************************************
  * Function         initialize_debug_enabled_flag
@@ -111,12 +109,21 @@ EMVCO_STATUS get_chip_info_in_fw_dnld_mode(void);
  ******************************************************************************/
 static void initialize_debug_enabled_flag() {
   unsigned long num = 0;
-  if (get_num_value(NAME_NFC_DEBUG_ENABLED, &num, sizeof(num))) {
+  if (get_num_value(NAME_EMVCO_DEBUG_ENABLED, &num, sizeof(num))) {
     emvco_debug_enabled = (num == 0) ? false : true;
   }
   LOG_EMVCOHAL_D("emvco_debug_enabled : %d", emvco_debug_enabled);
 }
 
+/******************************************************************************
+
+ * Function         status_led_switch_control
+ *
+ * Description      This function sets the led according to emvco status
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
 void led_switch_control(emvco_status_t emvco_status) {
   LOG_EMVCOHAL_D("%s emvco_status:%d", __func__, emvco_status);
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
@@ -144,7 +151,7 @@ void led_switch_control(emvco_status_t emvco_status) {
   }
 }
 /******************************************************************************
- * Function         hal_client_thread
+ * Function         emvco_hal_client_thread
  *
  * Description      This function is a thread handler which handles all TML and
  *                  NCI messages.
@@ -152,7 +159,7 @@ void led_switch_control(emvco_status_t emvco_status) {
  * Returns          void
  *
  ******************************************************************************/
-static void *hal_client_thread(void *arg) {
+static void *emvco_hal_client_thread(void *arg) {
   nci_hal_ctrl_t *p_nci_hal_ctrl = (nci_hal_ctrl_t *)arg;
   lib_emvco_message_t msg;
 
@@ -172,7 +179,7 @@ static void *hal_client_thread(void *arg) {
     }
 
     switch (msg.e_msgType) {
-    case LIB_EMVCO_DEFERREDCALL_MSG: {
+    case EMVCO_DEFERRED_CALL_MSG: {
       REENTRANCE_LOCK();
       lib_emvco_deferred_call_t *deferCall =
           (lib_emvco_deferred_call_t *)(msg.p_msg_data);
@@ -187,66 +194,41 @@ static void *hal_client_thread(void *arg) {
       break;
     }
 
-    case NCI_HAL_OPEN_CPLT_MSG: {
+    case EMVCO_OPEN_CHNL_CPLT_MSG: {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(HAL_EMVCO_OPEN_CPLT_EVT,
-                                          HAL_EMVCO_STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_OPEN_CHNL_CPLT_EVT, STATUS_OK);
       }
       REENTRANCE_UNLOCK();
       break;
     }
 
-    case NCI_HAL_CLOSE_CPLT_MSG: {
+    case EMVCO_CLOSE_CHNL_CPLT_MSG: {
       REENTRANCE_LOCK();
       is_set_emvco_mode = false;
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(HAL_EMVCO_CLOSE_CPLT_EVT,
-                                          HAL_EMVCO_STATUS_OK);
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOPPED,
-                                          HAL_EMVCO_STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_CLOSE_CHNL_CPLT_EVT, STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POLLING_STOP_EVT, STATUS_OK);
       }
-      kill_hal_client_thread(&nci_hal_ctrl);
+      kill_emvco_hal_client_thread(&nci_hal_ctrl);
       REENTRANCE_UNLOCK();
       break;
     }
 
-    case NCI_HAL_POST_INIT_CPLT_MSG: {
+    case EMVCO_OPEN_CHNL_ERROR_MSG: {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(HAL_EMVCO_POST_INIT_CPLT_EVT,
-                                          HAL_EMVCO_STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_OPEN_CHNL_ERROR_EVT,
+                                          STATUS_FAILED);
       }
       REENTRANCE_UNLOCK();
       break;
     }
 
-    case NCI_HAL_PRE_DISCOVER_CPLT_MSG: {
-      REENTRANCE_LOCK();
-      if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
-        /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(HAL_EMVCO_PRE_DISCOVER_CPLT_EVT,
-                                          HAL_EMVCO_STATUS_OK);
-      }
-      REENTRANCE_UNLOCK();
-      break;
-    }
-
-    case NCI_HAL_ERROR_MSG: {
-      REENTRANCE_LOCK();
-      if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
-        /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(HAL_EMVCO_ERROR_EVT,
-                                          HAL_EMVCO_STATUS_FAILED);
-      }
-      REENTRANCE_UNLOCK();
-      break;
-    }
-
-    case NCI_HAL_RX_MSG: {
+    case EMVCO_DATA_RX_EVT: {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_data_cback != NULL) {
         (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rsp_len,
@@ -259,47 +241,27 @@ static void *hal_client_thread(void *arg) {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        LOG_EMVCOHAL_E("EMVCO_EVENT_ACTIVATED propagted to upper layer");
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_ACTIVATED,
-                                          HAL_EMVCO_STATUS_OK);
+        LOG_EMVCOHAL_E("EMVCO_POLLING_STARTED_EVT propagted to upper layer");
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POLLING_STARTED_EVT, STATUS_OK);
       }
       REENTRANCE_UNLOCK();
       break;
     }
-    case EMVCO_EVENT_STOPPED_MSG: {
-      REENTRANCE_LOCK();
-      LOG_EMVCOHAL_D("%s EMVCO_EVENT_STOPPED_MSG", __func__);
-
-      REENTRANCE_UNLOCK();
-      break;
-    }
-
-    case EMVCO_EVENT_START_MSG: {
+    case EMVCO_POOLING_STARTING_MSG: {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_START_SUCCESS,
-                                          HAL_EMVCO_STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POOLING_START_EVT, STATUS_OK);
       }
       REENTRANCE_UNLOCK();
       break;
     }
-    case EMVCO_EVENT_STOP_MSG: {
+    case EMVCO_POOLING_START_FAILED_MSG: {
       REENTRANCE_LOCK();
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_STOP_IN_PROGRESS,
-                                          HAL_EMVCO_STATUS_OK);
-      }
-      REENTRANCE_UNLOCK();
-      break;
-    }
-    case EMVCO_EVENT_START_FAILED_MSG: {
-      REENTRANCE_LOCK();
-      if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
-        /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_EVENT_START_SUCCESS,
-                                          HAL_EMVCO_STATUS_FAILED);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POOLING_START_EVT,
+                                          STATUS_FAILED);
       }
       REENTRANCE_UNLOCK();
       break;
@@ -311,7 +273,7 @@ static void *hal_client_thread(void *arg) {
 }
 
 /******************************************************************************
- * Function         kill_hal_client_thread
+ * Function         kill_emvco_hal_client_thread
  *
  * Description      This function safely kill the client thread and clean all
  *                  resources.
@@ -319,7 +281,7 @@ static void *hal_client_thread(void *arg) {
  * Returns          void.
  *
  ******************************************************************************/
-static void kill_hal_client_thread(nci_hal_ctrl_t *p_nci_hal_ctrl) {
+static void kill_emvco_hal_client_thread(nci_hal_ctrl_t *p_nci_hal_ctrl) {
   LOG_EMVCOHAL_D("Terminating phNxpNciHal client thread...");
   p_nci_hal_ctrl->p_nfc_stack_cback = NULL;
   p_nci_hal_ctrl->p_nfc_stack_data_cback = NULL;
@@ -377,7 +339,7 @@ int open_app_data_channelImpl(
 clean_and_return:
   CONCURRENCY_UNLOCK();
   if (p_cback != NULL) {
-    (*p_cback)(HAL_EMVCO_OPEN_CPLT_EVT, HAL_EMVCO_STATUS_FAILED);
+    (*p_cback)(EMVCO_OPEN_CHNL_CPLT_EVT, STATUS_FAILED);
   }
 
   nci_hal_ctrl.p_nfc_stack_cback = NULL;
@@ -417,14 +379,14 @@ void *handle_set_emvco_modeImpl(void *vargp) {
       LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, in_isStartEMVCo);
       if (hal_open_status == EMVCO_STATUS_SUCCESS) {
         lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_EVENT_START_MSG;
+        msg.e_msgType = EMVCO_POOLING_STARTING_MSG;
         msg.p_msg_data = NULL;
         msg.size = 0;
         tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
         start_emvco_mode(emvco_config);
       } else {
         lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_EVENT_START_FAILED_MSG;
+        msg.e_msgType = EMVCO_POOLING_START_FAILED_MSG;
         msg.p_msg_data = NULL;
         msg.size = 0;
         tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
@@ -432,8 +394,7 @@ void *handle_set_emvco_modeImpl(void *vargp) {
 
     } else {
       LOG_EMVCOHAL_D("%s In-valid polling technlogy", __func__);
-      (*m_p_nfc_stack_cback)(EMVCO_EVENT_START_SUCCESS,
-                             HAL_EMVCO_STATUS_FAILED);
+      (*m_p_nfc_stack_cback)(EMVCO_POOLING_START_EVT, STATUS_FAILED);
     }
   } else {
     if (nci_hal_ctrl.halStatus == HAL_STATUS_OPEN) {
@@ -561,8 +522,8 @@ int min_open_app_data_channel() {
   }
 
   /* Create the client thread */
-  ret_val = osal_thread_create(&nci_hal_ctrl.hal_client_thread, NULL,
-                               hal_client_thread, &nci_hal_ctrl);
+  ret_val = osal_thread_create(&nci_hal_ctrl.emvco_hal_client_thread, NULL,
+                               emvco_hal_client_thread, &nci_hal_ctrl);
   if (ret_val != 0) {
     LOG_EMVCOHAL_E("osal_thread_create failed");
     wConfigStatus = tml_shutdown_cleanup();
@@ -747,11 +708,11 @@ static void open_app_data_channel_complete(EMVCO_STATUS status) {
   static lib_emvco_message_t msg;
 
   if (status == EMVCO_STATUS_SUCCESS) {
-    msg.e_msgType = NCI_HAL_OPEN_CPLT_MSG;
+    msg.e_msgType = EMVCO_OPEN_CHNL_CPLT_MSG;
     nci_hal_ctrl.hal_open_status = true;
     nci_hal_ctrl.halStatus = HAL_STATUS_OPEN;
   } else {
-    msg.e_msgType = NCI_HAL_ERROR_MSG;
+    msg.e_msgType = EMVCO_OPEN_CHNL_ERROR_MSG;
   }
 
   msg.p_msg_data = NULL;
@@ -822,7 +783,7 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
                              &nci_hal_ctrl.rsp_len, nci_hal_ctrl.p_rsp_data);
   if (status != EMVCO_STATUS_SUCCESS) {
     /* Do not send packet to controller, send response directly */
-    msg.e_msgType = NCI_HAL_RX_MSG;
+    msg.e_msgType = EMVCO_DATA_RX_EVT;
     msg.p_msg_data = NULL;
     msg.size = 0;
 
@@ -1119,7 +1080,8 @@ int close_app_data_channel(bool bShutdown) {
 
     status = tml_shutdown();
 
-    if (0 != osal_thread_join(nci_hal_ctrl.hal_client_thread, (void **)NULL)) {
+    if (0 !=
+        osal_thread_join(nci_hal_ctrl.emvco_hal_client_thread, (void **)NULL)) {
       LOG_EMVCO_TML_E("Fail to kill client thread!");
     }
 
@@ -1166,7 +1128,8 @@ int min_close_app_data_channel(void) {
 
     status = tml_shutdown();
 
-    if (0 != pthread_join(nci_hal_ctrl.hal_client_thread, (void **)NULL)) {
+    if (0 !=
+        pthread_join(nci_hal_ctrl.emvco_hal_client_thread, (void **)NULL)) {
       LOG_EMVCO_TML_E("Fail to kill client thread!");
     }
 
@@ -1198,9 +1161,9 @@ void close_app_data_channel_complete(EMVCO_STATUS status) {
   static lib_emvco_message_t msg;
 
   if (status == EMVCO_STATUS_SUCCESS) {
-    msg.e_msgType = NCI_HAL_CLOSE_CPLT_MSG;
+    msg.e_msgType = EMVCO_CLOSE_CHNL_CPLT_MSG;
   } else {
-    msg.e_msgType = NCI_HAL_ERROR_MSG;
+    msg.e_msgType = EMVCO_OPEN_CHNL_ERROR_MSG;
   }
   msg.p_msg_data = NULL;
   msg.size = 0;
@@ -1251,9 +1214,9 @@ static void power_cycle_complete(EMVCO_STATUS status) {
   static lib_emvco_message_t msg;
 
   if (status == EMVCO_STATUS_SUCCESS) {
-    msg.e_msgType = NCI_HAL_OPEN_CPLT_MSG;
+    msg.e_msgType = EMVCO_OPEN_CHNL_CPLT_MSG;
   } else {
-    msg.e_msgType = NCI_HAL_ERROR_MSG;
+    msg.e_msgType = EMVCO_OPEN_CHNL_ERROR_MSG;
   }
   msg.p_msg_data = NULL;
   msg.size = 0;
@@ -1299,52 +1262,6 @@ int check_ncicmd_write_window(uint16_t cmd_len, uint8_t *p_cmd) {
     /* cmd window check not required for writing data packet */
     status = EMVCO_STATUS_SUCCESS;
   }
-  return status;
-}
-
-/******************************************************************************
- * Function         nfcc_core_reset_init
- *
- * Description      Helper function to do nfcc core reset & core init
- *
- * Returns          Status
- *
- ******************************************************************************/
-EMVCO_STATUS nfcc_core_reset_init() {
-  EMVCO_STATUS status = EMVCO_STATUS_FAILED;
-  uint8_t retry_cnt = 0;
-  uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x01};
-
-retry_core_reset:
-  status = send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
-  if ((status != EMVCO_STATUS_SUCCESS) && (retry_cnt < 3)) {
-    LOG_EMVCOHAL_D("Retry: NCI_CORE_RESET");
-    retry_cnt++;
-    goto retry_core_reset;
-  } else if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_E("NCI_CORE_RESET failed!!!\n");
-    return status;
-  }
-
-  retry_cnt = 0;
-  uint8_t cmd_init_nci[] = {0x20, 0x01, 0x00};
-  uint8_t cmd_init_nci2_0[] = {0x20, 0x01, 0x02, 0x00, 0x00};
-retry_core_init:
-  if (nci_hal_ctrl.nci_info.nci_version == NCI_VERSION_2_0) {
-    status = send_ext_cmd(sizeof(cmd_init_nci2_0), cmd_init_nci2_0);
-  } else {
-    status = send_ext_cmd(sizeof(cmd_init_nci), cmd_init_nci);
-  }
-
-  if ((status != EMVCO_STATUS_SUCCESS) && (retry_cnt < 3)) {
-    LOG_EMVCOHAL_D("Retry: NCI_CORE_INIT\n");
-    retry_cnt++;
-    goto retry_core_init;
-  } else if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_E("NCI_CORE_INIT failed!!!\n");
-    return status;
-  }
-
   return status;
 }
 
