@@ -36,11 +36,67 @@
 
 #ifndef _EMVCO_CONFIG_H_
 #define _EMVCO_CONFIG_H_
+/** \addtogroup EMVCO_STACK_UTILITY_API_INTERFACE
+ *  @brief interface to read configuration values on stored on config file. Also
+ * provides Interface for getting the chip type, linked list and Semphore
+ * implementation.
+ *  @{
+ */
 
+/**
+ *
+ *
+ * @brief       API function for getting a string value of a setting
+ *
+ * @param[in]       name name of the config param to read.
+ * @param[in]       p_value pointer to input buffer.
+ * @param[in]       len input buffer length.
+ *
+ * @return      True if found, otherwise False.
+ *
+ */
 int get_str_value(const char *name, char *p_value, unsigned long len);
+
+/***
+ *
+ *
+ * @brief  API function for getting a numerical value of a setting
+ *
+ * @param[in]       name name of the config param to read.
+ * @param[in]       p_value pointer to input buffer.
+ * @param[in]       len input buffer length.
+ *
+ * @return      True if found, otherwise False.
+ *
+ */
 int get_num_value(const char *name, void *p_value, unsigned long len);
+
+/**
+ *
+ *
+ * @brief Read byte array value from the config file.
+ *
+ * @param[in]        name - name of the config param to read.
+ * @param[in]        pValue  - pointer to input buffer.
+ * @param[in]        bufflen - input buffer length.
+ * @param[in]        len - out parameter to return the number of bytes read from
+ *                   config file, return -1 in case bufflen is not enough.
+ *
+ * @return     TRUE[1] if config param name is found in the config file, else
+ *              FALSE[0]
+ *
+ */
 int get_byte_array_value(const char *name, char *pValue, long bufflen,
                          long *len);
+
+/**
+ *
+ * Function:    resetConfig
+ *
+ * @brief reset settings array
+ * @param[in] void
+ * @return    void
+ */
 void reset_config(void);
 int is_config_modified();
 int update_config_time_stamp();
@@ -213,5 +269,5 @@ typedef enum {
 #ifndef TRUE
 #define TRUE (!FALSE)
 #endif
-
+/** @}*/
 #endif //_EMVCO_CONFIG_H_

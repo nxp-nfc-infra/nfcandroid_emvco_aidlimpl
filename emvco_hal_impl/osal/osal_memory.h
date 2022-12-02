@@ -15,49 +15,56 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#ifndef _PHOSALNFC_MEMORY_H_
-#define _PHOSALNFC_MEMORY_H_
+#ifndef _OSAL_MEMORY_H_
+#define _OSAL_MEMORY_H_
+
+/** \addtogroup EMVCO_STACK_OSAL_API_INTERFACE
+ *  @{
+ */
 
 /**
- * Allocates some memory.
  *
- * \note This function executes successfully without OSAL module initialization.
+ * @brief  Allocates some memoryAllocates some memory
  *
- * \param[in] dwSize   Size, in uint32_t, to be allocated
+ * @param[in] dwSize   Size, in uint32_t, to be allocated
  *
- * \retval NON-NULL value:  The memory is successfully allocated ;
- * the return value is a pointer to the allocated memory location
- * \retval NULL:            The operation is not successful.
+ * @return            NON-NULL value:  The memory is successfully allocated ;
+ *                    the return value is a pointer to the allocated memory
+ * location NULL:The operation is not successful.
  *
  */
 void *osal_malloc(int dwSize);
+
 /**
- * This API allows to free already allocated memory.
- * \note This function executes successfully without OSAL module Initialization.
+ * @brief This API allows to free already allocated memory.
  *
  * \param[in] pMem  Pointer to the memory block to be deallocated
+ * @return    void
  */
 void osal_free(void *pMem);
+
 /**
- * Sets the given value in the memory locations.
- * \note This function executes successfully without OSAL module Initialization.
+ * @brief                Sets the given value in the memory locations.
  *
- * \param[in] pMem      Pointer to the memory block to be set to a value
- * \param[in] bVal      Value to be set
- * \param[in] dwSize    Number of bytes to be set.
+ * @param[in] pMem      Pointer to the memory block to be set to a value
+ * @param[in] bVal      Value to be set
+ * @param[in] dwSize    Number of bytes to be set.
  *
+ * @return    void
  */
 void osal_memset(void *pMem, int bVal, int dwSize);
+
 /**
- * Copies the values stored in the source memory to the
- * values stored in the destination memory.
- * \note This function executes successfully without OSAL module Initialization.
+ * @brief                Copies the values stored in the source memory to the
+ *                       values stored in the destination memory.
  *
- * \param[in] pDest     Pointer to the Destination Memory
- * \param[in] pSrc      Pointer to the Source Memory
- * \param[in] dwSize    Number of bytes to be copied.
+ * @param[in] pDest     Pointer to the Destination Memory
+ * @param[in] pSrc      Pointer to the Source Memory
+ * @param[in] dwSize    Number of bytes to be copied.
  *
+ * @return    void
  */
 void osal_memcpy(void *pDest, const void *pSrc, int size);
 
-#endif /* _PHOSALNFC_MEMORY_H_*/
+/** @}*/
+#endif /* _OSAL_MEMORY_H_*/

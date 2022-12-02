@@ -18,13 +18,56 @@
 #ifndef _EMVCO_NCI_EXT_H_
 #define _EMVCO_NCI_EXT_H_
 
+/** \addtogroup EMVCO_STACK_NCI_API_INTERFACE
+ *  @brief  interface to send and process the extension command
+ *  @{
+ */
+
 #include <emvco_dm.h>
 #include <emvco_tml.h>
 #include <string.h>
 
 void nci_ext_init(void);
-EMVCO_STATUS process_ext_rsp(uint8_t *p_ntf, uint16_t *p_len);
-EMVCO_STATUS send_ext_cmd(uint16_t cmd_len, uint8_t *p_cmd);
+
+/**
+ *
+ * @brief        Process extension function response
+ *
+ * @param[in] p_cmd command to be processed
+ * @param[in] p_len command length
+ *
+ * @return          EMVCO_STATUS_SUCCESS if success
+ *
+ */
+EMVCO_STATUS process_ext_rsp(uint8_t *p_data, uint16_t *p_cmd);
+
+/**
+ *
+ * @brief        sends the extension command
+ *
+ * @param[in] p_cmd command to be processed
+ * @param[in] p_len command length
+ *
+ * @return          EMVCO_STATUS_SUCCESS if success
+ *
+ */
+EMVCO_STATUS send_ext_cmd(uint16_t p_len, uint8_t *p_cmd);
+
+/**
+ * @brief      This function inform the status of open_app_data_channel
+ *                  function to EMVCo HAL.
+ *
+ * @param[in] p_cmd_data command
+ * @param[in] cmd_len command length
+ * @param[in] p_rsp_data response data
+ * @param[in] rsp_len response length
+ *
+ * @return          It return EMVCO_STATUS_SUCCESS then continue with send else
+ *                  sends EMVCO_STATUS_FAILED direct response is prepared and
+ *                  do not send anything to NFCC.
+ *
+ ******************************************************************************/
 EMVCO_STATUS send_app_data_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
                                uint16_t *rsp_len, uint8_t *p_rsp_data);
+/** @}*/
 #endif /* _PHNXPNICHAL_EXT_H_ */

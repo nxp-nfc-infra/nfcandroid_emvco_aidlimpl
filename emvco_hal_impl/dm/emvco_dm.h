@@ -18,6 +18,11 @@
 #ifndef _EMVCO_DM_H_
 #define _EMVCO_DM_H_
 
+/** \addtogroup EMVCO_DATA_EXCHANGE_STACK_DM_API_INTERFACE
+ *  @brief interface to EMVCO stack HAL to realize the EMVCo functionality.
+ *  @{
+ */
+
 #include <emvco_hal.h>
 #include <emvco_util.h>
 #include <pthread.h>
@@ -76,20 +81,37 @@ typedef void(control_granted_callback_t)();
 
 sem_t nfc_status_semaphore;
 
+/*
+ * EMVCo stack events that can be passed back to the EMVCo HAL
+ */
 enum {
+  /** @brief  Event to indicate EMVCo HAL open complete state*/
   EMVCO_OPEN_CHNL_CPLT_EVT = 0u,
+  /** @brief  Event to indicate EMVCo HAL open error state*/
   EMVCO_OPEN_CHNL_ERROR_EVT = 1u,
+  /** @brief  Event to indicate EMVCo HAL close complete state*/
   EMVCO_CLOSE_CHNL_CPLT_EVT = 2u,
+  /** @brief  Event to indicate the start of EMVCo mode*/
   EMVCO_POOLING_START_EVT = 3u,
+  /** @brief  Event to indicate EMVCo polling activated state*/
   EMVCO_POLLING_STARTED_EVT = 4u,
+  /** @brief  Event to indicate the stop of EMVCo mode*/
   EMVCO_POLLING_STOP_EVT = 5u,
+  /** @brief  Event to indicate the Non EMV card*/
   EMVCO_UN_SUPPORTED_CARD_EVT = 6u,
 };
 
+/*
+ * Status corresponds to EMVCo stack events
+ */
 enum {
   STATUS_OK = 0u,
   STATUS_FAILED = 1u,
 };
+
+/*
+ * Indicates the NFC state
+ */
 typedef enum {
   STATE_OFF = 1,
   STATE_TURNING_ON,
@@ -230,20 +252,113 @@ typedef struct nci_profile_Control {
 #define NCIHAL_CMD_CODE_LEN_BYTE_OFFSET (2U)
 #define NCIHAL_CMD_CODE_BYTE_LEN (3U)
 
-/******************** NCI HAL exposed functions *******************************/
-
+/**
+ *
+ * @brief           This function is called by EMVCo HAL during the
+ *                  initialization of the NFCC. It opens the physical connection
+ *                  with NFCC (PN7220) and creates required client thread for
+ *                  operation.
+ *                  After open is complete, status is informed to EMVCo HAL
+ *                  through callback function.
+ *
+ * @param[in]       p_cback provides EMVCo event status to client
+ * @param[in]       p_data_cback provides EMVCo data to client
+ * @param[in]       p_nfc_state_change_req_cback EMVCo HAL requests NFC module
+ * to turn ON or OFF the NFC through this callback
+ *
+ * @return          int status of the operation performed
+ *
+ */
 int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
                           emvco_state_change_callback_t *p_nfc_state_cback);
-int close_app_data_channel(bool);
+
+/**
+ *
+ * @brief       This function close the NFCC interface and free all
+ *              resources.This is called by EMVCo HAL on EMVCo service stop.
+ *
+ * @param[in]   bShutdown true, if host is going to shutdown mode. false if host
+ * is not going to shutdown mode.
+ *
+ * @return      int status of the close operation performed
+ *
+ */
+int close_app_data_channel(bool shutdown);
+
+/**
+ * @brief           This function write the data to NFCC through physical
+ *                  interface (e.g. I2C) using the driver interface.
+ *                  Before sending the data to NFCC, send_app_data_ext
+ *                  is called to check if there is any extension processing
+ *                  is required for the NCI packet being sent out.
+ *
+ * @return          int It returns number of bytes successfully written to NFCC.
+ *
+ ******************************************************************************/
 int send_app_data_internal(uint16_t data_len, const uint8_t *p_data);
+
+/**
+ *
+ * @brief           This function write the data to NFCC through physical
+ *                  interface (e.g. I2C) using the PN7220 driver interface.
+ *                  Before sending the data to NFCC, phEMVCoHal_write_ext
+ *                  is called to check if there is any extension processing
+ *                  is required for the NCI packet being sent out.
+ *
+ * @param[in]       data_len length of the data to be written
+ * @param[in]       p_data actual data to be written
+ *
+ * @return          int status of the write operation performed
+ *
+ */
 int send_app_data(uint16_t data_len, const uint8_t *p_data);
 
+/**
+ * @brief           This is the actual function which is being called by
+ *                  send_app_data. This function writes the data to NFCC.
+ *                  It waits till write callback provide the result of write
+ *                  process.
+ *
+ * @param[in]       data_len length of the data to be written
+ * @param[in]       p_data actual data to be written
+ *
+ * @return          int It returns number of bytes successfully written to NFCC.
+ *
+ ******************************************************************************/
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data);
 EMVCO_STATUS core_reset_recovery();
 
+/**
+ * @brief       This function sets the led according to emvco status
+ * @param[in] emvco_status EMVCO_MODE_ON turn green led and EMVCO_MODE_OFF turns
+ * green led off
+ * @return           void
+ *
+ */
 void led_switch_control(emvco_status_t emvco_status);
-void handle_set_emvco_mode(const int8_t emvco_config, bool_t in_isStartEMVCo);
+
+/**
+ * @brief starts/stops the EMVCo mode with the Device-Controller.
+ *
+ * @param[in] in_disc_mask EMVCo polling technologies are configured through
+ * this parameter
+ * @param[in] in_isStartEMVCo specifies to start or stop the EMVCo mode
+ *
+ * @return void
+ *
+ */
+void handle_set_emvco_mode(const int8_t in_disc_mask, bool_t in_isStartEMVCo);
+
+/**
+ *
+ * @brief updates NFC state to EMVCo Stack.
+ *
+ *
+ * @param[in] nfc_state specifies the NFC state
+ *
+ * @return void
+ */
 void handle_nfc_state_change(int32_t nfc_state);
 
 #endif /* _EMVCO_DM_H_ */

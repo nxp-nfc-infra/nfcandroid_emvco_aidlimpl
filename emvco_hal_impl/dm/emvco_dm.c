@@ -115,15 +115,7 @@ static void initialize_debug_enabled_flag() {
   LOG_EMVCOHAL_D("emvco_debug_enabled : %d", emvco_debug_enabled);
 }
 
-/******************************************************************************
 
- * Function         status_led_switch_control
- *
- * Description      This function sets the led according to emvco status
- *
- * Returns          void
- *
- ******************************************************************************/
 void led_switch_control(emvco_status_t emvco_status) {
   LOG_EMVCOHAL_D("%s emvco_status:%d", __func__, emvco_status);
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
@@ -604,20 +596,6 @@ clean_and_return:
   return EMVCO_STATUS_FAILED;
 }
 
-/******************************************************************************
- * Function         open_app_data_channel
- *
- * Description      This function is called by libnfc-nci during the
- *                  initialization of the NFCC. It opens the physical connection
- *                  with NFCC and creates required client thread for
- *                  operation.
- *                  After open is complete, status is informed to libnfc-nci
- *                  through callback function.
- *
- * Returns          This function return EMVCO_STATUS_SUCCESS (0) in case of
- *                  success. In case of failure returns other failure value.
- *
- ******************************************************************************/
 int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
                           emvco_state_change_callback_t *p_nfc_state_cback) {
@@ -724,34 +702,10 @@ static void open_app_data_channel_complete(EMVCO_STATUS status) {
   return;
 }
 
-/******************************************************************************
- * Function         send_app_data
- *
- * Description      This function write the data to NFCC through physical
- *                  interface (e.g. I2C) using the driver interface.
- *                  Before sending the data to NFCC, send_app_data_ext
- *                  is called to check if there is any extension processing
- *                  is required for the NCI packet being sent out.
- *
- * Returns          It returns number of bytes successfully written to NFCC.
- *
- ******************************************************************************/
 int send_app_data(uint16_t data_len, const uint8_t *p_data) {
   return send_app_data_internal(data_len, p_data);
 }
 
-/******************************************************************************
- * Function         send_app_data_internal
- *
- * Description      This function write the data to NFCC through physical
- *                  interface (e.g. I2C) using the driver interface.
- *                  Before sending the data to NFCC, send_app_data_ext
- *                  is called to check if there is any extension processing
- *                  is required for the NCI packet being sent out.
- *
- * Returns          It returns number of bytes successfully written to NFCC.
- *
- ******************************************************************************/
 int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
   static lib_emvco_message_t msg;
@@ -811,17 +765,6 @@ clean_and_return:
   return data_len;
 }
 
-/******************************************************************************
- * Function         send_app_data_unlocked
- *
- * Description      This is the actual function which is being called by
- *                  send_app_data. This function writes the data to NFCC.
- *                  It waits till write callback provide the result of write
- *                  process.
- *
- * Returns          It returns number of bytes successfully written to NFCC.
- *
- ******************************************************************************/
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data) {
   EMVCO_STATUS status = EMVCO_STATUS_INVALID_PARAMETER;
   nci_hal_sem cb_data;
@@ -1027,15 +970,6 @@ static void read_app_data_complete(void *p_context,
   return;
 }
 
-/******************************************************************************
- * Function         close_app_data_channel
- *
- * Description      This function close the NFCC interface and free all
- *                  resources.This is called by libnfc-nci on NFC service stop.
- *
- * Returns          Always return EMVCO_STATUS_SUCCESS (0).
- *
- ******************************************************************************/
 int close_app_data_channel(bool bShutdown) {
   EMVCO_STATUS status;
   /*NCI_RESET_CMD*/

@@ -32,6 +32,9 @@ extern "C" {
 typedef uint8_t bool_t;        /* boolean data type */
 typedef uint16_t EMVCO_STATUS; /* Return values */
 
+/*
+ * HAL events that can be passed back to the stack
+ */
 typedef uint8_t emvco_event_t;
 typedef uint8_t emvco_status_t;
 

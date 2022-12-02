@@ -57,28 +57,6 @@ static EMVCO_STATUS tml_initiateTimer(void);
 
 /* Function definitions */
 
-/*******************************************************************************
-**
-** Function         tml_init
-**
-** Description      Provides initialization of TML layer and hardware interface
-**                  Configures given hardware interface and sends handle to the
-**                  caller
-**
-** Parameters       pConfig - TML configuration details as provided by the upper
-**                            layer
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS - initialization successful
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_FAILED - initialization failed (for example,
-**                                     unable to open hardware interface)
-**                  EMVCO_STATUS_INVALID_DEVICE - device has not been opened or
-*has
-**                                             been disconnected
-**
-*******************************************************************************/
 EMVCO_STATUS tml_init(ptml_emvco_Config_t pConfig) {
   EMVCO_STATUS wInitStatus = EMVCO_STATUS_SUCCESS;
 
@@ -498,17 +476,6 @@ static void *emvco_tml_thread(void *pParam) {
   return NULL;
 }
 
-/*******************************************************************************
-**
-** Function         tml_cleanup
-**
-** Description      Clears all handles opened during TML initialization
-**
-** Parameters       None
-**
-** Returns          None
-**
-*******************************************************************************/
 void tml_cleanup(void) {
   if (NULL == gptml_emvco_context) {
     return;
@@ -530,24 +497,6 @@ void tml_cleanup(void) {
   return;
 }
 
-/*******************************************************************************
-**
-** Function         tml_shutdown
-**
-** Description      Uninitializes TML layer and hardware interface
-**
-** Parameters       None
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS - TML configuration released
-*successfully
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_FAILED - un-initialization failed (example:
-*unable
-**                                     to close interface)
-**
-*******************************************************************************/
 EMVCO_STATUS tml_shutdown(void) {
   EMVCO_STATUS wShutdownStatus = EMVCO_STATUS_SUCCESS;
 
@@ -583,37 +532,6 @@ EMVCO_STATUS tml_shutdown(void) {
   return wShutdownStatus;
 }
 
-/*******************************************************************************
-**
-** Function         tml_write
-**
-** Description      Asynchronously writes given data block to hardware
-**                  interface/driver. Enables writer thread if there are no
-**                  write requests pending. Returns successfully once writer
-**                  thread completes write operation. Notifies upper layer using
-**                  callback mechanism.
-**
-**                  NOTE:
-**                  * it is important to post a message with id
-**                    TMLNFC_WRITE_MESSAGE to IntegrationThread after data
-**                    has been written to PN54X
-**                  * if CRC needs to be computed, then input buffer should be
-**                    capable to store two more bytes apart from length of
-**                    packet
-**
-** Parameters       p_buffer - data to be sent
-**                  w_length - length of data buffer
-**                  pTmlWriteComplete - pointer to the function to be invoked
-**                                      upon completion
-**                  p_context - context provided by upper layer
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_PENDING - command is yet to be processed
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_BUSY - write request is already in progress
-**
-*******************************************************************************/
 EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length,
                        transact_completion_callback_t pTmlWriteComplete,
                        void *p_context) {
@@ -661,20 +579,6 @@ EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length,
   return wWriteStatus;
 }
 
-/*******************************************************************************
-**
-** Function         tml_update_read_complete_callback
-**
-** Description      Updates the callback to be invoked after read completed
-**
-** Parameters       pTmlReadComplete - pointer to the function to be invoked
-**                                     upon completion of read operation
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS - if TmlNfc context available
-**                  EMVCO_STATUS_FAILED - otherwise
-**
-*******************************************************************************/
 EMVCO_STATUS tml_update_read_complete_callback(
     transact_completion_callback_t pTmlReadComplete) {
   EMVCO_STATUS w_status = EMVCO_STATUS_FAILED;
@@ -685,31 +589,6 @@ EMVCO_STATUS tml_update_read_complete_callback(
   return w_status;
 }
 
-/*******************************************************************************
-**
-** Function         tml_read
-**
-** Description      Asynchronously reads data from the driver
-**                  Number of bytes to be read and buffer are passed by upper
-**                  layer.
-**                  Enables reader thread if there are no read requests pending
-**                  Returns successfully once read operation is completed
-**                  Notifies upper layer using callback mechanism
-**
-** Parameters       p_buffer - location to send read data to the upper layer via
-**                            callback
-**                  w_length - length of read data buffer passed by upper layer
-**                  pTmlReadComplete - pointer to the function to be invoked
-**                                     upon completion of read operation
-**                  p_context - context provided by upper layer
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_PENDING - command is yet to be processed
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_BUSY - read request is already in progress
-**
-*******************************************************************************/
 EMVCO_STATUS tml_read(uint8_t *p_buffer, uint16_t w_length,
                       transact_completion_callback_t pTmlReadComplete,
                       void *p_context) {
@@ -749,24 +628,6 @@ EMVCO_STATUS tml_read(uint8_t *p_buffer, uint16_t w_length,
   return wReadStatus;
 }
 
-/*******************************************************************************
-**
-** Function         tml_read_abort
-**
-** Description      Aborts pending read request (if any)
-**
-** Parameters       None
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS - ongoing read operation aborted
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_NOT_INITIALIZED - TML layer is not initialized
-**                  EMVCO_STATUS_BOARD_COMMUNICATION_ERROR - unable to cancel
-*read
-**                                                        operation
-**
-*******************************************************************************/
 EMVCO_STATUS tml_read_abort(void) {
   EMVCO_STATUS w_status = EMVCO_STATUS_INVALID_PARAMETER;
   gptml_emvco_context->t_read_info.b_enable = 0;
@@ -778,24 +639,6 @@ EMVCO_STATUS tml_read_abort(void) {
   return w_status;
 }
 
-/*******************************************************************************
-**
-** Function         tml_write_abort
-**
-** Description      Aborts pending write request (if any)
-**
-** Parameters       None
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS - ongoing write operation aborted
-**                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
-**                                                invalid
-**                  EMVCO_STATUS_NOT_INITIALIZED - TML layer is not initialized
-**                  EMVCO_STATUS_BOARD_COMMUNICATION_ERROR - unable to cancel
-*write
-**                                                        operation
-**
-*******************************************************************************/
 EMVCO_STATUS tml_write_abort(void) {
   EMVCO_STATUS w_status = EMVCO_STATUS_INVALID_PARAMETER;
 
@@ -810,24 +653,6 @@ EMVCO_STATUS tml_write_abort(void) {
   return w_status;
 }
 
-/*******************************************************************************
-**
-** Function         tml_ioctl
-**
-** Description      Resets device when insisted by upper layer
-**                  Number of bytes to be read and buffer are passed by upper
-**                  layer
-**                  Enables reader thread if there are no read requests pending
-**                  Returns successfully once read operation is completed
-**                  Notifies upper layer using callback mechanism
-**
-** Parameters       eControlCode       - control code for a specific operation
-**
-** Returns          NFC status:
-**                  EMVCO_STATUS_SUCCESS  - ioctl command completed successfully
-**                  EMVCO_STATUS_FAILED   - ioctl command request failed
-**
-*******************************************************************************/
 EMVCO_STATUS tml_ioctl(emvco_control_code_t eControlCode) {
   EMVCO_STATUS w_status = EMVCO_STATUS_SUCCESS;
 
@@ -894,19 +719,6 @@ EMVCO_STATUS tml_ioctl(emvco_control_code_t eControlCode) {
   return w_status;
 }
 
-/*******************************************************************************
-**
-** Function         tml_deferred_call
-**
-** Description      Posts message on upper layer thread
-**                  upon successful read or write operation
-**
-** Parameters       dwThreadId  - id of the thread posting message
-**                  ptWorkerMsg - message to be posted
-**
-** Returns          None
-**
-*******************************************************************************/
 void tml_deferred_call(uintptr_t dwThreadId, lib_emvco_message_t *ptWorkerMsg) {
   intptr_t bPostStatus;
   UNUSED(dwThreadId);
@@ -963,17 +775,6 @@ static void tml_writeDeferredCb(void *pParams) {
   return;
 }
 
-/*******************************************************************************
-**
-** Function         tml_shutdown_cleanup
-**
-** Description      wrapper function  for shutdown  and cleanup of resources
-**
-** Parameters       None
-**
-** Returns          EMVCO_STATUS
-**
-*******************************************************************************/
 EMVCO_STATUS tml_shutdown_cleanup() {
   EMVCO_STATUS wShutdownStatus = tml_shutdown();
   tml_cleanup();

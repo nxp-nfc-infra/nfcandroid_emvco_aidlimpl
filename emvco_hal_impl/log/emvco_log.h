@@ -16,6 +16,10 @@
  *
  ******************************************************************************/
 
+/** \addtogroup EMVCO_STACK_LOG_API_INTERFACE
+ *  @brief  interface to control the EMVCo log level
+ *  @{
+ */
 #if !defined(LOG__H_INCLUDED)
 #define LOG__H_INCLUDED
 #include <log/log.h>
@@ -222,6 +226,35 @@ extern const char *LOG_ITEM_TML;    /* Android logging tag for NxpTml    */
 #define LOG_EMVCO_TML_E(...)
 #endif /* Logging APIs used by NxpTml module */
 
+/**
+ * @brief           Initialize and get log level of module from libemvco.conf
+ *                  or
+ *                  Android runtime properties.
+ *                  The Android property emvco_global_log_level is to
+ *                  define log level for all modules. Modules log level will
+ *                  overwide global level.
+ *                  The Android property will overwide the level
+ *                  in libemvco.conf
+ *
+ *                  Android property names:
+ *                      emvco.log_level_global    * defines log level for all
+ *                      modules
+ *                      emvco.log_level_extns     * extensions module log
+ *                      emvco.log_level_hal       * Hal module log
+ *                      emvco.log_level_tml       * TML module log
+ *                      emvco.log_level_nci       * NCI transaction log
+ *
+ *                      Log Level values:
+ *                      LOG_LOG_SILENT_LOGLEVEL  0        * No trace to show
+ *                      LOG_LOG_ERROR_LOGLEVEL   1        * Show Error trace
+ *                      only
+ *                      LOG_LOG_WARN_LOGLEVEL    2        * Show Warning
+ *                      trace and Error trace
+ *                      LOG_LOG_DEBUG_LOGLEVEL   3        * Show all traces
+ *
+ * @return          void
+ *
+ ******************************************************************************/
 void initialize_log_level(void);
-
+/** @}*/
 #endif /* LOG__H_INCLUDED */

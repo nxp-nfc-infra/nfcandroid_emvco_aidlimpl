@@ -177,39 +177,6 @@ static void set_nci_tx_log_level(uint8_t level) {
   }
 }
 
-/******************************************************************************
- * Function         initialize_log_level
- *
- * Description      Initialize and get log level of module from libnfc-nxp.conf
- *or
- *                  Android runtime properties.
- *                  The Android property nfc.nxp_global_log_level is to
- *                  define log level for all modules. Modules log level will
- *overwide global level.
- *                  The Android property will overwide the level
- *                  in libnfc-nxp.conf
- *
- *                  Android property names:
- *                      nfc.log_level_global    * defines log level for all
- *modules
- *                      nfc.log_level_extns     * extensions module log
- *                      nfc.log_level_hal       * Hal module log
- *                      nfc.log_level_dnld      * firmware download module
- *log
- *                      nfc.log_level_tml       * TML module log
- *                      nfc.log_level_nci       * NCI transaction log
- *
- *                  Log Level values:
- *                      LOG_LOG_SILENT_LOGLEVEL  0        * No trace to show
- *                      LOG_LOG_ERROR_LOGLEVEL   1        * Show Error trace
- *only
- *                      LOG_LOG_WARN_LOGLEVEL    2        * Show Warning
- *trace and Error trace
- *                      LOG_LOG_DEBUG_LOGLEVEL   3        * Show all traces
- *
- * Returns          void
- *
- ******************************************************************************/
 void initialize_log_level(void) {
   uint8_t level = set_global_log_level();
   set_hal_log_level(level);

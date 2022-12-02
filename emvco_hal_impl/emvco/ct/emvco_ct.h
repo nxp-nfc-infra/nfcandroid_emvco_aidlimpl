@@ -18,7 +18,10 @@
 
 #ifndef _EMVCO_CT_H_
 #define _EMVCO_CT_H_
-
+/** \addtogroup EMVCO_STACK_CONTACT_LESS_CARD_API_INTERFACE
+ *  @brief  interface to perform the EMVCo mode switch.
+ *  @{
+ */
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,4 +29,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif /*  C++ Compilation guard */
+/** @}*/
 #endif /* _EMVCO_CT_H_ */

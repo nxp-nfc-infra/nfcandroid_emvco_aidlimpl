@@ -17,81 +17,78 @@
  ******************************************************************************/
 #ifndef _PHOSALNFC_TML_H_
 #define _PHOSALNFC_TML_H_
+/** \addtogroup EMVCO_STACK_OSAL_API_INTERFACE
+ *  @{
+ */
 
 /**
- * Close.
  *
- * closes the file specified by pathname
+ * @brief  closes the file specified by pathname
  *
- * \param[in] pathname               path of the file.
+ * @param[in]  pathname               path of the file.
  *
- * \retval #>0                       on success
- * \retval #-1                       error
+ * @return  #>0                       on success
+ * @return  #-1                       error
  *
  */
 int osal_tml_close(int fd);
 
 /**
- * Open.
  *
- * opens the file specified by pathname
+ * @brief  opens the file specified by pathname
  *
- * \param[in] pathname                path of the file.
+ * @param[in] pathname                path of the file.
  *
- * \retval #0                         on success
- * \retval #-1                        error
+ * @return  #0                         on success
+ * @return  #-1                        error
  *
  */
 int osal_tml_open(const char *pathname, int flags);
 
 /**
- * Read.
  *
- * attempts to read up to count bytes from file descriptor fd
- * into the buffer starting at buf
+ * @brief                             attempts to read up to count bytes from
+ * file descriptor fd into the buffer starting at buf
  *
- * \param[in] fd                      file descriptor of the file.
- * \param[in] buf                     buffer to store the read data
- * \param[in] count                   read up to count bytes
+ * @param[in] fd                      file descriptor of the file.
+ * @param[in] buf                     buffer to store the read data
+ * @param[in] count                   read up to count bytes
  *
- * \retval #0 or >0                   on success
- * \retval #-1                        error
+ * @return  #0 or >0                   on success
+ * @return  #-1                        error
  *
  */
 int osal_tml_read(int fd, void *buf, size_t count);
 
 /**
- * Write.
  *
- * writes up to count bytes from the buffer starting at buf
- * to the file referred to by the file descriptor fd
+ * @brief                          writes up to count bytes from the buffer
+ * starting at buf to the file referred to by the file descriptor fd
  *
- * \param[in] fd                   file descriptor of the file.
- * \param[in] buf                  buffer to store the read data
- * \param[in] count                read up to count bytes
+ * @param[in] fd                   file descriptor of the file.
+ * @param[in] buf                  buffer to store the read data
+ * @param[in] count                read up to count bytes
  *
- * \retval #0 or >0                on success
- * \retval #-1                     error
+ * @return #0 or >0                on success
+ * @return #-1                     error
  *
  */
 int osal_tml_write(int fd, const void *buf, size_t count);
 
 /**
- * ioctl - Control device.
+ * @brief performs a variety of control functions on STREAMS devices
  *
- * performs a variety of control functions on STREAMS devices
- *
- * \param[in] fd                      file descriptor of the file
- * \param[in] request                 selects the control function
+ * \@param[in]  fd                      file descriptor of the file
+ * @param[in]   request                 selects the control function
  *                                    to be performed
- * \param[in] reset_type              NFCC power control
- * \param[in] count                   read up to count bytes
+ * @param[in]  reset_type              NFCC power control
+ * @param[in]  count                   read up to count bytes
  *
- * \retval #otherthan -1              on success
- * \retval #-1                        error
+ * @return #otherthan -1              on success
+ * @return #-1                        error
  *
  */
 int osal_tml_ioctl(int fd, unsigned long request, unsigned long reset_type,
                    int count);
-
+/** @}*/
 #endif /* _PHOSALNFC_TML_H_*/

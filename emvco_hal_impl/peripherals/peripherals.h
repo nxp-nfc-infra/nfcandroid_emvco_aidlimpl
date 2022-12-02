@@ -19,6 +19,10 @@
 #ifndef _PERIPHERALS_H_
 #define _PERIPHERALS_H_
 
+/** \addtogroup EMVCO_STACK_PERIPHERAL_API_INTERFACE
+ *  @brief      Interface for handling hardware peripherals
+ */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,4 +30,5 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif /*  C++ Compilation guard */
+/** @}*/
 #endif /* _PERIPHERALS_H_ */

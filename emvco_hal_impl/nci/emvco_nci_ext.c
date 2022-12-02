@@ -81,15 +81,6 @@ void nci_ext_init(void) {
   EnableP2P_PrioLogic = false;
 }
 
-/*******************************************************************************
-**
-** Function         process_ext_rsp
-**
-** Description      Process extension function response
-**
-** Returns          EMVCO_STATUS_SUCCESS if success
-**
-*******************************************************************************/
 EMVCO_STATUS process_ext_rsp(uint8_t *p_ntf, uint16_t *p_len) {
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
 
@@ -551,18 +542,6 @@ clean_and_return:
   nci_hal_ctrl.nci_info.wait_for_ntf = FALSE;
   return status;
 }
-
-/******************************************************************************
- * Function         send_app_data_ext
- *
- * Description      This function inform the status of open_app_data_channel
- *                  function to libnfc-nci.
- *
- * Returns          It return EMVCO_STATUS_SUCCESS then continue with send else
- *                  sends EMVCO_STATUS_FAILED direct response is prepared and
- *                  do not send anything to NFCC.
- *
- ******************************************************************************/
 
 EMVCO_STATUS send_app_data_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
                                uint16_t *rsp_len, uint8_t *p_rsp_data) {
