@@ -27,6 +27,10 @@
 #include <emvco_tml.h>
 #include <string.h>
 
+#define NCI_MT_CMD 0x20
+#define NCI_MT_RSP 0x40
+#define NCI_MT_NTF 0x60
+
 void nci_ext_init(void);
 
 /**

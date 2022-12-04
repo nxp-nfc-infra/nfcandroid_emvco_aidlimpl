@@ -362,4 +362,20 @@
  */
 #define EMVCO_STATUS_CONNECTION_FAILED (0x0047)
 
+/*
+ * Indicates the NFC state
+ */
+typedef enum {
+  STATE_OFF = 1,
+  STATE_TURNING_ON,
+  STATE_ON,
+  STATE_TURNING_OFF
+} nfc_status_t;
+
+nfc_status_t nfc_status;
+
+typedef enum { EMVCO_MODE_ON = 1, EMVCO_MODE_OFF } emvco_mode_status_t;
+
+emvco_mode_status_t emvco_status;
+
 #endif /* _EMVCO_STATUS_H_ */

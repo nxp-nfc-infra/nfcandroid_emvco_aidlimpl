@@ -29,8 +29,10 @@
 #include <osal_memory.h>
 #include <osal_message_queue_lib.h>
 #include <osal_thread.h>
+#include <peripherals.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+
 /*********************** Global Variables *************************************/
 #define PN547C2_CLOCK_SETTING
 #define CORE_RES_STATUS_BYTE 3
@@ -43,6 +45,7 @@ static uint8_t config_access = false;
 static uint8_t config_success = true;
 
 extern nci_clock_t nci_clock;
+extern emvco_args_t *modeSwitchArgs;
 
 /* NCI HAL Control structure */
 nci_hal_ctrl_t nci_hal_ctrl;
@@ -72,14 +75,9 @@ rf_setting_t phNxpNciRfSet = {false, {0}};
 
 eeprom_area_t eeprom_area = {false, {0}};
 
-pthread_cond_t nfcStatusCondVar = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t nfcStatusSyncLock = PTHREAD_MUTEX_INITIALIZER;
+extern pthread_cond_t nfcStatusCondVar;
+extern pthread_mutex_t nfcStatusSyncLock;
 
-struct args {
-  int8_t emvco_config;
-  bool_t in_isStartEMVCo;
-};
-pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 /**************** local methods used in this file only ************************/
 static void open_app_data_channel_complete(EMVCO_STATUS status);
 static int min_open_app_data_channel();
@@ -115,33 +113,6 @@ static void initialize_debug_enabled_flag() {
   LOG_EMVCOHAL_D("emvco_debug_enabled : %d", emvco_debug_enabled);
 }
 
-
-void led_switch_control(emvco_status_t emvco_status) {
-  LOG_EMVCOHAL_D("%s emvco_status:%d", __func__, emvco_status);
-  EMVCO_STATUS status = EMVCO_STATUS_FAILED;
-  switch (emvco_status) {
-  case EMVCO_MODE_ON: {
-    status = tml_ioctl(GreenLedOn);
-    if (EMVCO_STATUS_SUCCESS == status) {
-      LOG_EMVCOHAL_D("GREEN LED ON - SUCCESS\n");
-    } else {
-      LOG_EMVCOHAL_D("GREEN LED ON - FAILED\n");
-    }
-    break;
-  }
-  case EMVCO_MODE_OFF: {
-    status = tml_ioctl(GreenLedOff);
-    if (EMVCO_STATUS_SUCCESS == status) {
-      LOG_EMVCOHAL_D("GREEN LED OFF - SUCCESS\n");
-    } else {
-      LOG_EMVCOHAL_D("GREEN LED OFF  - FAILED\n");
-    }
-    break;
-  }
-  default:
-    break;
-  }
-}
 /******************************************************************************
  * Function         emvco_hal_client_thread
  *
@@ -198,11 +169,11 @@ static void *emvco_hal_client_thread(void *arg) {
 
     case EMVCO_CLOSE_CHNL_CPLT_MSG: {
       REENTRANCE_LOCK();
-      is_set_emvco_mode = false;
+      modeSwitchArgs->is_start_emvco = false;
       if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
         /* Send the event */
-        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_CLOSE_CHNL_CPLT_EVT, STATUS_OK);
         (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POLLING_STOP_EVT, STATUS_OK);
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_CLOSE_CHNL_CPLT_EVT, STATUS_OK);
       }
       kill_emvco_hal_client_thread(&nci_hal_ctrl);
       REENTRANCE_UNLOCK();
@@ -282,16 +253,7 @@ static void kill_emvco_hal_client_thread(nci_hal_ctrl_t *p_nci_hal_ctrl) {
 
   return;
 }
-void handle_nfc_state_change(int32_t nfc_state) {
-  LOG_EMVCOHAL_D("%s nfc_state:%d", __func__, nfc_state);
-  nfc_status = nfc_state;
-  if (nfc_status == STATE_OFF) {
-    pthread_mutex_lock(&nfcStatusSyncLock);
-    pthread_cond_signal(&nfcStatusCondVar);
-    pthread_mutex_unlock(&nfcStatusSyncLock);
-  }
-  return;
-}
+
 int open_app_data_channelImpl(
     emvco_stack_callback_t *p_cback, emvco_stack_data_callback_t *p_data_cback,
     emvco_state_change_callback_t *p_nfc_state_cback) {
@@ -340,77 +302,6 @@ clean_and_return:
   nci_hal_ctrl.halStatus = HAL_STATUS_CLOSE;
   return EMVCO_STATUS_FAILED;
 }
-bool is_valid_emvco_polling_tech(int8_t emvco_config) {
-  if (emvco_config >= NFC_A_PASSIVE_POLL_MODE &&
-      emvco_config <= NFC_ABFVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_A_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_B_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_AF_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_BF_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_VAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_AVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_BVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_FVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_AFVAS_PASSIVE_POLL_MODE &&
-      emvco_config != NFC_BFVAS_PASSIVE_POLL_MODE) {
-    return true;
-  } else {
-    return false;
-  }
-}
-void *handle_set_emvco_modeImpl(void *vargp) {
-  pthread_mutex_lock(&emvco_lock);
-  const int8_t emvco_config = ((struct args *)vargp)->emvco_config;
-  bool_t in_isStartEMVCo = ((struct args *)vargp)->in_isStartEMVCo;
-  LOG_EMVCOHAL_D("%s in_isStartEMVCo:%d", __func__, in_isStartEMVCo);
-
-  if (in_isStartEMVCo) {
-    if (is_valid_emvco_polling_tech(emvco_config)) {
-      int hal_open_status = open_app_data_channelImpl(
-          m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
-      LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, in_isStartEMVCo);
-      if (hal_open_status == EMVCO_STATUS_SUCCESS) {
-        lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_POOLING_STARTING_MSG;
-        msg.p_msg_data = NULL;
-        msg.size = 0;
-        tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-        start_emvco_mode(emvco_config);
-      } else {
-        lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_POOLING_START_FAILED_MSG;
-        msg.p_msg_data = NULL;
-        msg.size = 0;
-        tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-      }
-
-    } else {
-      LOG_EMVCOHAL_D("%s In-valid polling technlogy", __func__);
-      (*m_p_nfc_stack_cback)(EMVCO_POOLING_START_EVT, STATUS_FAILED);
-    }
-  } else {
-    if (nci_hal_ctrl.halStatus == HAL_STATUS_OPEN) {
-      LOG_EMVCOHAL_D("%s HAL is open, stop_emvco_mode", __func__);
-      stop_emvco_mode();
-    } else {
-      LOG_EMVCOHAL_D("%s HAL is not open, No need to clean up", __func__);
-    }
-  }
-  pthread_mutex_unlock(&emvco_lock);
-  return NULL;
-}
-
-void handle_set_emvco_mode(const int8_t emvco_config, bool_t in_isStartEMVCo) {
-  LOG_EMVCOHAL_D("%s emvco_config:%d in_isStartEMVCo:%d", __func__,
-                 emvco_config, in_isStartEMVCo);
-  struct args *modeSwitchArgs = (struct args *)malloc(sizeof(struct args));
-  modeSwitchArgs->emvco_config = emvco_config;
-  modeSwitchArgs->in_isStartEMVCo = in_isStartEMVCo;
-  pthread_t thread_id;
-  (void)pthread_create(&thread_id, NULL, handle_set_emvco_modeImpl,
-                       (void *)modeSwitchArgs);
-  return;
-}
 
 /******************************************************************************
  * Function         min_open_app_data_channel
@@ -429,7 +320,7 @@ int min_open_app_data_channel() {
   tml_emvco_Config_t tTmlConfig;
   char *nfc_dev_node = NULL;
   const uint16_t max_len = 260;
-  int mode_switch_status;
+  uint32_t mode_switch_status;
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("phNxpNci_MinOpen(): enter");

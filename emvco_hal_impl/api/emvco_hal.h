@@ -110,12 +110,12 @@ int close_emvco_app_data_channel(bool);
  *
  * @param[in] dm_disc_mask EMVCo polling technologies are configured through
  * this parameter
- * @param[in] in_isStartEMVCo specifies to start or stop the EMVCo mode
+ * @param[in] is_start_emvco specifies to start or stop the EMVCo mode
  *
  * @return void
  *
  */
-void set_emvco_mode(const int8_t emvco_config, bool_t in_isStartEMVCo);
+void set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco);
 
 /**
  *

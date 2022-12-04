@@ -21,11 +21,21 @@
 
 /** \addtogroup EMVCO_STACK_PERIPHERAL_API_INTERFACE
  *  @brief      Interface for handling hardware peripherals
+ *  @{
  */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief       This function sets the led according to emvco status
+ * @param[in] emvco_status EMVCO_MODE_ON turn green led and EMVCO_MODE_OFF turns
+ * green led off
+ * @return           void
+ *
+ */
+void led_switch_control(emvco_status_t emvco_status);
 
 #ifdef __cplusplus
 }

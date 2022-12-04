@@ -15,3 +15,33 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include <emvco_log.h>
+#include <emvco_status.h>
+#include <emvco_tml.h>
+
+void led_switch_control(emvco_status_t emvco_status) {
+  LOG_EMVCOHAL_D("%s emvco_status:%d", __func__, emvco_status);
+  EMVCO_STATUS status = EMVCO_STATUS_FAILED;
+  switch (emvco_status) {
+  case EMVCO_MODE_ON: {
+    status = tml_ioctl(GreenLedOn);
+    if (EMVCO_STATUS_SUCCESS == status) {
+      LOG_EMVCOHAL_D("GREEN LED ON - SUCCESS\n");
+    } else {
+      LOG_EMVCOHAL_D("GREEN LED ON - FAILED\n");
+    }
+    break;
+  }
+  case EMVCO_MODE_OFF: {
+    status = tml_ioctl(GreenLedOff);
+    if (EMVCO_STATUS_SUCCESS == status) {
+      LOG_EMVCOHAL_D("GREEN LED OFF - SUCCESS\n");
+    } else {
+      LOG_EMVCOHAL_D("GREEN LED OFF  - FAILED\n");
+    }
+    break;
+  }
+  default:
+    break;
+  }
+}

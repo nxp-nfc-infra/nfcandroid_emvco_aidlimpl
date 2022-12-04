@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <emvco_cl.h>
 #include <emvco_dm.h>
 #include <emvco_hal.h>
 #include <emvco_log.h>
@@ -37,9 +38,9 @@ int close_emvco_app_data_channel(bool isShutdown) {
   return close_app_data_channel(isShutdown);
 }
 
-void set_emvco_mode(const int8_t emvco_config, bool_t in_isStartEMVCo) {
+void set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
   LOG_EMVCOHAL_D("set_emvco_mode");
-  handle_set_emvco_mode(emvco_config, in_isStartEMVCo);
+  handle_set_emvco_mode(emvco_config, is_start_emvco);
 }
 void on_nfc_state_change(int32_t nfc_state) {
   LOG_EMVCOHAL_D("on_nfc_state_change");

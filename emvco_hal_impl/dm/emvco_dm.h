@@ -44,11 +44,6 @@ typedef void(control_granted_callback_t)();
 #define FW_MOBILE_ROM_VERSION_PN551 0x10
 #define FW_MOBILE_ROM_VERSION_PN553 0x11
 #define FW_MOBILE_ROM_VERSION_PN557 0x12
-/* NCI Data */
-
-#define NCI_MT_CMD 0x20
-#define NCI_MT_RSP 0x40
-#define NCI_MT_NTF 0x60
 
 #define CORE_RESET_TRIGGER_TYPE_CORE_RESET_CMD_RECEIVED 0x02
 #define CORE_RESET_TRIGGER_TYPE_POWERED_ON 0x01
@@ -108,22 +103,6 @@ enum {
   STATUS_OK = 0u,
   STATUS_FAILED = 1u,
 };
-
-/*
- * Indicates the NFC state
- */
-typedef enum {
-  STATE_OFF = 1,
-  STATE_TURNING_ON,
-  STATE_ON,
-  STATE_TURNING_OFF
-} nfc_status_t;
-
-nfc_status_t nfc_status;
-
-typedef enum { EMVCO_MODE_ON = 1, EMVCO_MODE_OFF } emvco_mode_status_t;
-
-emvco_mode_status_t emvco_status;
 
 emvco_stack_callback_t *m_p_nfc_stack_cback;
 emvco_stack_data_callback_t *m_p_nfc_stack_data_cback;
@@ -328,37 +307,7 @@ int send_app_data(uint16_t data_len, const uint8_t *p_data);
  ******************************************************************************/
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data);
 EMVCO_STATUS core_reset_recovery();
-
-/**
- * @brief       This function sets the led according to emvco status
- * @param[in] emvco_status EMVCO_MODE_ON turn green led and EMVCO_MODE_OFF turns
- * green led off
- * @return           void
- *
- */
-void led_switch_control(emvco_status_t emvco_status);
-
-/**
- * @brief starts/stops the EMVCo mode with the Device-Controller.
- *
- * @param[in] in_disc_mask EMVCo polling technologies are configured through
- * this parameter
- * @param[in] in_isStartEMVCo specifies to start or stop the EMVCo mode
- *
- * @return void
- *
- */
-void handle_set_emvco_mode(const int8_t in_disc_mask, bool_t in_isStartEMVCo);
-
-/**
- *
- * @brief updates NFC state to EMVCo Stack.
- *
- *
- * @param[in] nfc_state specifies the NFC state
- *
- * @return void
- */
-void handle_nfc_state_change(int32_t nfc_state);
-
+int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
+                              emvco_stack_data_callback_t *p_data_cback,
+                              emvco_state_change_callback_t *p_nfc_state_cback);
 #endif /* _EMVCO_DM_H_ */

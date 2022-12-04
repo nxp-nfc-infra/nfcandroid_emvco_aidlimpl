@@ -302,11 +302,11 @@ void tml_cleanup(void);
  *                    capable to store two more bytes apart from length of
  *                    packet
  *
- * @param[in]        p_buffer - data to be sent
- *                  w_length - length of data buffer
- *                  pTmlWriteComplete - pointer to the function to be invoked
+ * @param[in]       p_buffer - data to be sent
+ * @param[in]       w_length - length of data buffer
+ * @param[in]       pTmlWriteComplete - pointer to the function to be invoked
  *                                      upon completion
- *                  p_context - context provided by upper layer
+ * @param[in]       p_context - context provided by upper layer
  *
  * @return          NFC status:
  *                  EMVCO_STATUS_PENDING - command is yet to be processed
@@ -320,32 +320,26 @@ EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length,
                        void *p_context);
 /**
  *
- * @brief       Asynchronously reads data from the driver
+ * @brief           Asynchronously reads data from the driver
  *                  Number of bytes to be read and buffer are passed by upper
  *                  layer.
  *                  Enables reader thread if there are no read requests pending
  *                  Returns successfully once read operation is completed
  *                  Notifies upper layer using callback mechanism
  *
- * @param[in]         p_buffer - location to send read data to the upper layer
- * via callback w_length - length of read data buffer passed by upper layer
- *                  pTmlReadComplete - pointer to the function to be invoked
- *                                     upon completion of read operation
- *                  p_context - context provided by upper layer
+ * @param[in]       p_buffer - data to be sent
+ * @param[in]       w_length - length of data buffer
+ * @param[in]       pTmlWriteComplete  pointer to the function to be invoked upon
+ * completion
+ * @param[in]       p_context        context provided by upper layer
  *
  * @return          NFC status:
  *                  EMVCO_STATUS_PENDING - command is yet to be processed
  *                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
  *                                                invalid
  *                  EMVCO_STATUS_BUSY - read request is already in progress
- * @param[in] p_buffer - data to be sent
- * @param[in] w_length - length of data buffer
- * @param[in] pTmlWriteComplete  pointer to the function to be invoked upon
- * completion
- * @param[in] p_context        context provided by upper layer
+
  *
- * @return EMVCO_STATUS          #0 or >0  on success
- * @return #-1                     error
  *
  */
 EMVCO_STATUS tml_read(uint8_t *p_buffer, uint16_t w_length,
