@@ -29,13 +29,25 @@ extern "C" {
 #define EMVCO_STATUS_SUCCESS (0x0000)
 #define EMVCO_STATUS_FAILED (0x00FF)
 
-typedef uint8_t bool_t;        /* boolean data type */
+/**
+ * @brief  boolean data type
+ */
+typedef uint8_t bool_t;
+
+/**
+ * @brief  EMVCo status specifies EMVCO_STATUS_SUCCESS or EMVCO_STATUS_FAILED
+ */
 typedef uint16_t EMVCO_STATUS; /* Return values */
 
-/*
- * HAL events that can be passed back to the stack
+/**
+ * @brief emvco_event_t EMVCo data event
+ *
  */
 typedef uint8_t emvco_event_t;
+/**
+ * @brief emvco_event_t EMVCo statuc event
+ *
+ */
 typedef uint8_t emvco_status_t;
 
 #ifdef __cplusplus

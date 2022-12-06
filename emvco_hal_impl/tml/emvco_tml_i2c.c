@@ -103,19 +103,6 @@ EMVCO_STATUS i2c_open_and_configure(ptml_emvco_Config_t pConfig,
   return EMVCO_STATUS_SUCCESS;
 }
 
-/*******************************************************************************
-**
-** Function         Flushdata
-**
-** Description      Reads payload of FW rsp from NFCC device into given buffer
-**
-** Parameters       p_dev_handle - valid device handle
-**                  p_buffer    - buffer for read data
-**                  numRead    - number of bytes read by calling function
-**
-** Returns          always returns -1
-**
-*******************************************************************************/
 int i2c_flush_data(void *p_dev_handle, uint8_t *p_buffer, int numRead) {
   int retRead = 0;
   uint16_t totalBtyesToRead =
@@ -321,19 +308,6 @@ int i2c_nfcc_reset(void *p_dev_handle, enum NfccResetType eType) {
   return ret;
 }
 
-/*******************************************************************************
-**
-** Function         i2c_led_control
-**
-** Description      Controls the RED and GREEN LED
-**
-** Parameters       p_dev_handle     - valid device handle
-**                  eType          - led control
-**
-** Returns           0   - reset operation success
-**                  -1   - reset operation failure
-**
-*******************************************************************************/
 int i2c_led_control(void *p_dev_handle, enum LEDControl eType) {
   int ret = -1;
   LOG_EMVCO_TML_D("%s, LEDControl eType %u", __func__, eType);
@@ -350,19 +324,6 @@ int i2c_led_control(void *p_dev_handle, enum LEDControl eType) {
   return ret;
 }
 
-/*******************************************************************************
-**
-** Function         i2c_led_control
-**
-** Description      sets the mode switch to NFCC
-**
-** Parameters       p_dev_handle     - valid device handle
-**                  eType          - mode switch control
-**
-** Returns           0   - reset operation success
-**                  -1   - reset operation failure
-**
-*******************************************************************************/
 int i2c_nfcc_profile_switch(void *p_dev_handle, enum ProfileMode eType) {
   int ret = -1;
   LOG_EMVCO_TML_D("%s, LEDControl eType %u", __func__, eType);
@@ -379,19 +340,6 @@ int i2c_nfcc_profile_switch(void *p_dev_handle, enum ProfileMode eType) {
   return ret;
 }
 
-/*******************************************************************************
-**
-** Function         i2c_led_control
-**
-** Description      sets the mode switch to NFCC
-**
-** Parameters       p_dev_handle     - valid device handle
-**                  eType          - mode switch control
-**
-** Returns           0   - reset operation success
-**                  -1   - reset operation failure
-**
-*******************************************************************************/
 int i2c_smcu_profile_switch(void *p_dev_handle, enum ProfileMode eType) {
   int ret = -1;
   LOG_EMVCO_TML_D("%s, LEDControl eType %u", __func__, eType);

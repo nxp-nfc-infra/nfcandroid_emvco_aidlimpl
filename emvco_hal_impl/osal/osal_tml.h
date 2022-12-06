@@ -78,7 +78,7 @@ int osal_tml_write(int fd, const void *buf, size_t count);
 /**
  * @brief performs a variety of control functions on STREAMS devices
  *
- * \@param[in]  fd                      file descriptor of the file
+ * @param[in]  fd                      file descriptor of the file
  * @param[in]   request                 selects the control function
  *                                    to be performed
  * @param[in]  reset_type              NFCC power control

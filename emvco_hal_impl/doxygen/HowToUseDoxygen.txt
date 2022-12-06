@@ -42,4 +42,10 @@ Open the DoxyWizard tool installed in your system.
     - Specify the bin directory of doxygen
 Finally, click on the 'Run doxygen' tab from 'Run' window.
 
+Limitation:
+Currently image files are not getting copied automatically to output directory so document may not shown the images by default.
+To resolve this issue manually, please copy all the images from "emvco_hal_impl\doxygen\images" 
+to doxygen output directory (under html directory)
+
+
 Note: To create a PDF document, enable LaTeX Output from Wizard window and use it as imput with other avaialable tools.

@@ -65,115 +65,143 @@ enum ProfileMode : uint32_t {
   EMVCO_MODE,
 };
 
-/*****************************************************************************
- **
- ** Function         Close
- **
- ** Description      Closes NFCC device
- **
- ** Parameters       p_dev_handle - device handle
- **
- ** Returns          None
- **
- *****************************************************************************/
+/**
+ *
+ * @brief      Closes NFCC device
+ *
+ * @param[in]       p_dev_handle - device handle
+ *
+ * @return          None
+ *
+ **/
 void i2c_close(void *p_dev_handle);
 
-/*****************************************************************************
- **
- ** Function         OpenAndConfigure
- **
- ** Description      Open and configure NFCC device and transport layer
- **
- ** Parameters       pConfig     - hardware information
- **                  pLinkHandle - device handle
- **
- ** Returns          NFC status:
- **                  EMVCO_STATUS_SUCCESS - open_and_configure operation success
- **                  EMVCO_STATUS_INVALID_DEVICE - device open operation failure
- **
- ****************************************************************************/
+/**
+ *
+ * @brief       Open and configure NFCC device and transport layer
+ *
+ * @param[in]       pConfig     - hardware information
+ * @param[in]                 pLinkHandle - device handle
+ *
+ * @return           NFC status:
+ *                  EMVCO_STATUS_SUCCESS - open_and_configure operation success
+ *                  EMVCO_STATUS_INVALID_DEVICE - device open operation failure
+ *
+ */
 EMVCO_STATUS i2c_open_and_configure(ptml_emvco_Config_t pConfig,
                                     void **pLinkHandle);
 
-/*****************************************************************************
- **
- ** Function         Read
- **
- ** Description      Reads requested number of bytes from NFCC device into
- **                 given buffer
- **
- ** Parameters       p_dev_handle       - valid device handle
- **                  p_buffer          - buffer for read data
- **                  nNbBytesToRead   - number of bytes requested to be read
- **
- ** Returns          numRead   - number of successfully read bytes
- **                  -1        - read operation failure
- **
- ****************************************************************************/
+/**
+ *
+ * @brief      Reads requested number of bytes from NFCC device into
+ *                 given buffer
+ *
+ * @param[in]       p_dev_handle       - valid device handle
+ * @param[in]       p_buffer          - buffer for read data
+ * @param[in]       nNbBytesToRead   - number of bytes requested to be read
+ *
+ * @return          numRead   - number of successfully read bytes
+ *                  -1        - read operation failure
+ *
+ */
 int i2c_read(void *p_dev_handle, uint8_t *p_buffer, int nNbBytesToRead);
 
-/*****************************************************************************
- **
- ** Function         Write
- **
- ** Description      Writes requested number of bytes from given buffer into
- **                  NFCC device
- **
- ** Parameters       p_dev_handle       - valid device handle
- **                  p_buffer          - buffer for read data
- **                  nNbBytesToWrite  - number of bytes requested to be
- *written
- **
- ** Returns          numWrote   - number of successfully written bytes
- **                  -1         - write operation failure
- **
- *****************************************************************************/
+/**
+ *
+ * @brief      Writes requested number of bytes from given buffer into
+ *                  NFCC device
+ *
+ * @param[in]       p_dev_handle       - valid device handle
+ * @param[in]       p_buffer          - buffer for read data
+ * @param[in]       nNbBytesToWrite  - number of bytes requested to be written
+ *
+ * @return           numWrote   - number of successfully written bytes
+ *                  -1         - write operation failure
+ *
+ */
 int i2c_write(void *p_dev_handle, uint8_t *p_buffer, int nNbBytesToWrite);
 
-/*****************************************************************************
- **
- ** Function         Reset
- **
- ** Description      Reset NFCC device, using VEN pin
- **
- ** Parameters       p_dev_handle     - valid device handle
- **                  eType          - NfccResetType
- **
- ** Returns           0   - reset operation success
- **                  -1   - reset operation failure
- **
- ****************************************************************************/
+/**
+ *
+ * @brief      Reset NFCC device, using VEN pin
+ *
+ * @param[in]       p_dev_handle     - valid device handle
+ * @param[in]       eType          - NfccResetType
+ *
+ * @return            0   - reset operation success
+ *                  -1   - reset operation failure
+ *
+ */
 int i2c_nfcc_reset(void *p_dev_handle, enum NfccResetType eType);
 
-/*****************************************************************************
- **
- ** Function         SemTimedWait
- **
- ** Description      Timed sem_wait for avoiding i2c_read & write overlap
- **
- ** Parameters       none
- **
- ** Returns          Sem_wait return status
- ****************************************************************************/
+/**
+ *
+ * @brief      Timed sem_wait for avoiding i2c_read & write overlap
+ *
+ * @param[in]       none
+ *
+ * @return          Sem_wait return status
+ ***************************************************************************/
 int i2c_sem_timed_wait();
 
-/*****************************************************************************
- **
- ** Function         SemPost
- **
- ** Description      sem_post 2c_read / write
- **
- ** Parameters       none
- **
- ** Returns          none
- ****************************************************************************/
+/**
+ * @brief       sem_post 2c_read / write
+ *
+ * @param[in]       none
+ *
+ * @return          none
+ */
 void i2c_sem_post();
 
+/**
+ *
+ * @brief      Reads payload of FW rsp from NFCC device into given buffer
+ *
+ * @param[in]        p_dev_handle - valid device handle
+ * @param[in]        p_buffer    - buffer for read data
+ * @param[in]        numRead    - number of bytes read by calling function
+ *
+ * @return          always returns -1
+ *
+ */
 int i2c_flush_data(void *p_dev_handle, uint8_t *p_buffer, int numRead);
 
+/**
+ *
+ * @brief      Controls the RED and GREEN LED
+ *
+ * @param[in]       p_dev_handle     - valid device handle
+ *                  eType          - led control
+ *
+ * @return           0   - reset operation success
+ *                  -1   - reset operation failure
+ *
+ */
 int i2c_led_control(void *p_dev_handle, enum LEDControl eType);
 
+/**
+ *
+ * @brief      sets the mode switch to NFCC
+ *
+ * @param[in]       p_dev_handle     - valid device handle
+ *                  eType          - mode switch control
+ *
+ * @return           0   - reset operation success
+ *                  -1   - reset operation failure
+ *
+ */
 int i2c_nfcc_profile_switch(void *p_dev_handle, enum ProfileMode eType);
 
+/**
+ *
+ * @brief       sets the mode switch to NFCC
+ *
+ * @param[in]       p_dev_handle     - valid device handle
+ *                  eType          - mode switch control
+ *
+ * @return           0   - reset operation success
+ *                  -1   - reset operation failure
+ *
+ */
 int i2c_smcu_profile_switch(void *p_dev_handle, enum ProfileMode eType);
 #endif /* _EMVCO_TML_I2C_H_*/

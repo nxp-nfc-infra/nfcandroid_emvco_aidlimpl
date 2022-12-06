@@ -453,13 +453,6 @@ init_retry:
   } else {
     status = send_ext_cmd(sizeof(cmd_init_nci), cmd_init_nci);
   }
-  status = send_ext_cmd(sizeof(cmd_set_config_deactivate_idle_power_off),
-                        cmd_set_config_deactivate_idle_power_off);
-  if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
-    goto init_retry;
-  }
-
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_INIT : Failed");
     if (init_retry_cnt < 3) {
@@ -471,6 +464,12 @@ init_retry:
     wConfigStatus = tml_shutdown_cleanup();
     wConfigStatus = EMVCO_STATUS_FAILED;
     goto clean_and_return;
+  }
+  status = send_ext_cmd(sizeof(cmd_set_config_deactivate_idle_power_off),
+                        cmd_set_config_deactivate_idle_power_off);
+  if (status != EMVCO_STATUS_SUCCESS) {
+    LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
+    goto init_retry;
   }
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);

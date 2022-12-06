@@ -99,9 +99,9 @@ typedef struct lib_emvco_hw_conf {
   uintptr_t n_client_id;
 } driver_config_data, *pdriver_config_data;
 
-/*
- * EMVCO Message structure contains message specific details like
- * message type, message specific data block details, etc.
+/**
+ * @brief EMVCO Message structure contains message specific details like
+ *        message type, message specific data block details, etc.
  */
 typedef struct lib_emvco_message {
   uint32_t e_msgType; /* Type of the message to be posted*/
@@ -109,8 +109,8 @@ typedef struct lib_emvco_message {
   uint32_t size;      /* Size of the datablock*/
 } lib_emvco_message_t, *plib_emvco_message_t;
 
-/*
- * Deferred message specific info declaration.
+/**
+ * @brief Deferred message specific info declaration.
  * This type of information is packed as message data when
  * EMVCO_DEFERRED_CALL_MSG
  * type message is posted to message handler thread.

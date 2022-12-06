@@ -43,8 +43,10 @@
 #define DISC_MASK_EMVCO_F_PASSIVE_POLL_MODE 0x04
 #define DISC_MASK_EMVCO_VAS_PASSIVE_POLL_MODE 0x08
 
-/* compile-time configuration structure for the RF Discovery Frequency for each
- * technology */
+/**
+ * @brief compile-time configuration structure for the RF Discovery Frequency
+ * for each technology
+ */
 typedef struct {
   uint8_t pa;   /* Frequency for EMVCo Technology A   */
   uint8_t pb;   /* Frequency for EMVCo Technology B   */
@@ -52,13 +54,25 @@ typedef struct {
   uint8_t pvas; /* Frequency for EMVCo Technology VAS */
 } tDISC_FREQ_CFG;
 
+/**
+ * @brief EMVCo polling type structure species type value and frequency value
+ * technology
+ */
 typedef struct {
   uint8_t type;
   uint8_t frequency;
 } tEMVCO_DISCOVER_PARAMS;
 
+/**
+ * @brief EMVCo polling discovery mask
+ *
+ */
 typedef uint32_t tDISC_TECH_PROTO_MASK;
 
+/**
+ * @brief emvco discovery configuration structure for emvco polling
+ * contains emvco polling type mask and start/stop flag
+ */
 typedef struct emvco_args {
   int8_t emvco_config;
   bool_t is_start_emvco;

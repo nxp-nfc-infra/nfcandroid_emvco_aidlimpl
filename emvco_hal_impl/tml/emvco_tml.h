@@ -53,8 +53,8 @@
 ***************************Globals,Structure and Enumeration ******************
 */
 
-/*
- * Transaction (Tx/Rx) completion information structure of TML
+/**
+ * @brief Transaction (Tx/Rx) completion information structure of TML
  *
  * This structure holds the completion callback information of the
  * transaction passed from the TML layer to the Upper layer
@@ -87,8 +87,8 @@ enum emvco_state_flags {
   /*nfc booted in NCI mode */
   EMVCO_STATE_NCI = 0x2,
 };
-/*
- * TML transreceive completion callback to Upper Layer
+/**
+ * @brief TML transreceive completion callback to Upper Layer
  *
  * p_context - Context provided by upper layer
  * pInfo    - Transaction info. See osal_transact_info
@@ -96,8 +96,8 @@ enum emvco_state_flags {
 typedef void (*transact_completion_callback_t)(void *p_context,
                                                osal_transact_info_t *pInfo);
 
-/*
- * TML Deferred callback interface structure invoked by upper layer
+/**
+ * @brief TML Deferred callback interface structure invoked by upper layer
  *
  * This could be used for read/write operations
  *
@@ -107,8 +107,8 @@ typedef void (*transact_completion_callback_t)(void *p_context,
 typedef void (*defer_func_pointer_t)(uint32_t dw_msg_posted_thread,
                                      void *pParams);
 
-/*
- * Enum definition contains  supported ioctl control codes.
+/**
+ * @brief Enum definition contains  supported ioctl control codes.
  *
  * tml_ioctl
  */
@@ -183,7 +183,8 @@ typedef struct tml_emvco_context {
       read_info_update_mutex; /*Mutex to synchronize read Info update*/
 } tml_emvco_context_t;
 
-/*
+/**
+ * @brief
  * TML Configuration exposed to upper layer.
  */
 typedef struct tml_emvco_Config {
@@ -222,10 +223,6 @@ typedef struct {
   void *pParams;
 } tml_emvco_defer_msg_t; /* DeferMsg structure passed to User Thread */
 
-typedef enum {
-  I2C_FRAGMENATATION_DISABLED, /*i2c fragmentation_disabled           */
-  I2C_FRAGMENTATION_ENABLED    /*i2c_fragmentation_enabled          */
-} i2c_fragmentation_t;
 /* Function declarations */
 
 /**
@@ -423,7 +420,5 @@ EMVCO_STATUS tml_update_read_complete_callback(
  */
 void tml_deferred_call(uintptr_t dwThreadId, lib_emvco_message_t *ptWorkerMsg);
 
-void set_fragmentation_enabled(i2c_fragmentation_t enable);
-i2c_fragmentation_t get_fragmentation_enabled();
 /** @}*/
 #endif /*  _EMVCO_TML_H_  */

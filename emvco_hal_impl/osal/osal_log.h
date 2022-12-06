@@ -20,9 +20,22 @@
 
 #include <log/log.h>
 
+/**
+ * @brief Prints logging information
+ *
+ * @param[in] prio priority of the log level
+ * @param[in] tag TAG name
+ * @param[in] ... additional information of the log
+ */
 #define OSAL_LOG_PRI(prio, tag, ...)                                           \
   { LOG_PRI(prio, tag, __VA_ARGS__); }
 
+/**
+ * @brief writes error logging information
+ *
+ * @param[in] tag TAG name
+ * @param[in] subTag asub tag name
+ */
 #define __osal_log_error_write(tag, subTag)                                    \
   __android_log_error_write(tag, subTag, -1, NULL, 0)
 #endif /* _OSAL_LOG_H_*/

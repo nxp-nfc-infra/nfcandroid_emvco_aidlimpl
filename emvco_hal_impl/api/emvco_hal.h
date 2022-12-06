@@ -32,7 +32,7 @@
 extern "C" {
 #endif
 
-/*
+/**
  * @brief
  * The callback passed in from the EMVCo HAL to get the
  * EMVCo status EMVCo stack .
@@ -40,14 +40,14 @@ extern "C" {
 typedef void(emvco_stack_callback_t)(emvco_event_t event,
                                      emvco_status_t event_status);
 
-/*
+/**
  * @brief
  * The callback passed in from the EMVCo HAL that EMVCo
  * stack can use to pass status to EMVCo HAL.
  */
 typedef void(emvco_stack_data_callback_t)(uint16_t data_len, uint8_t *p_data);
 
-/*
+/**
  * @brief
  * The callback passed in from the EMVCo HAL that EMVCo
  * stack can use to pass data to EMVCo HAL.

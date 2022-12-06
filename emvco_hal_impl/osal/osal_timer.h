@@ -27,11 +27,11 @@
 ************************* Include Files ****************************************
 */
 
-/*
- * Timer callback interface which will be called once registered timer
+/**
+ * @brief Timer callback interface which will be called once registered timer
  * time out expires.
- *        TimerId  - Timer Id for which callback is called.
- *        p_context - Parameter to be passed to the callback function
+ *  @param[in]       TimerId  - Timer Id for which callback is called.
+ *  @param[in]       p_context - Parameter to be passed to the callback function
  */
 typedef void (*p_osal_emvco_timer_callback_t)(uint32_t TimerId,
                                               void *p_context);
