@@ -74,6 +74,12 @@ typedef void(control_granted_callback_t)();
 #define NFC_BFVAS_PASSIVE_POLL_MODE 14
 #define NFC_ABFVAS_PASSIVE_POLL_MODE 15
 
+/**********************************************
+ * NCI Core Group Params
+ **********************************************/
+#define NCI_CORE_PARAM_SIZE_RESET 0x01
+#define NCI_RESET_TYPE_KEEP_CFG 0x00
+
 sem_t nfc_status_semaphore;
 
 /*
@@ -306,7 +312,6 @@ int send_app_data(uint16_t data_len, const uint8_t *p_data);
  *
  ******************************************************************************/
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data);
-EMVCO_STATUS core_reset_recovery();
 int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
                               emvco_stack_data_callback_t *p_data_cback,
                               emvco_state_change_callback_t *p_nfc_state_cback);

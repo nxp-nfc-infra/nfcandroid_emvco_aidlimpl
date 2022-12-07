@@ -33,9 +33,9 @@
 
 #define NCI_MT_SHIFT 5
 
-#define NCI_MT_CMD 1 /* (NCI_MT_CMD << NCI_MT_SHIFT) = 0x20 */
-#define NCI_MT_RSP 2 /* (NCI_MT_RSP << NCI_MT_SHIFT) = 0x40 */
-#define NCI_MT_NTF 3 /* (NCI_MT_NTF << NCI_MT_SHIFT) = 0x60 */
+#define MT_CMD 1 /* (MT_CMD << NCI_MT_SHIFT) = 0x20 */
+#define MT_RSP 2 /* (MT_RSP << NCI_MT_SHIFT) = 0x40 */
+#define MT_NTF 3 /* (MT_NTF << NCI_MT_SHIFT) = 0x60 */
 
 /* Status Codes */
 #define NCI_STATUS_OK 0x00
@@ -74,5 +74,35 @@
 
 #define UINT8_TO_STREAM(p, u8)                                                 \
   { *(p)++ = (uint8_t)(u8); }
+
+#define ARRAY_TO_STREAM(p, a, len)                                             \
+  {                                                                            \
+    int ijk;                                                                   \
+    for (ijk = 0; ijk < (len); ijk++)                                          \
+      *(p)++ = (uint8_t)(a)[ijk];                                              \
+  }
+/**********************************************
+ * NCI Core Group Opcode        - 0
+ **********************************************/
+#define MSG_CORE_RESET 0
+#define MSG_CORE_INIT 1
+#define MSG_CORE_SET_CONFIG 2
+#define MSG_CORE_GET_CONFIG 3
+
+/* Define the message header size for all NCI Commands and Notifications.
+ */
+#define NCI_MSG_HDR_SIZE 3 /* per NCI spec */
+
+/**********************************************
+ * NCI Core Group Params
+ **********************************************/
+#define NCI_CORE_PARAM_SIZE_RESET 0x01
+
+#define NCI_VERSION_UNKNOWN 0x00
+#define NCI_VERSION_1_0 0x10
+#define NCI_VERSION_2_0 0x20
+#define NCI_CORE_PARAM_SIZE_INIT(X) (((X) == NCI_VERSION_2_0) ? (0x02) : (0x00))
+#define NCI2_0_CORE_INIT_CMD_BYTE_0 0x00
+#define NCI2_0_CORE_INIT_CMD_BYTE_1 0x00
 
 #endif /* NCI_DEFS_H */

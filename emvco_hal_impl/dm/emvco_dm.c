@@ -22,6 +22,7 @@
 #include <emvco_dm.h>
 #include <emvco_log.h>
 #include <emvco_nci_ext.h>
+#include <emvco_ncif.h>
 #include <emvco_tml.h>
 #include <errno.h>
 #include <log/log.h>
@@ -324,15 +325,9 @@ int min_open_app_data_channel() {
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("phNxpNci_MinOpen(): enter");
-  /*NCI_INIT_CMD*/
-  static uint8_t cmd_init_nci[] = {0x20, 0x01, 0x00};
-  /*NCI_RESET_CMD*/
-  static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
-  /*NCI2_0_INIT_CMD*/
-  static uint8_t cmd_init_nci2_0[] = {0x20, 0x01, 0x02, 0x00, 0x00};
-  /*SET_CONFIG_IDLE_POWER_OFF_CMD*/
-  static uint8_t cmd_set_config_deactivate_idle_power_off[] = {
-      0x20, 0x02, 0x05, 0x01, 0xA0, 0x44, 0x01, 0x02};
+  const uint8_t cmd_idle_pwr_off_cfg[] = {0x05, 0x01, 0xA0, 0x44, 0x01, 0x02};
+
+  uint8_t *p_cmd_idle_pwr_off_cfg = (uint8_t *)cmd_idle_pwr_off_cfg;
 
   if (nci_hal_ctrl.halStatus == HAL_STATUS_MIN_OPEN) {
     LOG_EMVCOHAL_D("min_open_app_data_channel(): already open");
@@ -433,8 +428,7 @@ init_retry:
   mode_switch_status = tml_ioctl(NFCCModeSwitchOn);
   LOG_EMVCOHAL_D("%s modeswitch IOCTL status:%d", __func__, mode_switch_status);
   led_switch_control(EMVCO_MODE_ON);
-
-  status = send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
+  status = snd_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
     if (init_retry_cnt < 3) {
@@ -449,9 +443,9 @@ init_retry:
   }
 
   if (nci_hal_ctrl.nci_info.nci_version == NCI_VERSION_2_0) {
-    status = send_ext_cmd(sizeof(cmd_init_nci2_0), cmd_init_nci2_0);
+    status = snd_core_init(NCI_VERSION_2_0);
   } else {
-    status = send_ext_cmd(sizeof(cmd_init_nci), cmd_init_nci);
+    status = snd_core_init(NCI_VERSION_UNKNOWN);
   }
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_INIT : Failed");
@@ -465,8 +459,8 @@ init_retry:
     wConfigStatus = EMVCO_STATUS_FAILED;
     goto clean_and_return;
   }
-  status = send_ext_cmd(sizeof(cmd_set_config_deactivate_idle_power_off),
-                        cmd_set_config_deactivate_idle_power_off);
+  status = snd_core_set_config(&p_cmd_idle_pwr_off_cfg[0],
+                               p_cmd_idle_pwr_off_cfg[1]);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
     goto init_retry;
@@ -494,56 +488,6 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
   m_p_nfc_stack_data_cback = p_data_cback;
   m_p_nfc_state_cback = p_nfc_state_cback;
   return EMVCO_STATUS_SUCCESS;
-}
-
-EMVCO_STATUS core_reset_recovery() {
-  EMVCO_STATUS status = EMVCO_STATUS_FAILED;
-
-  /*NCI_INIT_CMD*/
-  static uint8_t cmd_init_nci[] = {0x20, 0x01, 0x00};
-  /*NCI_RESET_CMD*/
-  static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01,
-                                    0x00}; // keep configuration
-  static uint8_t cmd_init_nci2_0[] = {0x20, 0x01, 0x02, 0x00, 0x00};
-  /* reset config cache */
-  uint8_t retry_core_init_cnt = 0;
-
-  LOG_EMVCOHAL_D("%s: recovery", __func__);
-
-retry_core_init:
-  if (retry_core_init_cnt > 3) {
-    goto FAILURE;
-  }
-
-  status = tml_ioctl(ResetDevice);
-  if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_D("Controller Reset - FAILED\n");
-    goto FAILURE;
-  }
-  status = send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
-  if ((status != EMVCO_STATUS_SUCCESS) &&
-      (nci_hal_ctrl.retry_cnt >= MAX_RETRY_COUNT)) {
-    retry_core_init_cnt++;
-    goto retry_core_init;
-  } else if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_D("NCI_CORE_RESET: Failed");
-    retry_core_init_cnt++;
-    goto retry_core_init;
-  }
-  if (nci_hal_ctrl.nci_info.nci_version == NCI_VERSION_2_0) {
-    status = send_ext_cmd(sizeof(cmd_init_nci2_0), cmd_init_nci2_0);
-  } else {
-    status = send_ext_cmd(sizeof(cmd_init_nci), cmd_init_nci);
-  }
-  if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_D("NCI_CORE_INIT : Failed");
-    retry_core_init_cnt++;
-    goto retry_core_init;
-  }
-
-  return EMVCO_STATUS_SUCCESS;
-FAILURE:
-  abort();
 }
 
 /******************************************************************************
@@ -862,13 +806,8 @@ static void read_app_data_complete(void *p_context,
 
 int close_app_data_channel(bool bShutdown) {
   EMVCO_STATUS status;
-  /*NCI_RESET_CMD*/
-  static uint8_t cmd_reset_nci[] = {0x20, 0x00, 0x01, 0x00};
-
-  static uint8_t cmd_ven_disable_nci[] = {0x20, 0x02, 0x05, 0x01,
-                                          0xA0, 0x07, 0x01, 0x02};
-
-  // AutoThreadMutex a(sHalFnLock);
+  const uint8_t cmd_ven_disable_nci[] = {0x05, 0x01, 0xA0, 0x07, 0x01, 0x02};
+  uint8_t *p_cmd_ven_disable_nci = (uint8_t *)cmd_ven_disable_nci;
   if (nci_hal_ctrl.halStatus == HAL_STATUS_CLOSE) {
     LOG_EMVCOHAL_D("close_app_data_channel is already closed, ignoring close");
     return EMVCO_STATUS_FAILED;
@@ -882,13 +821,14 @@ int close_app_data_channel(bool bShutdown) {
     osal_sem_post(&(nci_hal_ctrl.sync_spi_nfc));
   }
   if (!bShutdown) {
-    status = send_ext_cmd(sizeof(cmd_ven_disable_nci), cmd_ven_disable_nci);
+    status = snd_core_set_config(&p_cmd_ven_disable_nci[0],
+                                 p_cmd_ven_disable_nci[1]);
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_E("CMD_VEN_DISABLE_NCI: Failed");
     }
   }
   nci_hal_ctrl.halStatus = HAL_STATUS_CLOSE;
-  status = send_ext_cmd(sizeof(cmd_reset_nci), cmd_reset_nci);
+  status = snd_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
   }
@@ -1087,26 +1027,6 @@ int check_ncicmd_write_window(uint16_t cmd_len, uint8_t *p_cmd) {
     status = EMVCO_STATUS_SUCCESS;
   }
   return status;
-}
-
-/******************************************************************************
- * Function         phNxpNciHal_do_factory_reset
- *
- * Description      This function is called during factory reset to clear/reset
- *                  nfc sub-system persistant data.
- *
- * Returns          void.
- *
- ******************************************************************************/
-void phNxpNciHal_do_factory_reset(void) {
-  EMVCO_STATUS status = EMVCO_STATUS_FAILED;
-  if (nci_hal_ctrl.halStatus == HAL_STATUS_CLOSE) {
-    status = min_open_app_data_channel();
-    if (status != EMVCO_STATUS_SUCCESS) {
-      LOG_EMVCOHAL_E("%s: NXP Nfc Open failed", __func__);
-      return;
-    }
-  }
 }
 
 /******************************************************************************
