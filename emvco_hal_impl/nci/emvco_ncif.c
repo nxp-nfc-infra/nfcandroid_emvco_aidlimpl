@@ -53,6 +53,7 @@ uint8_t snd_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
   len = NCI_MSG_HDR_SIZE + (*p_disc_size);
 
   send_app_data(len, p_start);
+  free(p);
   return (NCI_STATUS_OK);
 }
 
