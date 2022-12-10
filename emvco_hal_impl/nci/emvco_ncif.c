@@ -79,11 +79,11 @@ uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   size = tlv_size;
   pt = p_param_tlvs;
   while (size > 1) {
-    size -= 2;
-    pt++;
+    size -= 3;
+    pt += 2;
     num++;
-    ulen = *pt++;
-    pt += ulen;
+    ulen = *pt;
+    pt += (ulen + 1);
     if (size >= ulen) {
       size -= ulen;
     } else {

@@ -325,7 +325,7 @@ int min_open_app_data_channel() {
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("phNxpNci_MinOpen(): enter");
-  const uint8_t cmd_idle_pwr_off_cfg[] = {0x05, 0x01, 0xA0, 0x44, 0x01, 0x02};
+  const uint8_t cmd_idle_pwr_off_cfg[] = {0x04, 0xA0, 0x44, 0x01, 0x02};
 
   uint8_t *p_cmd_idle_pwr_off_cfg = (uint8_t *)cmd_idle_pwr_off_cfg;
 
@@ -334,7 +334,7 @@ int min_open_app_data_channel() {
     return EMVCO_STATUS_SUCCESS;
   }
 
-  int init_retry_cnt = 0;
+  int init_retry_cnt = 0, set_config_retry_cnt = 0;
   int8_t ret_val = 0x00;
 
   initialize_debug_enabled_flag();
@@ -459,12 +459,18 @@ init_retry:
     wConfigStatus = EMVCO_STATUS_FAILED;
     goto clean_and_return;
   }
-  status = snd_core_set_config(&p_cmd_idle_pwr_off_cfg[0],
-                               p_cmd_idle_pwr_off_cfg[1]);
-  if (status != EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
-    goto init_retry;
-  }
+  do {
+    status = snd_core_set_config(&p_cmd_idle_pwr_off_cfg[1],
+                                 p_cmd_idle_pwr_off_cfg[0]);
+    if (status == EMVCO_STATUS_SUCCESS) {
+      set_config_retry_cnt = 0;
+      break;
+    } else {
+      LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
+      ++set_config_retry_cnt;
+    }
+  } while (set_config_retry_cnt < 3);
+
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);
   LOG_EMVCOHAL_D("min_open_app_data_channel(): exit");
