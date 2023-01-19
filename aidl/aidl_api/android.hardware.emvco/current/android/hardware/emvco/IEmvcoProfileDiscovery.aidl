@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ package android.hardware.emvco;
 @VintfStability
 interface IEmvcoProfileDiscovery {
   boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback emvcoClientCallback);
-  oneway void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
-  oneway void onNfcStateChange(android.hardware.emvco.NfcState in_nfcState);
+  void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
+  void onNfcStateChange(android.hardware.emvco.NfcState in_nfcState);
   boolean registerNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeRequestCallback in_nfcStateChangeCallback);
 }

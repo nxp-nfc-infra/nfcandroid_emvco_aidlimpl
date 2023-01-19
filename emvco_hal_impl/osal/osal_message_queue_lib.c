@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -224,7 +224,9 @@ int osal_msg_rcv(intptr_t msqid, lib_emvco_message_t *msg, long msgtyp,
 
   pQueue = (message_queue_t *)msqid;
 
-  sem_wait(&pQueue->n_process_semaphore);
+  if (-1 == sem_wait(&pQueue->n_process_semaphore)) {
+    LOG_EMVCO_TML_E("sem_wait didn't return success\n");
+  }
 
   pthread_mutex_lock(&pQueue->n_critical_section_mutex);
 

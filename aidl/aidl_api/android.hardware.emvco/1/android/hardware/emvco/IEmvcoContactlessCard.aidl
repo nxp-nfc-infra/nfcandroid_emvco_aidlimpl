@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,5 +38,5 @@ package android.hardware.emvco;
 interface IEmvcoContactlessCard {
   boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
   int transceive(in byte[] in_data);
-  oneway void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
+  void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
 }

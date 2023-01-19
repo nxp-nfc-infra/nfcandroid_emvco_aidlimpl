@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -77,7 +77,7 @@ interface IEmvcoContactlessCard {
     * @return void
     *
     */
-    oneway void setEMVCoMode(in byte in_config,boolean in_isStartEMVCo);
+    void setEMVCoMode(in byte in_config,boolean in_isStartEMVCo);
 }
 
 /** @}*/

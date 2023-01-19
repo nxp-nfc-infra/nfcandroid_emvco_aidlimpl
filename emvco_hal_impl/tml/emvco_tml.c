@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -173,7 +173,9 @@ static void *tml_writer_thread(void *pParam) {
   /* Writer thread loop shall be running till shutdown is invoked */
   while (gptml_emvco_context->b_thread_done) {
     LOG_EMVCO_TML_D("PN54X - Tml Writer Thread Running................\n");
-    sem_wait(&gptml_emvco_context->tx_semaphore);
+    if (-1 == sem_wait(&gptml_emvco_context->tx_semaphore)) {
+      LOG_EMVCO_TML_E("sem_wait didn't return success \n");
+    }
     /* If Tml write is requested */
     if (1 == gptml_emvco_context->t_write_info.b_enable) {
       LOG_EMVCO_TML_D("PN54X - Write requested.....\n");
@@ -384,7 +386,9 @@ static void *emvco_tml_thread(void *pParam) {
     /* If Tml write is requested */
     /* Set the variable to success initially */
     w_status = EMVCO_STATUS_SUCCESS;
-    sem_wait(&gptml_emvco_context->rx_semaphore);
+    if (-1 == sem_wait(&gptml_emvco_context->rx_semaphore)) {
+      LOG_EMVCO_TML_E("sem_wait didn't return success \n");
+    }
 
     /* If Tml read is requested */
     if (1 == gptml_emvco_context->t_read_info.b_enable) {
@@ -723,7 +727,9 @@ void tml_deferred_call(uintptr_t dwThreadId, lib_emvco_message_t *ptWorkerMsg) {
   intptr_t bPostStatus;
   UNUSED(dwThreadId);
   /* Post message on the user thread to invoke the callback function */
-  sem_wait(&gptml_emvco_context->post_msg_semaphore);
+  if (-1 == sem_wait(&gptml_emvco_context->post_msg_semaphore)) {
+    LOG_EMVCO_TML_E("sem_wait didn't return success \n");
+  }
   bPostStatus =
       osal_msg_snd(gptml_emvco_context->dw_callback_thread_id, ptWorkerMsg, 0);
   sem_post(&gptml_emvco_context->post_msg_semaphore);
