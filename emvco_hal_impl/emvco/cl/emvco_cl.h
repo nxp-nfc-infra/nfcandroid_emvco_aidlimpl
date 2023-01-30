@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -76,6 +76,7 @@ typedef uint32_t tDISC_TECH_PROTO_MASK;
 typedef struct emvco_args {
   int8_t emvco_config;
   bool_t is_start_emvco;
+  int8_t current_discovery_mode;
 } emvco_args_t;
 
 void nfc_state_changed(int32_t nfc_state);
@@ -128,6 +129,14 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *osal_transact_info);
  *
  */
 void handle_set_emvco_mode(const int8_t in_disc_mask, bool_t is_start_emvco);
+
+/**
+ * @brief returns the current active profile type.
+ * @param[in] void
+ * @return discovery_mode_t - NFC/EMVCo/Unknown
+ *
+ */
+discovery_mode_t get_current_mode();
 
 /**
  *

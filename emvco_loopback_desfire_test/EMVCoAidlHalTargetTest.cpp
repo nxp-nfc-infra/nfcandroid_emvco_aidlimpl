@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -82,6 +82,7 @@ const int NFC_A_PASSIVE_POLL_MODE = 0;
 const int NFC_B_PASSIVE_POLL_MODE = 1;
 const int NFC_F_PASSIVE_POLL_MODE = 2;
 const int NFC_VAS_PASSIVE_POLL_MODE = 3;
+::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
 
 class EmvcoClientCallback
     : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
@@ -133,6 +134,14 @@ void setRFTechnologyMode(int modeType, bool isSet) {
   }
   ALOGI("%s after set pollingConfiguration:%d\n", __func__,
         pollingConfiguration);
+}
+
+void EmvcoHalBinderDied(void *cookie) {
+  ALOGI("EmvcoHalBinderDied");
+  (void)cookie;
+  AIBinder_unlinkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
+  exit(1);
+  ALOGI("Self test App aborted due to EMVCo HAL crash");
 }
 
 int main(int argc, char **argv) {
@@ -227,6 +236,9 @@ int main(int argc, char **argv) {
   const std::string instance = std::string() + IEmvco::descriptor + "/default";
   SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
   iIEmvco_ = IEmvco::fromBinder(binder);
+  mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
+      AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
+  AIBinder_linkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
 
   iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
 

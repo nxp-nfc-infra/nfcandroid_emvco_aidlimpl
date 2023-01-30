@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022,2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,26 +23,26 @@ package android.hardware.emvco;
  */
 
 /**
- * @brief Event codes to be handled by Application
+ * @brief Pofile types to be handled by EMVCo HAL
  *
- * The EMVCo Hal notifies application with below event codes.
+ * The EMVCo Hal uses this event to determine the current active profile.
  */
 @VintfStability
 @Backing(type="int")
-enum EmvcoEvent {
-   /** @brief  Event to indicate EMVCo HAL open complete state*/
-   EMVCO_OPEN_CHNL_CPLT_EVT = 0,
-   /** @brief  Event to indicate EMVCo HAL open error state*/
-   EMVCO_OPEN_CHNL_ERROR_EVT = 1,
-   /** @brief  Event to indicate EMVCo HAL close complete state*/
-   EMVCO_CLOSE_CHNL_CPLT_EVT = 2,
-   /** @brief  Event to indicate the start of EMVCo mode*/
-   EMVCO_POOLING_START_EVT = 3,
-   /** @brief  Event to indicate EMVCo polling activated state*/
-   EMVCO_POLLING_STARTED_EVT = 4,
-   /** @brief  Event to indicate the stop of EMVCo mode*/
-   EMVCO_POLLING_STOP_EVT = 5,
-   /** @brief  Event to indicate the Non EMV card*/
-   EMVCO_UN_SUPPORTED_CARD_EVT = 6,
+enum DiscoveryMode {
+    /**
+     * NFC event to notify NFC as current active state to EMVCo HAL
+     *
+     */
+    NFC                       = 1,
+    /**
+     * EMVCO event to notify NFC as current active state to EMVCo HAL
+     */
+    EMVCO                = 2,
+    /**
+     * UN_KNOWN event to notify UN_KNOWN as current active state to EMVCo HAL
+     */
+    UN_KNOWN                       = 3,
+
 }
 /** @}*/

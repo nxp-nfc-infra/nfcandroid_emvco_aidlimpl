@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,18 +36,6 @@ enum EmvcoStatus {
      * Generic error.
      */
     EMVCO_STATUS_FAILED = 1,
-    /**
-     * Transport error.
-     */
-    EMVCO_STATUS_ERR_TRANSPORT = 2,
-    /**
-     * Command timeout error.
-     */
-    EMVCO_STATUS_ERR_CMD_TIMEOUT = 3,
-    /**
-     * Refused error when command is rejected.
-     */
-    EMVCO_STATUS_REFUSED = 4,
 }
 
 /** @}*/

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -116,6 +116,14 @@ int close_emvco_app_data_channel(bool);
  *
  */
 void set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco);
+
+/**
+ * @brief returns the current active profile type.
+ * @param[in] void
+ * @return discovery_mode_t - NFC/EMVCo/Unknown
+ *
+ */
+discovery_mode_t get_current_discovery_mode();
 
 /**
  *

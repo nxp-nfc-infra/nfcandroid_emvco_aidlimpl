@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ namespace android {
 namespace hardware {
 namespace emvco {
 
+using ::aidl::android::hardware::emvco::DiscoveryMode;
 using ::aidl::android::hardware::emvco::EmvcoEvent;
 using ::aidl::android::hardware::emvco::EmvcoStatus;
 
@@ -83,6 +84,7 @@ std::shared_ptr<Emvco> Emvco::getInstance() {
 Emvco::Emvco()
     : death_recipient_(AIBinder_DeathRecipient_new(&OnCallbackDiedWrapped)) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  open();
 }
 
 ::ndk::ScopedAStatus Emvco::getEmvcoProfileDiscoveryInterface(
@@ -126,6 +128,13 @@ Emvco::Emvco()
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   registerCallback(in_clientCallback);
   *_aidl_return = true;
+  return ndk::ScopedAStatus::ok();
+}
+
+::ndk::ScopedAStatus Emvco::getCurrentDiscoveryMode(
+    ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  *_aidl_return = (DiscoveryMode)get_current_discovery_mode();
   return ndk::ScopedAStatus::ok();
 }
 

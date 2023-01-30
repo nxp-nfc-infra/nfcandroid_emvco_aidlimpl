@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -83,6 +83,8 @@ const std::vector<uint8_t> nci_stop_discovery_idle = NCI_STOP_DISCOVERY_IDLE;
 const std::vector<uint8_t> nci_stop_discovery_discover =
     NCI_STOP_DISCOVERY_DISCOVER;
 const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
+
+::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
 
 // 638 test case *7 APDU including start discovery + 638 discovery = 5104
 #define PPSE_SEND_MAX_TIMES 5104
@@ -266,6 +268,15 @@ void setRFTechnologyMode(int modeType, bool isSet) {
         pollingConfiguration);
 }
 
+void EmvcoHalBinderDied(void *cookie) {
+  ALOGI("EmvcoHalBinderDied");
+  (void)cookie;
+  AIBinder_unlinkToDeath(nxp_emvco_service_->asBinder().get(),
+                         mDeathRecipient.get(), 0);
+  exit(1);
+  ALOGI("Self test App aborted due to EMVCo HAL crash");
+}
+
 int main(int argc, char **argv) {
   ABinderProcess_startThreadPool();
 
@@ -326,6 +337,11 @@ int main(int argc, char **argv) {
   const std::string instance = std::string() + IEmvco::descriptor + "/default";
   SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
   nxp_emvco_service_ = IEmvco::fromBinder(binder);
+
+  mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
+      AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
+  AIBinder_linkToDeath(nxp_emvco_service_->asBinder().get(),
+                       mDeathRecipient.get(), 0);
 
   nxp_emvco_service_->getEmvcoContactlessCard(&nxp_emvco_cl_service_);
 

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,10 +45,8 @@ uint8_t EnableP2P_PrioLogic = false;
 
 /* NFCEE Set mode */
 static uint8_t setEEModeDone = 0x00;
-/* External global variable to get FW version from NCI response*/
-extern uint32_t wFwVerRsp;
-/* External global variable to get FW version from FW file*/
-extern uint16_t wFwVer;
+uint32_t wFwVerRsp;
+uint16_t wFwVer;
 
 uint16_t rom_version;
 extern uint32_t timeoutTimerId;

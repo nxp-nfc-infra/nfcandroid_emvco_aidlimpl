@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -41,6 +41,10 @@ int close_emvco_app_data_channel(bool isShutdown) {
 void set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
   LOG_EMVCOHAL_D("set_emvco_mode");
   handle_set_emvco_mode(emvco_config, is_start_emvco);
+}
+discovery_mode_t get_current_discovery_mode() {
+  LOG_EMVCOHAL_D("get_current_discovery_mode");
+  return get_current_mode();
 }
 void on_nfc_state_change(int32_t nfc_state) {
   LOG_EMVCOHAL_D("on_nfc_state_change");

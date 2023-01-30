@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@
 #include "EmvcoContactlessCard.h"
 #include "EmvcoProfileDiscovery.h"
 #include <aidl/android/hardware/emvco/BnEmvco.h>
+#include <aidl/android/hardware/emvco/DiscoveryMode.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
 #include <aidl/android/hardware/emvco/INfcStateChangeRequestCallback.h>
 #include <android-base/logging.h>
@@ -105,6 +106,8 @@ public:
           ::aidl::android::hardware::emvco::INfcStateChangeRequestCallback>
           &in_nfcStateChangeCallback,
       bool *_aidl_return);
+  ::ndk::ScopedAStatus getCurrentDiscoveryMode(
+      ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return);
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -99,6 +99,15 @@ public:
    * @return void
    */
   ::ndk::ScopedAStatus onNfcStateChange(NfcState in_nfcState) override;
+
+  /**
+   * @brief returns the current active profile type.
+   *
+   * @return DiscoveryMode - NFC/EMVCo/Unknown
+   *
+   */
+  ::ndk::ScopedAStatus getCurrentDiscoveryMode(
+      ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) override;
 };
 
 } // namespace emvco

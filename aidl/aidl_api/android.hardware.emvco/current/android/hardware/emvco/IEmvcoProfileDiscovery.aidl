@@ -40,4 +40,5 @@ interface IEmvcoProfileDiscovery {
   void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
   void onNfcStateChange(android.hardware.emvco.NfcState in_nfcState);
   boolean registerNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeRequestCallback in_nfcStateChangeCallback);
+  android.hardware.emvco.DiscoveryMode getCurrentDiscoveryMode();
 }

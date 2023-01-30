@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -52,6 +52,8 @@ void handle_nfc_state_change(int32_t nfc_state) {
     pthread_mutex_lock(&nfcStatusSyncLock);
     pthread_cond_signal(&nfcStatusCondVar);
     pthread_mutex_unlock(&nfcStatusSyncLock);
+  } else if (nfc_status == STATE_ON) {
+    modeSwitchArgs->current_discovery_mode = NFC;
   }
   return;
 }
@@ -128,7 +130,6 @@ void *handle_set_emvco_modeImpl(void *vargp) {
 void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
   LOG_EMVCOHAL_D("%s emvco_config:%d is_start_emvco:%d", __func__, emvco_config,
                  is_start_emvco);
-  modeSwitchArgs = (struct emvco_args *)malloc(sizeof(struct emvco_args));
   modeSwitchArgs->emvco_config = emvco_config;
   modeSwitchArgs->is_start_emvco = is_start_emvco;
   pthread_t thread_id;
@@ -137,6 +138,11 @@ void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
   return;
 }
 
+discovery_mode_t get_current_mode() {
+  LOG_EMVCOHAL_D("%s current_discovery_mode:%d", __func__,
+                 modeSwitchArgs->current_discovery_mode);
+  return modeSwitchArgs->current_discovery_mode;
+}
 /**
  *
  * Description      Build RF discovery configurations from
@@ -246,6 +252,7 @@ void *process_emvco_mode_rsp_impl(void *vargp) {
       case MSG_RF_DISCOVER_RSP: {
         if (p_len == 4) {
           LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
+          modeSwitchArgs->current_discovery_mode = EMVCO;
           lib_emvco_message_t msg;
           msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
           msg.p_msg_data = NULL;

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -49,6 +49,10 @@ typedef uint8_t emvco_event_t;
  *
  */
 typedef uint8_t emvco_status_t;
+
+typedef enum { NFC = 1, EMVCO, UNKNOWN } discovery_mode_t;
+
+discovery_mode_t discovery_mode;
 
 #ifdef __cplusplus
 }

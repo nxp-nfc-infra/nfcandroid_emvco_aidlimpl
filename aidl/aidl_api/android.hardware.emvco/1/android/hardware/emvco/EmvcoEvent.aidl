@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -36,9 +36,11 @@
 package android.hardware.emvco;
 @Backing(type="int") @VintfStability
 enum EmvcoEvent {
-  EMVCO_HAL_OPEN_CPLT_EVT = 0,
-  EMVCO_HAL_CLOSE_CPLT_EVT = 1,
-  EMVCO_MODE_START_EVT = 2,
-  EMVCO_POLL_ACTIVATE_EVT = 3,
-  EMVCO_MODE_STOP_EVT = 4,
+  EMVCO_OPEN_CHNL_CPLT_EVT = 0,
+  EMVCO_OPEN_CHNL_ERROR_EVT = 1,
+  EMVCO_CLOSE_CHNL_CPLT_EVT = 2,
+  EMVCO_POOLING_START_EVT = 3,
+  EMVCO_POLLING_STARTED_EVT = 4,
+  EMVCO_POLLING_STOP_EVT = 5,
+  EMVCO_UN_SUPPORTED_CARD_EVT = 6,
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -52,6 +52,13 @@ EmvcoProfileDiscovery::onNfcStateChange(NfcState in_nfcState) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->onNfcStateChange(in_nfcState);
 }
+
+::ndk::ScopedAStatus EmvcoProfileDiscovery::getCurrentDiscoveryMode(
+    ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->getCurrentDiscoveryMode(_aidl_return);
+}
+
 } // namespace emvco
 } // namespace hardware
 } // namespace android

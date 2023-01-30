@@ -21,6 +21,7 @@ package android.hardware.emvco;
 import android.hardware.emvco.IEmvcoClientCallback;
 import android.hardware.emvco.INfcStateChangeRequestCallback;
 import android.hardware.emvco.NfcState;
+import android.hardware.emvco.DiscoveryMode;
 
 @VintfStability
 interface IEmvcoProfileDiscovery {
@@ -74,4 +75,12 @@ interface IEmvcoProfileDiscovery {
     * @return boolean returns true, if success and returns false, if failed to register
     */
     boolean registerNFCStateChangeCallback(in INfcStateChangeRequestCallback in_nfcStateChangeCallback);
+
+    /**
+    * @brief returns the current active profile type.
+    *
+    * @return DiscoveryMode - NFC/EMVCo/Unknown
+    *
+    */
+    DiscoveryMode getCurrentDiscoveryMode();
 }

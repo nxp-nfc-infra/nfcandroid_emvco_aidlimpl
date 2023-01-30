@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -38,7 +38,4 @@ package android.hardware.emvco;
 enum EmvcoStatus {
   EMVCO_STATUS_OK = 0,
   EMVCO_STATUS_FAILED = 1,
-  EMVCO_STATUS_ERR_TRANSPORT = 2,
-  EMVCO_STATUS_ERR_CMD_TIMEOUT = 3,
-  EMVCO_STATUS_REFUSED = 4,
 }

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -490,6 +490,12 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
                           emvco_state_change_callback_t *p_nfc_state_cback) {
   LOG_EMVCOHAL_D("%s:", __func__);
+  if (modeSwitchArgs == NULL) {
+    modeSwitchArgs = (struct emvco_args *)malloc(sizeof(struct emvco_args));
+    modeSwitchArgs->current_discovery_mode = UNKNOWN;
+    modeSwitchArgs->emvco_config = -1;
+    modeSwitchArgs->is_start_emvco = false;
+  }
   m_p_nfc_stack_cback = p_cback;
   m_p_nfc_stack_data_cback = p_data_cback;
   m_p_nfc_state_cback = p_nfc_state_cback;
