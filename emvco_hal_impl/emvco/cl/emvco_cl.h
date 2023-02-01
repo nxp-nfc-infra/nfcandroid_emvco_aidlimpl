@@ -91,13 +91,10 @@ void set_emvco_mode_impl(const int8_t emvco_config, bool_t is_start_emvco);
 /**
  * @brief starts the EMVCo mode with the Device-Controller.
  *
- * @param[in] in_disc_mask EMVCo polling technologies are configured through
- * this parameter
- *
  * @return EMVCO_STATUS indicates success or failure
  *
  */
-EMVCO_STATUS start_emvco_mode(const int8_t in_disc_mask);
+EMVCO_STATUS start_emvco_mode();
 
 /**
  * @brief stops the EMVCo mode with the Device-Controller.

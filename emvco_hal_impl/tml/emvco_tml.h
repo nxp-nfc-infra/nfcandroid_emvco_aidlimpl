@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -162,21 +162,16 @@ typedef struct tml_read_write_info {
 typedef struct tml_emvco_context {
   pthread_t reader_thread; /*Handle to the thread which handles write and read
                              operations */
-  pthread_t writer_thread;
   volatile uint8_t
       b_thread_done; /*Flag to decide whether to run or abort the thread */
   config_retrans_t e_config; /*Retransmission of Nci Packet during timeout */
   uint8_t b_retry_count;     /*Number of times retransmission shall happen */
-  uint8_t bWriteCbInvoked; /* Indicates whether write callback is invoked during
-                              retransmission */
   uint32_t dw_timer_id;    /* Timer used to retransmit nci packet */
   tml_read_write_info_t t_read_info;  /*Pointer to Reader Thread Structure */
-  tml_read_write_info_t t_write_info; /*Pointer to Writer Thread Structure */
   void *p_dev_handle;                 /* Pointer to Device Handle */
   uintptr_t dw_callback_thread_id; /* Thread ID to which message to be posted */
   uint8_t b_enable_crc; /*Flag to validate/not CRC for input buffer */
   sem_t rx_semaphore;
-  sem_t tx_semaphore;       /* Lock/Aquire txRx Semaphore */
   sem_t post_msg_semaphore; /* Semaphore to post message atomically by Reader &
                              writer thread */
   pthread_mutex_t
@@ -188,20 +183,20 @@ typedef struct tml_emvco_context {
  * TML Configuration exposed to upper layer.
  */
 typedef struct tml_emvco_Config {
-  /* Port name connected to PN54X
+  /* Port name connected to PN72X
    *
-   * Platform specific canonical device name to which PN54X is connected.
+   * Platform specific canonical device name to which PN72X is connected.
    *
-   * e.g. On Linux based systems this would be /dev/PN54X
+   * e.g. On Linux based systems this would be /dev/PN72X
    */
   int8_t *p_dev_name;
   /* Callback Thread ID
    *
    * This is the thread ID on which the Reader & Writer thread posts message. */
   uintptr_t dw_get_msg_thread_id;
-  /* Communication speed between DH and PN54X
+  /* Communication speed between DH and PN72X
    *
-   * This is the baudrate of the bus for communication between DH and PN54X */
+   * This is the baudrate of the bus for communication between DH and PN72X */
   uint32_t dw_baud_rate;
 } tml_emvco_Config_t, *ptml_emvco_Config_t; /* pointer to tml_emvco_Config_t */
 
@@ -294,7 +289,7 @@ void tml_cleanup(void);
  *                  NOTE:
  *                  * it is important to post a message with id
  *                    TMLNFC_WRITE_MESSAGE to IntegrationThread after data
- *                    has been written to PN54X
+ *                    has been written to PN72X
  *                  * if CRC needs to be computed, then input buffer should be
  *                    capable to store two more bytes apart from length of
  *                    packet
@@ -312,9 +307,7 @@ void tml_cleanup(void);
  *                  EMVCO_STATUS_BUSY - write request is already in progress
  *
  */
-EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length,
-                       transact_completion_callback_t pTmlWriteComplete,
-                       void *p_context);
+EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length);
 /**
  *
  * @brief           Asynchronously reads data from the driver
@@ -342,24 +335,6 @@ EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length,
 EMVCO_STATUS tml_read(uint8_t *p_buffer, uint16_t w_length,
                       transact_completion_callback_t pTmlReadComplete,
                       void *p_context);
-
-/**
- * @brief      Aborts pending write request (if any)
- *
- * @param[in]       None
- *
- * @return          NFC status:
- *                  EMVCO_STATUS_SUCCESS - ongoing write operation aborted
- *                  EMVCO_STATUS_INVALID_PARAMETER - at least one parameter is
- *                                                invalid
- *                  EMVCO_STATUS_NOT_INITIALIZED - TML layer is not initialized
- *                  EMVCO_STATUS_BOARD_COMMUNICATION_ERROR - unable to cancel
- * write
- *                                                        operation
- *
- */
-EMVCO_STATUS tml_write_abort(void);
-
 /**
  *
  * @brief       Aborts pending read request (if any)

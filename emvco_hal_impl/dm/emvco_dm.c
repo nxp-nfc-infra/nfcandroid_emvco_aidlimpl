@@ -76,8 +76,6 @@ rf_setting_t phNxpNciRfSet = {false, {0}};
 
 eeprom_area_t eeprom_area = {false, {0}};
 
-extern pthread_cond_t nfcStatusCondVar;
-extern pthread_mutex_t nfcStatusSyncLock;
 
 /**************** local methods used in this file only ************************/
 static void open_app_data_channel_complete(EMVCO_STATUS status);
@@ -86,8 +84,6 @@ static int handle_power_cycle(void);
 int min_close_app_data_channel(void);
 static void min_open_app_data_channel_complete(EMVCO_STATUS status);
 static int check_ncicmd_write_window(uint16_t cmd_len, uint8_t *p_cmd);
-static void send_app_data_complete(void *p_context,
-                                   osal_transact_info_t *pInfo);
 static void read_app_data_complete(void *p_context,
                                    osal_transact_info_t *pInfo);
 static void close_app_data_channel_complete(EMVCO_STATUS status);
@@ -262,18 +258,6 @@ int open_app_data_channelImpl(
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("open_app_data_channel nfc_status:%d", nfc_status);
 
-  if (nfc_status != STATE_OFF) {
-    if (0 != osal_sem_init(&nfc_status_semaphore, 0, 1)) {
-      LOG_EMVCOHAL_D("osal_sem_init() Failed, errno = 0x%02X", errno);
-    }
-    LOG_EMVCOHAL_D("Disable NFC");
-    p_nfc_state_cback(false);
-
-    pthread_mutex_lock(&nfcStatusSyncLock);
-    pthread_cond_wait(&nfcStatusCondVar, &nfcStatusSyncLock);
-    pthread_mutex_unlock(&nfcStatusSyncLock);
-  }
-
   if (nci_hal_ctrl.halStatus == HAL_STATUS_OPEN) {
     LOG_EMVCOHAL_D("open_app_data_channel already open");
     return EMVCO_STATUS_SUCCESS;
@@ -355,9 +339,10 @@ int min_open_app_data_channel() {
   osal_memset(&tTmlConfig, 0x00, sizeof(tTmlConfig));
   osal_memset(&nxpprofile_ctrl, 0, sizeof(nci_profile_Control_t));
 
-  /*Init binary semaphore for Spi Nfc synchronization*/
-  if (0 != osal_sem_init(&nci_hal_ctrl.sync_spi_nfc, 0, 1)) {
-    LOG_EMVCOHAL_E("osal_sem_init() FAiled, errno = 0x%02X", errno);
+  /*Init binary semaphore to handle back to back NCI write synchronization*/
+  if (0 != osal_sem_init(&nci_hal_ctrl.sync_nci_write, 0, 1)) {
+    LOG_EMVCOHAL_E("osal_sem_init() FAiled for sync_nci_write, errno = 0x%02X",
+                   errno);
     goto clean_and_return;
   }
 
@@ -566,17 +551,6 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
   /* Create local copy of cmd_data */
   osal_memcpy(nci_hal_ctrl.p_cmd_data, p_data, data_len);
   nci_hal_ctrl.cmd_len = data_len;
-#ifdef P2P_PRIO_LOGIC_HAL_IMP
-  /* Specific logic to block RF disable when P2P priority logic is busy */
-  if (data_len < NORMAL_MODE_HEADER_LEN) {
-    /* Avoid OOB Read */
-    android_errorWriteLog(0x534e4554, "128530069");
-  } else if (p_data[0] == 0x21 && p_data[1] == 0x06 && p_data[2] == 0x01 &&
-             EnableP2P_PrioLogic == true) {
-    LOG_EMVCOHAL_D("P2P priority logic busy: Disable it.");
-    phNxpNciHal_clean_P2P_Prio();
-  }
-#endif
 
   /* Check for NXP ext before sending write */
   status = send_app_data_ext(&nci_hal_ctrl.cmd_len, nci_hal_ctrl.p_cmd_data,
@@ -636,29 +610,10 @@ int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data) {
     data_len = 0;
     goto clean_and_return;
   }
-
 retry:
-
-  data_len = nci_hal_ctrl.cmd_len;
-
   status = tml_write((uint8_t *)nci_hal_ctrl.p_cmd_data,
-                     (uint16_t)nci_hal_ctrl.cmd_len,
-                     (transact_completion_callback_t)&send_app_data_complete,
-                     (void *)&cb_data);
-  if (status != EMVCO_STATUS_PENDING) {
-    LOG_EMVCOHAL_E("write_unlocked status error");
-    data_len = 0;
-    goto clean_and_return;
-  }
-
-  /* Wait for callback response */
-  if (SEM_WAIT(cb_data)) {
-    LOG_EMVCOHAL_E("write_unlocked semaphore error");
-    data_len = 0;
-    goto clean_and_return;
-  }
-
-  if (cb_data.status != EMVCO_STATUS_SUCCESS) {
+                     (uint16_t)nci_hal_ctrl.cmd_len);
+  if (status != EMVCO_STATUS_SUCCESS) {
     data_len = 0;
     if (nci_hal_ctrl.retry_cnt++ < MAX_RETRY_COUNT) {
       LOG_EMVCOHAL_D(
@@ -672,7 +627,7 @@ retry:
                      "0x%x)",
                      nci_hal_ctrl.retry_cnt);
 
-      osal_sem_post(&(nci_hal_ctrl.sync_spi_nfc));
+      osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
 
       status = tml_ioctl(ResetDevice);
 
@@ -701,45 +656,20 @@ clean_and_return:
   cleanup_cb_data(&cb_data);
   return data_len;
 }
-
-/******************************************************************************
- * Function         send_app_data_complete
- *
- * Description      This function handles write callback.
- *
- * Returns          void.
- *
- ******************************************************************************/
-static void send_app_data_complete(void *p_context,
-                                   osal_transact_info_t *pInfo) {
-  nci_hal_sem *p_cb_data = (nci_hal_sem *)p_context;
-  if (pInfo->w_status == EMVCO_STATUS_SUCCESS) {
-    LOG_EMVCOHAL_D("write successful status = 0x%x", pInfo->w_status);
+static bool is_data_credit_received(osal_transact_info_t *pInfo) {
+  if ((6 == pInfo->w_length) &&
+      (pInfo->p_buff[0] == NCI_MT_NTF &&
+       pInfo->p_buff[1] == NCI_CORE_CONN_CREDITS_NTF &&
+       pInfo->p_buff[2] == NCI_CORE_CONN_CREDITS_NTF_LEN &&
+       pInfo->p_buff[3] == NCI_CORE_CONN_CREDITS_NTF_NO_OF_ENTRY &&
+       pInfo->p_buff[4] == NCI_CORE_CONN_CREDITS_NTF_CONN_ID &&
+       pInfo->p_buff[5] == NCI_CORE_CONN_CREDITS_NTF_CONN_CREDITS)) {
+    return true;
   } else {
-    LOG_EMVCOHAL_D("write error status = 0x%x", pInfo->w_status);
+    return false;
   }
-
-  p_cb_data->status = pInfo->w_status;
-
-  SEM_POST(p_cb_data);
-
-  return;
 }
 
-/******************************************************************************
- * Function         read_app_data_complete
- *
- * Description      This function is called whenever there is an NCI packet
- *                  received from NFCC. It could be RSP or NTF packet. This
- *                  function provide the received NCI packet to libnfc-nci
- *                  using data callback of libnfc-nci.
- *                  There is a pending read called from each
- *                  read_app_data_complete so each a packet received from
- *                  NFCC can be provide to libnfc-nci.
- *
- * Returns          void.
- *
- ******************************************************************************/
 static void read_app_data_complete(void *p_context,
                                    osal_transact_info_t *pInfo) {
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
@@ -750,9 +680,12 @@ static void read_app_data_complete(void *p_context,
   }
   if (pInfo->w_status == EMVCO_STATUS_SUCCESS) {
 
-    osal_sem_getvalue(&(nci_hal_ctrl.sync_spi_nfc), &sem_val);
-    if (((pInfo->p_buff[0] & NCI_MT_MASK) == NCI_MT_RSP) && sem_val == 0) {
-      osal_sem_post(&(nci_hal_ctrl.sync_spi_nfc));
+    osal_sem_getvalue(&(nci_hal_ctrl.sync_nci_write), &sem_val);
+
+    if (((pInfo->p_buff[0] & NCI_MT_MASK) == NCI_MT_RSP ||
+         is_data_credit_received(pInfo)) &&
+        sem_val == 0) {
+      osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
     }
     /*Check the Omapi command response and store in dedicated buffer to solve
      * sync issue*/
@@ -828,9 +761,9 @@ int close_app_data_channel(bool bShutdown) {
   CONCURRENCY_LOCK();
 
   int sem_val;
-  osal_sem_getvalue(&(nci_hal_ctrl.sync_spi_nfc), &sem_val);
+  osal_sem_getvalue(&(nci_hal_ctrl.sync_nci_write), &sem_val);
   if (sem_val == 0) {
-    osal_sem_post(&(nci_hal_ctrl.sync_spi_nfc));
+    osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
   }
   if (!bShutdown) {
     status = snd_core_set_config(&p_cmd_ven_disable_nci[0],
@@ -844,13 +777,11 @@ int close_app_data_channel(bool bShutdown) {
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
   }
-  osal_sem_destroy(&nci_hal_ctrl.sync_spi_nfc);
-
+  osal_sem_destroy(&nci_hal_ctrl.sync_nci_write);
   if (NULL != gptml_emvco_context->p_dev_handle) {
     close_app_data_channel_complete(EMVCO_STATUS_SUCCESS);
     /* Abort any pending read and write */
     status = tml_read_abort();
-    status = tml_write_abort();
 
     osal_timer_cleanup();
 
@@ -893,12 +824,11 @@ int min_close_app_data_channel(void) {
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
   }
-  sem_destroy(&nci_hal_ctrl.sync_spi_nfc);
+  osal_sem_destroy(&nci_hal_ctrl.sync_nci_write);
   if (NULL != gptml_emvco_context->p_dev_handle) {
     close_app_data_channel_complete(EMVCO_STATUS_SUCCESS);
     /* Abort any pending read and write */
     status = tml_read_abort();
-    status = tml_write_abort();
 
     osal_timer_cleanup();
 
@@ -1022,11 +952,11 @@ int check_ncicmd_write_window(uint16_t cmd_len, uint8_t *p_cmd) {
     return EMVCO_STATUS_FAILED;
   }
 
-  if ((p_cmd[0] & 0xF0) == 0x20) {
+  if ((p_cmd[0] & 0xF0) == 0x20 || (p_cmd[0] & 0xF0) == 0x00) {
     clock_gettime(CLOCK_MONOTONIC, &ts);
     ts.tv_sec += sem_timedout;
 
-    while ((s = osal_sem_timedwait_monotonic_np(&nci_hal_ctrl.sync_spi_nfc,
+    while ((s = osal_sem_timedwait_monotonic_np(&nci_hal_ctrl.sync_nci_write,
                                                 &ts)) == -1 &&
            errno == EINTR)
       continue; /* Restart if interrupted by handler */
@@ -1035,7 +965,7 @@ int check_ncicmd_write_window(uint16_t cmd_len, uint8_t *p_cmd) {
       status = EMVCO_STATUS_SUCCESS;
     }
   } else {
-    /* cmd window check not required for writing data packet */
+    /* cmd window check not required for writing non nci cmd and data packet */
     status = EMVCO_STATUS_SUCCESS;
   }
   return status;

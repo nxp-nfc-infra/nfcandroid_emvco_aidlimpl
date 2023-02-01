@@ -826,7 +826,7 @@ static void hal_extns_write_rsp_timeout_cb(uint32_t timerId, void *p_context) {
   LOG_EMVCOHAL_D("hal_extns_write_rsp_timeout_cb - write timeout!!!");
   nci_hal_ctrl.ext_cb_data.status = EMVCO_STATUS_FAILED;
   usleep(1);
-  osal_sem_post(&(nci_hal_ctrl.sync_spi_nfc));
+  osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
   SEM_POST(&(nci_hal_ctrl.ext_cb_data));
 
   return;

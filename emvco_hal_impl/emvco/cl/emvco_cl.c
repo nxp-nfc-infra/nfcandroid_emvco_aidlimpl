@@ -31,8 +31,6 @@ extern tml_emvco_context_t *gptml_emvco_context;
 extern nci_hal_ctrl_t nci_hal_ctrl;
 emvco_args_t *modeSwitchArgs;
 
-pthread_cond_t nfcStatusCondVar = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t nfcStatusSyncLock = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* the RF Discovery Frequency for each technology */
@@ -45,13 +43,31 @@ const tDISC_FREQ_CFG rf_disc_freq_cfg = {
 
 tDISC_FREQ_CFG *p_rf_disc_freq_cfg = (tDISC_FREQ_CFG *)&rf_disc_freq_cfg;
 
+void open_app_data_channel_internal() {
+  int hal_open_status = open_app_data_channelImpl(
+      m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
+  LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, hal_open_status);
+  if (hal_open_status == EMVCO_STATUS_SUCCESS) {
+    lib_emvco_message_t msg;
+    msg.e_msgType = EMVCO_POOLING_STARTING_MSG;
+    msg.p_msg_data = NULL;
+    msg.size = 0;
+    tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
+    start_emvco_mode();
+  } else {
+    lib_emvco_message_t msg;
+    msg.e_msgType = EMVCO_POOLING_START_FAILED_MSG;
+    msg.p_msg_data = NULL;
+    msg.size = 0;
+    tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
+  }
+}
+
 void handle_nfc_state_change(int32_t nfc_state) {
   LOG_EMVCOHAL_D("%s nfc_state:%d", __func__, nfc_state);
   nfc_status = nfc_state;
-  if (nfc_status == STATE_OFF) {
-    pthread_mutex_lock(&nfcStatusSyncLock);
-    pthread_cond_signal(&nfcStatusCondVar);
-    pthread_mutex_unlock(&nfcStatusSyncLock);
+  if (nfc_status == STATE_OFF && modeSwitchArgs->is_start_emvco) {
+    open_app_data_channel_internal();
   } else if (nfc_status == STATE_ON) {
     modeSwitchArgs->current_discovery_mode = NFC;
   }
@@ -85,32 +101,15 @@ bool is_valid_emvco_polling_tech(int8_t emvco_config) {
   }
 }
 
-void *handle_set_emvco_modeImpl(void *vargp) {
+void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
+  LOG_EMVCOHAL_D("%s emvco_config:%d is_start_emvco:%d", __func__, emvco_config,
+                 is_start_emvco);
   pthread_mutex_lock(&emvco_lock);
-  const int8_t emvco_config = ((struct emvco_args *)vargp)->emvco_config;
-  bool_t is_start_emvco = ((struct emvco_args *)vargp)->is_start_emvco;
-  LOG_EMVCOHAL_D("%s is_start_emvco:%d", __func__, is_start_emvco);
-
+  modeSwitchArgs->is_start_emvco = is_start_emvco;
+  modeSwitchArgs->emvco_config = emvco_config;
   if (is_start_emvco) {
     if (is_valid_emvco_polling_tech(emvco_config)) {
-      int hal_open_status = open_app_data_channelImpl(
-          m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
-      LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, is_start_emvco);
-      if (hal_open_status == EMVCO_STATUS_SUCCESS) {
-        lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_POOLING_STARTING_MSG;
-        msg.p_msg_data = NULL;
-        msg.size = 0;
-        tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-        start_emvco_mode(emvco_config);
-      } else {
-        lib_emvco_message_t msg;
-        msg.e_msgType = EMVCO_POOLING_START_FAILED_MSG;
-        msg.p_msg_data = NULL;
-        msg.size = 0;
-        tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-      }
-
+      m_p_nfc_state_cback(false);
     } else {
       LOG_EMVCOHAL_D("%s In-valid polling technlogy", __func__);
       (*m_p_nfc_stack_cback)(EMVCO_POOLING_START_EVT, STATUS_FAILED);
@@ -124,17 +123,6 @@ void *handle_set_emvco_modeImpl(void *vargp) {
     }
   }
   pthread_mutex_unlock(&emvco_lock);
-  return NULL;
-}
-
-void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
-  LOG_EMVCOHAL_D("%s emvco_config:%d is_start_emvco:%d", __func__, emvco_config,
-                 is_start_emvco);
-  modeSwitchArgs->emvco_config = emvco_config;
-  modeSwitchArgs->is_start_emvco = is_start_emvco;
-  pthread_t thread_id;
-  (void)pthread_create(&thread_id, NULL, handle_set_emvco_modeImpl,
-                       (void *)modeSwitchArgs);
   return;
 }
 
@@ -182,37 +170,31 @@ uint8_t get_rf_discover_config(tDISC_TECH_PROTO_MASK dm_disc_mask,
   return num_params;
 }
 
-EMVCO_STATUS start_emvco_mode(const int8_t emvco_config) {
-  LOG_EMVCOHAL_D("start_emvco_mode %s emvco_config: %d", __func__,
-                 emvco_config);
-  modeSwitchArgs->is_start_emvco = true;
+EMVCO_STATUS start_emvco_mode() {
+  LOG_EMVCOHAL_D("%s", __func__);
   uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
   snd_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
   return EMVCO_STATUS_SUCCESS;
 }
 
 EMVCO_STATUS stop_emvco_mode() {
-  LOG_EMVCOHAL_D("stop_emvco_mode send nci_stop_discovery");
-
-  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
-  int mode_switch_status = tml_ioctl(NFCCModeSwitchOff);
-  LOG_EMVCOHAL_D("%s EMVCO_MODE_OFF status:%d", __func__, mode_switch_status);
+  LOG_EMVCOHAL_D("stop_emvco_mode nci_stop_discovery without modeswitch");
   led_switch_control(EMVCO_MODE_OFF);
   int hal_close_status = close_app_data_channel(true);
   LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
 
   (*m_p_nfc_state_cback)(true);
-  return status;
+  return EMVCO_STATUS_SUCCESS;
 }
 
-void *process_emvco_mode_rsp_impl(void *vargp) {
-  osal_transact_info_t *pTransactionInfo = vargp;
+EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp");
   uint8_t *p_ntf = pTransactionInfo->p_buff;
   uint16_t p_len = pTransactionInfo->w_length;
   if (!modeSwitchArgs->is_start_emvco) {
-    return NULL;
+    return EMVCO_STATUS_FAILED;
   }
-  LOG_EMVCOHAL_D("process_emvco_mode_rsp_impl data_len:%d "
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp data_len:%d "
                  "modeSwitchArgs->is_start_emvco:%d",
                  p_len, modeSwitchArgs->is_start_emvco);
   uint8_t msg_type, pbf, group_id, op_code, *p_data;
@@ -224,7 +206,7 @@ void *process_emvco_mode_rsp_impl(void *vargp) {
 
   if (!(NCI_GID_CORE == group_id || NCI_GID_PROP == group_id ||
         NCI_GID_RF_MANAGE == group_id)) {
-    return NULL;
+    return EMVCO_STATUS_FAILED;
   }
   NCI_MSG_PRS_HDR1(p_data, op_code);
   LOG_EMVCOHAL_D("process_emvco_mode_rsp op_code:%d", op_code);
@@ -263,20 +245,6 @@ void *process_emvco_mode_rsp_impl(void *vargp) {
       }
     }
     break;
-  }
-  return NULL;
-}
-
-EMVCO_STATUS
-process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
-  pthread_t thread_id;
-  int pthread_create_status = 0;
-
-  pthread_create_status = pthread_create(
-      &thread_id, NULL, process_emvco_mode_rsp_impl, pTransactionInfo);
-  if (0 != pthread_create_status) {
-    /* thread create failed */
-    return EMVCO_STATUS_FAILED;
   }
   return EMVCO_STATUS_SUCCESS;
 }

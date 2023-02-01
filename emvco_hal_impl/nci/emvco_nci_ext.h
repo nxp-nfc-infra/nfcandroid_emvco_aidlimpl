@@ -27,9 +27,15 @@
 #include <emvco_tml.h>
 #include <string.h>
 
+#define NCI_MT_DATA 0x00
 #define NCI_MT_CMD 0x20
 #define NCI_MT_RSP 0x40
 #define NCI_MT_NTF 0x60
+#define NCI_CORE_CONN_CREDITS_NTF 0x06
+#define NCI_CORE_CONN_CREDITS_NTF_LEN 0x03
+#define NCI_CORE_CONN_CREDITS_NTF_NO_OF_ENTRY 0x01
+#define NCI_CORE_CONN_CREDITS_NTF_CONN_ID 0x00
+#define NCI_CORE_CONN_CREDITS_NTF_CONN_CREDITS 0x01
 
 void nci_ext_init(void);
 

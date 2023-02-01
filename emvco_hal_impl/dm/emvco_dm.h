@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022,2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@ typedef struct nci_hal_ctrl {
 
   /* Waiting semaphore */
   nci_hal_sem ext_cb_data;
-  sem_t sync_spi_nfc;
+  sem_t sync_nci_write;
 
   uint16_t cmd_len;
   uint8_t p_cmd_data[NCI_MAX_DATA_LEN];
