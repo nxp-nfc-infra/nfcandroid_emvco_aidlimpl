@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -45,14 +45,15 @@ extern bool emvco_debug_enabled;
 #define ENABLE_NCIX_TRACES TRUE
 #define ENABLE_NCIR_TRACES TRUE
 
-/* ####################### Set the log module name in .conf file
- * ########################## */
-#define NAME_LOG_EXTNS_LOGLEVEL "LOG_EXTNS_LOGLEVEL"
-#define NAME_LOG_HAL_LOGLEVEL "LOG_NCIHAL_LOGLEVEL"
-#define NAME_LOG_NCIX_LOGLEVEL "LOG_NCIX_LOGLEVEL"
-#define NAME_LOG_NCIR_LOGLEVEL "LOG_NCIR_LOGLEVEL"
-#define NAME_LOG_TML_LOGLEVEL "LOG_TML_LOGLEVEL"
-
+#define NAME_NXP_LOG_EXTNS_LOGLEVEL "NXP_LOG_EXTNS_LOGLEVEL"
+#define NAME_NXP_LOG_NCIHAL_LOGLEVEL "NXP_LOG_NCIHAL_LOGLEVEL"
+#define NAME_NXP_LOG_NCIX_LOGLEVEL "NXP_LOG_NCIX_LOGLEVEL"
+#define NAME_NXP_LOG_NCIR_LOGLEVEL "NXP_LOG_NCIR_LOGLEVEL"
+#define NAME_NXP_LOG_TML_LOGLEVEL "NXP_LOG_TML_LOGLEVEL"
+#define NAME_NXP_EMVCO_DEBUG_ENABLED "NXP_EMVCO_DEBUG_ENABLED"
+#define NAME_NXP_EMVCO_DEV_NODE "NXP_EMVCO_DEV_NODE"
+#define NAME_NXP_ACT_PROP_EXTN "NXP_ACT_PROP_EXTN"
+#define NAME_NXP_VAS_ECP "NXP_VAS_ECP"
 /* ####################### Set the log module name by Android property
  * ########################## */
 #define PROP_NAME_LOG_GLOBAL_LOGLEVEL "emvco.log_level_global"

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -79,11 +79,18 @@ uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   size = tlv_size;
   pt = p_param_tlvs;
   while (size > 1) {
-    size -= 3;
-    pt += 2;
+
+    if (*pt == 0xA0 || *pt == 0xA1) {
+      size -= 3;
+      pt += 2;
+    } else {
+      size -= 2;
+      pt++;
+    }
+
     num++;
-    ulen = *pt;
-    pt += (ulen + 1);
+    ulen = *pt++;
+    pt += ulen;
     if (size >= ulen) {
       size -= ulen;
     } else {

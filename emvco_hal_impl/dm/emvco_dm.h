@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022,2023 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 #include <emvco_util.h>
 #include <pthread.h>
 /********************* Definitions and structures *****************************/
+#define DEF_NFC_DEV_NODE "/dev/nxpnfc"
 #define MAX_INIT_RETRY_COUNT 3
 #define MAX_RETRY_COUNT 5
 #define NCI_MAX_DATA_LEN 300

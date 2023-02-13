@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ int main() {
     LOG(INFO) << "failed to set thread pool max thread count";
     return 1;
   }
-  std::shared_ptr<Emvco> emvco_service = ndk::SharedRefBase::make<Emvco>();
+  std::shared_ptr<Emvco> emvco_service = Emvco::getInstance();
 
   const std::string instance = std::string() + Emvco::descriptor + "/default";
   ALOGD_IF(EMVCO_HAL_DEBUG, "EMVCo Registering service: %s", instance.c_str());

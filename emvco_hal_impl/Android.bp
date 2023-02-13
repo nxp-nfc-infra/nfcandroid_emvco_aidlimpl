@@ -45,6 +45,7 @@ cc_library_shared {
         "utils/emvco_config.c",
         "utils/emvco_util.c",
         "utils/sparse_crc32.c",
+        "utils/map.c",
     ],
 
     local_include_dirs: [

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022,2023 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -62,7 +62,7 @@ extern uint16_t wFwVer;
 extern uint16_t rom_version;
 
 uint32_t timeoutTimerId = 0;
-bool emvco_debug_enabled = true;
+bool emvco_debug_enabled;
 
 /*  Used to send Callback Transceive data during Mifare Write.
  *  If this flag is enabled, no need to send response to Upper layer */
@@ -104,7 +104,9 @@ static void initialize_debug_enabled_flag();
  ******************************************************************************/
 static void initialize_debug_enabled_flag() {
   unsigned long num = 0;
-  if (get_num_value(NAME_EMVCO_DEBUG_ENABLED, &num, sizeof(num))) {
+  unsigned int num_len = 0;
+  if (get_byte_value(NAME_NXP_EMVCO_DEBUG_ENABLED, &num, &num_len)) {
+    LOG_EMVCOHAL_D("emvco_debug_enabled conf from file: %lu", num);
     emvco_debug_enabled = (num == 0) ? false : true;
   }
   LOG_EMVCOHAL_D("emvco_debug_enabled : %d", emvco_debug_enabled);
@@ -303,8 +305,10 @@ clean_and_return:
 int min_open_app_data_channel() {
   osal_emvco_config_t tOsalConfig;
   tml_emvco_Config_t tTmlConfig;
-  char *nfc_dev_node = NULL;
-  const uint16_t max_len = 260;
+  char *buffer = NULL;
+  unsigned int bufflen = 0;
+  char *p_nfc_dev_node = NULL;
+  unsigned int dev_node_size = 0;
   uint32_t mode_switch_status;
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
@@ -320,10 +324,6 @@ int min_open_app_data_channel() {
 
   int init_retry_cnt = 0, set_config_retry_cnt = 0;
   int8_t ret_val = 0x00;
-
-  initialize_debug_enabled_flag();
-  /* initialize trace level */
-  initialize_log_level();
 
   /*Create the timer for extns write response*/
   timeoutTimerId = osal_timer_create();
@@ -351,22 +351,26 @@ int min_open_app_data_channel() {
 
   /*nci version NCI_VERSION_UNKNOWN version by default*/
   nci_hal_ctrl.nci_info.nci_version = NCI_VERSION_UNKNOWN;
+
   /* Read the nfc device node name */
-  nfc_dev_node = (char *)malloc(max_len * sizeof(char));
-  if (nfc_dev_node == NULL) {
-    LOG_EMVCOHAL_D("malloc of nfc_dev_node failed ");
-    goto clean_and_return;
-  } else if (!get_str_value(NAME_CFG_NXP_NFC_DEV_NODE, nfc_dev_node, max_len)) {
+  if (!get_byte_array_value(NAME_NXP_EMVCO_DEV_NODE, &p_nfc_dev_node,
+                            &dev_node_size)) {
     LOG_EMVCOHAL_D(
         "Invalid nfc device node name keeping the default device node "
         "/dev/nxpnfc");
-    strlcpy(nfc_dev_node, "/dev/nxpnfc", (max_len * sizeof(char)));
+    int len = (sizeof(char) * strlen(DEF_NFC_DEV_NODE) + 1);
+    p_nfc_dev_node = (char *)malloc(len);
+    if (p_nfc_dev_node == NULL) {
+      LOG_EMVCOHAL_E("malloc of p_nfc_dev_node failed ");
+      goto clean_and_return;
+    }
+    strlcpy(p_nfc_dev_node, DEF_NFC_DEV_NODE, len);
   }
 
   /* Configure hardware link */
   nci_hal_ctrl.gDrvCfg.n_client_id = osal_msg_get(0, 0600);
   nci_hal_ctrl.gDrvCfg.n_link_type = ENUM_LINK_TYPE_I2C;
-  tTmlConfig.p_dev_name = (int8_t *)nfc_dev_node;
+  tTmlConfig.p_dev_name = (int8_t *)p_nfc_dev_node;
   tOsalConfig.dw_callback_thread_id =
       (uintptr_t)nci_hal_ctrl.gDrvCfg.n_client_id;
   tOsalConfig.p_log_file = NULL;
@@ -378,9 +382,9 @@ int min_open_app_data_channel() {
     LOG_EMVCOHAL_E("tml_init Failed");
     goto clean_and_return;
   } else {
-    if (nfc_dev_node != NULL) {
-      osal_free(nfc_dev_node);
-      nfc_dev_node = NULL;
+    if (p_nfc_dev_node != NULL) {
+      osal_free(p_nfc_dev_node);
+      p_nfc_dev_node = NULL;
     }
   }
 
@@ -456,6 +460,27 @@ init_retry:
     }
   } while (set_config_retry_cnt < 3);
 
+  set_config_retry_cnt = 0;
+
+  get_byte_array_value(NAME_NXP_VAS_ECP, &buffer, &bufflen);
+  if (buffer != NULL) {
+    do {
+      status = send_ext_cmd(bufflen, (uint8_t *)buffer);
+      if (status == EMVCO_STATUS_SUCCESS) {
+        set_config_retry_cnt = 0;
+        break;
+      } else {
+        LOG_EMVCOHAL_E("NCI_SET_CONFIG_VAS Failed");
+        ++set_config_retry_cnt;
+      }
+    } while (set_config_retry_cnt < 3);
+  } else {
+    LOG_EMVCOHAL_E("NCI_SET_CONFIG_VAS command not found from config. "
+                   "NCI_SET_CONFIG_VAS Failed");
+  }
+  free(buffer);
+  buffer = NULL;
+
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);
   LOG_EMVCOHAL_D("min_open_app_data_channel(): exit");
@@ -464,9 +489,9 @@ init_retry:
 clean_and_return:
   min_close_app_data_channel();
   CONCURRENCY_UNLOCK();
-  if (nfc_dev_node != NULL) {
-    osal_free(nfc_dev_node);
-    nfc_dev_node = NULL;
+  if (p_nfc_dev_node != NULL) {
+    osal_free(p_nfc_dev_node);
+    p_nfc_dev_node = NULL;
   }
   return EMVCO_STATUS_FAILED;
 }
@@ -484,6 +509,11 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
   m_p_nfc_stack_cback = p_cback;
   m_p_nfc_stack_data_cback = p_data_cback;
   m_p_nfc_state_cback = p_nfc_state_cback;
+  read_config(emvco_hal_config_path);
+
+  /* initialize log levels */
+  initialize_debug_enabled_flag();
+  initialize_log_level();
   return EMVCO_STATUS_SUCCESS;
 }
 

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022,2023 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -165,14 +165,9 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
 }
 ::ndk::ScopedAStatus Emvco::setEMVCoMode(int8_t in_config,
                                          bool in_isStartEMVCo) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_config:%d", __func__, in_config);
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_open called check return",
-           __func__);
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_config:%d, in_isStartEMVCo:%d",
+           __func__, in_config, in_isStartEMVCo);
 
-  open_emvco_app_data_channel(eventCallback, dataCallback, setNfcState);
-
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_isStartEMVCo:%d", __func__,
-           in_isStartEMVCo);
   set_emvco_mode(in_config, in_isStartEMVCo);
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: phNxpNciHal_doSetEMVCoMode returned",
            __func__);
