@@ -271,7 +271,7 @@ bool read_config(const char *name) {
           LOG_EXTNS_D("%s map_set key:%s, value:%s \n", __func__, token,
                       strValue);
           map_set(pconfig_map, &token, strlen(token) + 1, &strValue,
-                  strlen(strValue) + 1);
+                  strValue_index+1);
         } else {
           int num_len = floor(log10(abs(numValue))) + 1;
           LOG_EXTNS_D("%s map_set key:%s, value:%d", __func__, token, numValue);
