@@ -45,7 +45,7 @@
 #include <sys/stat.h>
 
 struct map *pconfig_map = NULL;
-
+uint8_t *p_buffer = NULL;
 pthread_mutex_t config_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static size_t readConfigFile(const char *fileName, uint8_t **p_data) {
@@ -62,7 +62,7 @@ static size_t readConfigFile(const char *fileName, uint8_t **p_data) {
     return 0;
   }
 
-  uint8_t *p_buffer = (uint8_t *)malloc(file_size + 1);
+  p_buffer = (uint8_t *)malloc(file_size + 1);
   if (!p_buffer) {
     fclose(fd);
     return 0;
@@ -148,6 +148,7 @@ bool read_config(const char *name) {
 
   if (p_config == NULL) {
     LOG_EXTNS_E("%s Cannot open config file %s\n", __func__, name);
+    pthread_mutex_unlock(&config_mutex);
     return false;
   }
 
