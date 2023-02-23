@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -64,6 +64,7 @@
 #define NCI_MSG_RF_INTF_ACTIVATED 5
 #define NCI_MSG_RF_DEACTIVATE 6
 #define NCI_MSG_RF_FIELD 7
+#define NCI_DISCOVER_PARAM_SIZE_DEACT 0x01
 
 /* builds byte0 of NCI Command and Notification packet */
 #define NCI_MSG_BLD_HDR0(p, mt, gid)                                           \

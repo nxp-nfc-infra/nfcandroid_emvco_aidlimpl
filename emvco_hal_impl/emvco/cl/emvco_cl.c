@@ -173,7 +173,7 @@ uint8_t get_rf_discover_config(tDISC_TECH_PROTO_MASK dm_disc_mask,
 EMVCO_STATUS start_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
   uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
-  snd_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
+  send_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
   return EMVCO_STATUS_SUCCESS;
 }
 
@@ -224,7 +224,7 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
           num_params = get_rf_discover_config(modeSwitchArgs->emvco_config,
                                               disc_params, MAX_DISC_PARAMS);
           LOG_EMVCOHAL_D("RFDiscover num_params:%d", num_params);
-          snd_discover_cmd(num_params, disc_params);
+          send_discover_cmd(num_params, disc_params);
         }
         break;
       }
@@ -234,6 +234,9 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
       case MSG_RF_DISCOVER_RSP: {
         if (p_len == 4) {
           LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
+          nci_hal_ctrl.frag_rsp.data_pos = 0;
+          RESET_CHAINED_DATA();
+
           modeSwitchArgs->current_discovery_mode = EMVCO;
           lib_emvco_message_t msg;
           msg.e_msgType = EMVCO_POLLING_STARTED_MSG;

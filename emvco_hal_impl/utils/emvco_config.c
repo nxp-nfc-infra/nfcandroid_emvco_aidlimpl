@@ -303,8 +303,10 @@ bool read_config(const char *name) {
       break;
     }
   }
-  free(p_config);
-  p_config = NULL;
+  if (p_config != NULL) {
+    free(p_config);
+    p_config = NULL;
+  }
   pthread_mutex_unlock(&config_mutex);
   return true;
 }
@@ -314,9 +316,9 @@ int get_byte_array_value(char *key, char **p_value, unsigned int *value_len) {
   unsigned int value_size;
   void *value = map_get_value(pconfig_map, key, strlen(key) + 1, &value_size);
   if (value != NULL) {
-    *p_value = malloc(value_size);
+    *p_value = osal_malloc(value_size);
     if (!(*p_value)) {
-      LOG_EXTNS_E("%s: malloc failed for key %s", __func__, key);
+      LOG_EXTNS_E("%s: osal_malloc failed for key %s", __func__, key);
       pthread_mutex_unlock(&config_mutex);
       return FALSE;
     }

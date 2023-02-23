@@ -359,7 +359,7 @@ int min_open_app_data_channel() {
         "Invalid nfc device node name keeping the default device node "
         "/dev/nxpnfc");
     int len = (sizeof(char) * strlen(DEF_NFC_DEV_NODE) + 1);
-    p_nfc_dev_node = (char *)malloc(len);
+    p_nfc_dev_node = (char *)osal_malloc(len);
     if (p_nfc_dev_node == NULL) {
       LOG_EMVCOHAL_E("malloc of p_nfc_dev_node failed ");
       goto clean_and_return;
@@ -417,7 +417,7 @@ init_retry:
   mode_switch_status = tml_ioctl(NFCCModeSwitchOn);
   LOG_EMVCOHAL_D("%s modeswitch IOCTL status:%d", __func__, mode_switch_status);
   led_switch_control(EMVCO_MODE_ON);
-  status = snd_core_reset(NCI_RESET_TYPE_KEEP_CFG);
+  status = send_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
     if (init_retry_cnt < 3) {
@@ -432,9 +432,9 @@ init_retry:
   }
 
   if (nci_hal_ctrl.nci_info.nci_version == NCI_VERSION_2_0) {
-    status = snd_core_init(NCI_VERSION_2_0);
+    status = send_core_init(NCI_VERSION_2_0);
   } else {
-    status = snd_core_init(NCI_VERSION_UNKNOWN);
+    status = send_core_init(NCI_VERSION_UNKNOWN);
   }
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_INIT : Failed");
@@ -449,8 +449,8 @@ init_retry:
     goto clean_and_return;
   }
   do {
-    status = snd_core_set_config(&p_cmd_idle_pwr_off_cfg[1],
-                                 p_cmd_idle_pwr_off_cfg[0]);
+    status = send_core_set_config(&p_cmd_idle_pwr_off_cfg[1],
+                                  p_cmd_idle_pwr_off_cfg[0]);
     if (status == EMVCO_STATUS_SUCCESS) {
       set_config_retry_cnt = 0;
       break;
@@ -501,7 +501,8 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_state_change_callback_t *p_nfc_state_cback) {
   LOG_EMVCOHAL_D("%s:", __func__);
   if (modeSwitchArgs == NULL) {
-    modeSwitchArgs = (struct emvco_args *)malloc(sizeof(struct emvco_args));
+    modeSwitchArgs =
+        (struct emvco_args *)osal_malloc(sizeof(struct emvco_args));
     modeSwitchArgs->current_discovery_mode = UNKNOWN;
     modeSwitchArgs->emvco_config = -1;
     modeSwitchArgs->is_start_emvco = false;
@@ -573,7 +574,9 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
   if (nci_hal_ctrl.halStatus != HAL_STATUS_OPEN) {
     return EMVCO_STATUS_FAILED;
   }
-  if (data_len > NCI_MAX_DATA_LEN) {
+  /* (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT) = 0x20 */
+  if ((p_data[0] & (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT)) &&
+      (data_len > NCI_MAX_DATA_LEN)) {
     LOG_EMVCOHAL_E("cmd_len exceeds limit NCI_MAX_DATA_LEN");
     __osal_log_error_write(0x534e4554, "121267042");
     goto clean_and_return;
@@ -616,11 +619,7 @@ clean_and_return:
 }
 
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data) {
-  EMVCO_STATUS status = EMVCO_STATUS_INVALID_PARAMETER;
   nci_hal_sem cb_data;
-  nci_hal_ctrl.retry_cnt = 0;
-  static uint8_t reset_ntf[] = {0x60, 0x00, 0x06, 0xA0, 0x00,
-                                0xC7, 0xD4, 0x00, 0x00};
   /* Create the local semaphore */
   if (init_cb_data(&cb_data, NULL) != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_D("send_app_data_unlocked Create cb data failed");
@@ -640,47 +639,7 @@ int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data) {
     data_len = 0;
     goto clean_and_return;
   }
-retry:
-  status = tml_write((uint8_t *)nci_hal_ctrl.p_cmd_data,
-                     (uint16_t)nci_hal_ctrl.cmd_len);
-  if (status != EMVCO_STATUS_SUCCESS) {
-    data_len = 0;
-    if (nci_hal_ctrl.retry_cnt++ < MAX_RETRY_COUNT) {
-      LOG_EMVCOHAL_D(
-          "write_unlocked failed - controller Maybe in Standby Mode - Retry");
-      /* 10ms delay to give NFCC wake up delay */
-      usleep(1000 * 10);
-      goto retry;
-    } else {
-      LOG_EMVCOHAL_E("write_unlocked failed - controller Maybe in Standby Mode "
-                     "(max count = "
-                     "0x%x)",
-                     nci_hal_ctrl.retry_cnt);
-
-      osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
-
-      status = tml_ioctl(ResetDevice);
-
-      if (EMVCO_STATUS_SUCCESS == status) {
-        LOG_EMVCOHAL_D("Controller Reset - SUCCESS\n");
-      } else {
-        LOG_EMVCOHAL_D("Controller Reset - FAILED\n");
-      }
-      if (nci_hal_ctrl.p_nfc_stack_data_cback != NULL &&
-          nci_hal_ctrl.p_rx_data != NULL &&
-          nci_hal_ctrl.hal_open_status == true) {
-        LOG_EMVCOHAL_D(
-            "Send the Core Reset NTF to upper layer, which will trigger the "
-            "recovery\n");
-        // Send the Core Reset NTF to upper layer, which will trigger the
-        // recovery.
-        nci_hal_ctrl.rx_data_len = sizeof(reset_ntf);
-        osal_memcpy(nci_hal_ctrl.p_rx_data, reset_ntf, sizeof(reset_ntf));
-        (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
-                                               nci_hal_ctrl.p_rx_data);
-      }
-    }
-  }
+  send_emvco_data(nci_hal_ctrl.p_cmd_data, nci_hal_ctrl.cmd_len);
 
 clean_and_return:
   cleanup_cb_data(&cb_data);
@@ -755,8 +714,7 @@ static void read_app_data_complete(void *p_context,
     /* Read successful send the event to higher layer */
     else if ((nci_hal_ctrl.p_nfc_stack_data_cback != NULL) &&
              (status == EMVCO_STATUS_SUCCESS)) {
-      (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
-                                             nci_hal_ctrl.p_rx_data);
+      process_emvco_data(nci_hal_ctrl.p_rx_data, nci_hal_ctrl.rx_data_len);
     }
   } else {
     LOG_EMVCOHAL_E("read error status = 0x%x", pInfo->w_status);
@@ -796,14 +754,14 @@ int close_app_data_channel(bool bShutdown) {
     osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
   }
   if (!bShutdown) {
-    status = snd_core_set_config(&p_cmd_ven_disable_nci[0],
-                                 p_cmd_ven_disable_nci[1]);
+    status = send_core_set_config(&p_cmd_ven_disable_nci[0],
+                                  p_cmd_ven_disable_nci[1]);
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_E("CMD_VEN_DISABLE_NCI: Failed");
     }
   }
   nci_hal_ctrl.halStatus = HAL_STATUS_CLOSE;
-  status = snd_core_reset(NCI_RESET_TYPE_KEEP_CFG);
+  status = send_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
   }

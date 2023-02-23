@@ -31,6 +31,7 @@
 #define MAX_INIT_RETRY_COUNT 3
 #define MAX_RETRY_COUNT 5
 #define NCI_MAX_DATA_LEN 300
+#define FRAG_MAX_DATA_LEN 1024
 #define NCI_POLL_DURATION 500
 #define HAL_EMVCO_ENABLE_I2C_FRAGMENTATION_EVT 0x07
 #undef P2P_PRIO_LOGIC_HAL_IMP
@@ -143,6 +144,23 @@ typedef struct gpio_info {
 /* Macros to enable and disable extensions */
 #define HAL_ENABLE_EXT() (nci_hal_ctrl.hal_ext_enabled = 1)
 #define HAL_DISABLE_EXT() (nci_hal_ctrl.hal_ext_enabled = 0)
+
+/**
+ * @brief Structure representing Fragmented data and its properties.
+ *
+ * @param[in] p_data Pointer to the start of the Fragmented data.
+ * @param[in] data_size Total size of the Fragmented data
+ * @param[in] data_pos Current position in the Fragmented data.
+ * @param[in] is_chained Indicates whether there is chained data or not.
+ */
+
+typedef struct frag_rsp {
+  uint8_t p_data[FRAG_MAX_DATA_LEN];
+  uint16_t data_size;
+  uint16_t data_pos;
+  uint8_t is_chained;
+} frag_rsp_t;
+
 typedef struct nci_info {
   uint8_t nci_version;
   bool_t wait_for_ntf;
@@ -161,6 +179,8 @@ typedef struct nci_hal_ctrl {
   /* Rx data */
   uint8_t *p_rx_ese_data;
   uint16_t rx_ese_data_len;
+
+  frag_rsp_t frag_rsp;
 
   /* libnfc-nci callbacks */
   emvco_stack_callback_t *p_nfc_stack_cback;

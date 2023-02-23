@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -26,6 +26,13 @@
 #include <emvco_cl.h>
 #include <stdint.h>
 
+#define MAX_FRAGMENT_SIZE 253
+#define PBF_COMPLETE_MSG 0x00
+#define PBF_SEGMENT_MSG 0x10
+/* Macros to update the chained data state */
+#define SET_CHAINED_DATA() (nci_hal_ctrl.frag_rsp.is_chained = 1)
+#define RESET_CHAINED_DATA() (nci_hal_ctrl.frag_rsp.is_chained = 0)
+#define IS_CHAINED_DATA() (1 == nci_hal_ctrl.frag_rsp.is_chained)
 /**
  *
  * @brief      compose and send CORE RESET command to command queue
@@ -35,7 +42,7 @@
  *                  NFCSTATUS_FAILED - failed to process the command
  *
  */
-uint8_t snd_core_reset(uint8_t reset_type);
+uint8_t send_core_reset(uint8_t reset_type);
 
 /**
  * @brief       compose and send CORE INIT command to command queue
@@ -45,7 +52,7 @@ uint8_t snd_core_reset(uint8_t reset_type);
  *                  NFCSTATUS_FAILED - failed to process the command
  *
  */
-uint8_t snd_core_init(uint8_t nci_version);
+uint8_t send_core_init(uint8_t nci_version);
 
 /**
  *
@@ -57,7 +64,7 @@ uint8_t snd_core_init(uint8_t nci_version);
  *                  NFCSTATUS_FAILED - failed to process the command
  *
  */
-uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size);
+uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size);
 
 /**
  *
@@ -72,7 +79,7 @@ uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size);
  *                  NFCSTATUS_FAILED - failed to process the command
  *
  */
-uint8_t snd_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param);
+uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param);
 
 /**
  *
@@ -86,7 +93,35 @@ uint8_t snd_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param);
  *                  NFCSTATUS_FAILED - failed to process the command
  *
  **/
-uint8_t snd_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data);
+uint8_t send_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data);
+
+/**
+ *
+ * @brief           Process the Received data packet from NFCC,
+ *                  assembles and send it as complete packet
+ *                  to upper layer
+ *
+ * @param[in]       data_len command length
+ * @param[in]       p_data   command data
+ *
+ * @return          void
+ *
+ **/
+void process_emvco_data(uint8_t *p_data, uint16_t data_len);
+
+/**
+ *
+ * @brief           Process the Received data packet from Upper layer,
+ *                  de-assembles, if length is more the Max fragment data
+ *                  length and send it to NFCC
+ *
+ * @param[in]       data_len command length
+ * @param[in]       p_data   command data
+ *
+ * @return          void
+ *
+ **/
+void send_emvco_data(uint8_t *p_ntf, uint16_t p_len);
 
 /** @}*/
 #endif /* EMVCO_NCIF_H */

@@ -43,9 +43,9 @@
 #define NCI_BYTE_3_MASK 0x3F
 
 #define NCI_MSG_TYPE_DATA 0
-#define NCI_MSG_TYPE_CMD 1 /* (NCI_MT_CMD << NCI_MT_SHIFT) = 0x20 */
-#define NCI_MSG_TYPE_RSP 2 /* (NCI_MT_RSP << NCI_MT_SHIFT) = 0x40 */
-#define NCI_MSG_TYPE_NTF 3 /* (NCI_MT_NTF << NCI_MT_SHIFT) = 0x60 */
+#define NCI_MSG_TYPE_CMD 1 /* (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT) = 0x20 */
+#define NCI_MSG_TYPE_RSP 2 /* (NCI_MSG_TYPE_RSP << NCI_MT_SHIFT) = 0x40 */
+#define NCI_MSG_TYPE_NTF 3 /* (NCI_MSG_TYPE_NTF << NCI_MT_SHIFT) = 0x60 */
 
 /* parse byte0 of NCI packet */
 #define NCI_MSG_PRS_HDR0(p, mt, pbf, gid)                                      \

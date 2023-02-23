@@ -19,53 +19,29 @@
 #define LOG_TAG "emvco_aidl_hal_test"
 
 #include <aidl/Gtest.h>
-#include <aidl/Vintf.h>
 #include <aidl/android/hardware/emvco/BnEmvco.h>
 #include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
 #include <aidl/android/hardware/emvco/IEmvco.h>
 #include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
-#include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
 #include <android/binder_enums.h>
 #include <android/binder_interface_utils.h>
 #include <android/binder_manager.h>
 #include <android/binder_process.h>
-#include <binder/IServiceManager.h>
 #include <chrono>
 #include <future>
 #include <log/log.h>
-#include <math.h>
-#include <mutex>
-#include <pthread.h>
-#include <semaphore.h>
-#include <signal.h>
-#include <stdio.h>
-#include <string.h>
-#include <thread>
-#include <time.h>
-#include <unistd.h>
 
 using aidl::android::hardware::emvco::EmvcoEvent;
 using aidl::android::hardware::emvco::EmvcoStatus;
 using aidl::android::hardware::emvco::IEmvco;
 using aidl::android::hardware::emvco::IEmvcoClientCallback;
 using aidl::android::hardware::emvco::IEmvcoContactlessCard;
-
-using ndk::ScopedAStatus;
-using ndk::SharedRefBase;
 using ndk::SpAIBinder;
 
-using android::getAidlHalInstanceNames;
-using android::PrintInstanceNameToString;
-using android::base::StringPrintf;
-using ndk::enum_range;
-using ndk::ScopedAStatus;
-using ndk::SharedRefBase;
-using ndk::SpAIBinder;
 
 /* NCI Commands */
-
 #define NCI_START_DISCOVERY                                                    \
   { 0x21, 0x03, 0x05, 0x02, 0x00, 0x01, 0x01, 0x01 }
 #define NCI_STOP_DISCOVERY_IDLE                                                \
@@ -74,8 +50,8 @@ using ndk::SpAIBinder;
   { 0x21, 0x06, 0x01, 0x03 }
 #define NCI_SEND_PPSE                                                          \
   {                                                                            \
-    0x00, 0x00, 0x14, 0x00, 0xA4, 0x04, 0x00, 0x0E, 0x32, 0x50, 0x41, 0x59,    \
-        0x2E, 0x53, 0x59, 0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31, 0x00       \
+    0x00, 0xA4, 0x04, 0x00, 0x0E, 0x32, 0x50, 0x41, 0x59, 0x2E, 0x53, 0x59,    \
+        0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31, 0x00                         \
   }
 
 const std::vector<uint8_t> nci_start_discovery = NCI_START_DISCOVERY;
@@ -88,7 +64,6 @@ const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
 
 // 638 test case *7 APDU including start discovery + 638 discovery = 5104
 #define PPSE_SEND_MAX_TIMES 5104
-#define FRAGMENT_SZ 253
 
 #define PRINT_CAPDU(y, z)                                                      \
   {                                                                            \
@@ -103,13 +78,8 @@ volatile static int APDU_COUNT = 0;
 static std::vector<std::promise<void>> psse_cb_promise_;
 unsigned long long start_ts_, end_ts_;
 
-static int received_data_length_ = 0;
-static char temp_[1000];
-static int starting_index_ = 0;
-const static int index_zero_ = 0;
 static std::vector<uint8_t> nci_send_loopback_;
 static volatile bool is_end_of_test_ = false;
-static volatile bool is_frgamented_apdu_ = false;
 static volatile bool is_aborted_ = false;
 static volatile bool is_removal_procedure = false;
 static volatile uint8_t pollingConfiguration = 0;
@@ -160,37 +130,23 @@ private:
   std::function<void(EmvcoEvent, EmvcoStatus)> on_hal_event_cb_;
 };
 
-static bool isEndOfTest(std::vector<unsigned char> &data) {
+static bool isEndOfTest(std::vector<unsigned char> &data, int received_size) {
   ALOGI("%s\n", __func__);
   bool isEOT = false;
   if ((data.at(0) == 0x61) && (data.at(1) == 0x06)) {
-    ALOGI("RF Deactivated\n");
-    starting_index_ = 0;
-    is_frgamented_apdu_ = false;
+    ALOGI("RF Deactivated received_size:%d\n", received_size);
     isEOT = true;
-  } else if ((received_data_length_ > 7) &&
-             (data.at(3) == 0x00 &&
-              (data.at(4) == 0x70 || data.at(4) == 0x72) &&
-              data.at(5) == 0x04 && data.at(6) == 0x04 && data.at(7) == 0x00)) {
-    ALOGI("Device lost APDU received\n");
-    if (data.at(4) == 0x70) {
+  } else if ((received_size >= 5) &&
+             (data.at(0) == 0x00 &&
+              (data.at(1) == 0x70 || data.at(1) == 0x72) &&
+              data.at(2) == 0x04 && data.at(3) == 0x04 && data.at(4) == 0x00)) {
+    ALOGI("Device lost APDU received with NCI header\n");
+    if (data.at(1) == 0x70) {
       is_removal_procedure = true;
     }
     isEOT = true;
   }
   return isEOT;
-}
-
-static std::vector<uint8_t> getNCILoopbackData(uint8_t packetBoundaryFlag,
-                                               char *pTemp, int dataLength) {
-  ALOGI("%s\n dataLength", __func__);
-  std::vector<uint8_t> nci_send_loopback_;
-  nci_send_loopback_.insert(nci_send_loopback_.begin(), packetBoundaryFlag);
-  nci_send_loopback_.insert(nci_send_loopback_.begin() + 1, 0x00);
-  nci_send_loopback_.insert(nci_send_loopback_.begin() + 2, dataLength);
-  nci_send_loopback_.insert(nci_send_loopback_.begin() + 3, pTemp,
-                            pTemp + dataLength);
-  return nci_send_loopback_;
 }
 
 static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
@@ -200,53 +156,7 @@ static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
   nxp_emvco_cl_service_->transceive(data, &aidl_return);
 }
 
-static void
-transceive(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
-           uint8_t packetBoundaryFlag, int32_t dataLength, char *pTemp,
-           char *orgpTemp, std::string dataTag, int32_t aidl_return) {
-  ALOGI("%s %s\n", __func__, dataTag.c_str());
-  if (packetBoundaryFlag == 0x10) {
-    while (dataLength > FRAGMENT_SZ) {
-      ALOGI("fragment Max APDU size \n");
-      send(nxp_emvco_cl_service_, getNCILoopbackData(0x10, pTemp, FRAGMENT_SZ),
-           aidl_return, "LOOPBACK_APDU");
-      dataLength -= FRAGMENT_SZ;
-      pTemp += FRAGMENT_SZ;
-    }
-    if (dataLength > 0) {
-      ALOGI("fragmented loopback data written \n");
-      send(nxp_emvco_cl_service_, getNCILoopbackData(0x00, pTemp, dataLength),
-           aidl_return, "LOOPBACK_APDU");
-    }
-    pTemp = orgpTemp;
-  } else if (packetBoundaryFlag == 0x00) {
-    if (dataLength > 0) {
-      ALOGI("loopback data written\n");
-      send(nxp_emvco_cl_service_, getNCILoopbackData(0x00, pTemp, dataLength),
-           aidl_return, "LOOPBACK_APDU");
-    }
-  }
-}
 
-int hexToDecimal(char *hex) {
-  long long decimal = 0, base = 1;
-  int i = 0, len;
-  len = (size_t)sizeof(unsigned char);
-  for (i = len; i >= 0; i--) {
-    if (hex[i] >= '0' && hex[i] <= '9') {
-      decimal += (hex[i] - 48) * base;
-      base *= 16;
-    } else if (hex[i] >= 'A' && hex[i] <= 'F') {
-      decimal += (hex[i] - 55) * base;
-      base *= 16;
-    } else if (hex[i] >= 'a' && hex[i] <= 'f') {
-      decimal += (hex[i] - 87) * base;
-      base *= 16;
-    }
-  }
-  ALOGI("Decimal:%lld \n", decimal);
-  return decimal;
-}
 void signal_callback_handler(int signum) {
   ALOGI("%s Self test App abort requested, signum:%d", __func__, signum);
   is_aborted_ = true;
@@ -319,11 +229,6 @@ int main(int argc, char **argv) {
   }
   signal(SIGINT, signal_callback_handler);
 
-  char length[3];
-  char *pLength = length;
-  char *orgpTemp = temp_;
-  char *pTemp = temp_;
-
   std::vector<std::future<void>> psse_cb_future;
 
   std::chrono::milliseconds timeout{CALLBACK_TIMEOUT};
@@ -351,55 +256,19 @@ int main(int argc, char **argv) {
         (void)event;
         (void)status;
       },
-      [&pTemp, &orgpTemp, &pLength, &length](auto &in_data) {
+      [](auto &in_data) {
         ALOGI("Data callback");
         const std::lock_guard<std::mutex> lock(data_mutex_);
         ALOGI("Data callback after mutex lock");
-
         try {
-          std::vector<unsigned char> data(in_data.begin(), in_data.end());
-          received_data_length_ = data.size();
-          ALOGI("Received data.size():%d", received_data_length_);
-
-          if (isEndOfTest(data)) {
+          std::vector<uint8_t> data(in_data.begin(), in_data.end());
+          int received_size = data.size();
+          if (isEndOfTest(data, received_size)) {
             ALOGI("End of Test\n");
             is_end_of_test_ = true;
             psse_cb_promise_.at(APDU_COUNT).set_value();
-          } else if (data.at(0) == 0x10) {
-            sprintf(length, "%x", data.at(2));
-            received_data_length_ = hexToDecimal(pLength);
-            ALOGI("Fragment APDU received_data_length_:%d",
-                  received_data_length_);
-            is_frgamented_apdu_ = true;
-            memcpy(&temp_[starting_index_], &data.at(3), received_data_length_);
-            starting_index_ += received_data_length_;
-          } else if (data.at(0) == 0x00) {
-
-            sprintf(length, "%x", data.at(2));
-            received_data_length_ = hexToDecimal(pLength);
-            ALOGI("Non Fragment APDU received_data_length_:%d",
-                  received_data_length_);
-            if (received_data_length_ < 1) {
-              ALOGI("Not valid Non fragment APDU received length less than 1");
-              starting_index_ = 0;
-              return;
-            }
-
-            if (is_frgamented_apdu_) {
-              ALOGI("Continuation of Fragment APDU");
-              memcpy(&temp_[starting_index_], &data.at(3),
-                     received_data_length_);
-              transceive(nxp_emvco_cl_service_, 0x10,
-                         starting_index_ + received_data_length_ - 2, pTemp,
-                         orgpTemp, "CMD_APDU", aidl_return);
-
-              starting_index_ = 0;
-              is_frgamented_apdu_ = false;
-            } else {
-              memcpy(&temp_[index_zero_], &data.at(3), received_data_length_);
-              transceive(nxp_emvco_cl_service_, 0x00, received_data_length_ - 2,
-                         pTemp, orgpTemp, "CMD_APDU", aidl_return);
-            }
+          } else if ((data.at(0) == 0x00) || (data.at(0) == 0x10)) {
+            send(nxp_emvco_cl_service_, data, aidl_return, "LOOPBACK_APDU");
           } else if (data.at(0) == 0x61 &&
                      data.at(1) == 0x05) { // RF_ACTIVATION_NTF - 0x61 && 0x05
             ALOGI("RF_ACTIVATION_NTF VERIFIED");
@@ -449,7 +318,6 @@ int main(int argc, char **argv) {
 
     } else {
       ALOGI("EOT RECEIVED ");
-      received_data_length_ = 0;
     }
     if (is_removal_procedure) {
       is_removal_procedure = false;

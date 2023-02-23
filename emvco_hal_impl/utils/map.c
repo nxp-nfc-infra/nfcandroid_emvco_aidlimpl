@@ -18,11 +18,12 @@
 
 #include "map.h"
 #include "emvco_log.h"
+#include "osal_memory.h"
 #include <stdlib.h>
 #include <string.h>
 
 struct map *map_create(void) {
-  struct map *m = (struct map *)malloc(sizeof(struct map));
+  struct map *m = (struct map *)osal_malloc(sizeof(struct map));
   m->head = NULL;
   m->size = 0;
   return m;
@@ -51,18 +52,18 @@ void map_set(struct map *m, const void *key, int key_size, const void *value,
   }
 
   struct map_node *new_node =
-      (struct map_node *)malloc(sizeof(struct map_node));
+      (struct map_node *)osal_malloc(sizeof(struct map_node));
   if (new_node == NULL) {
     return;
   }
-  new_node->key = malloc(key_size);
+  new_node->key = osal_malloc(key_size);
   if (new_node->key == NULL) {
     free(new_node);
     return;
   }
   memcpy(new_node->key, key, key_size);
   new_node->key_size = key_size;
-  new_node->value = malloc(value_size);
+  new_node->value = osal_malloc(value_size);
   if (new_node->value == NULL) {
     free(new_node->key);
     free(new_node);

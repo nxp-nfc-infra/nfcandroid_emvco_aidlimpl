@@ -24,7 +24,11 @@
 #include <emvco_ncif.h>
 #include <emvco_util.h>
 
-uint8_t snd_core_reset(uint8_t reset_type) {
+/* NCI HAL Control structure */
+nci_hal_ctrl_t nci_hal_ctrl;
+uint8_t *p_nci_data = NULL;
+
+uint8_t send_core_reset(uint8_t reset_type) {
   uint8_t *pp, *p;
   int len = NCI_MSG_HDR_SIZE + NCI_CORE_PARAM_SIZE_RESET;
   p = (uint8_t *)osal_malloc(len);
@@ -41,7 +45,7 @@ uint8_t snd_core_reset(uint8_t reset_type) {
   return (NCI_STATUS_OK);
 }
 
-uint8_t snd_core_init(uint8_t nci_version) {
+uint8_t send_core_init(uint8_t nci_version) {
   uint8_t *pp, *p;
   int len = NCI_MSG_HDR_SIZE + NCI_CORE_PARAM_SIZE_INIT(nci_version);
   p = (uint8_t *)osal_malloc(len);
@@ -61,7 +65,7 @@ uint8_t snd_core_init(uint8_t nci_version) {
   return (NCI_STATUS_OK);
 }
 
-uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
+uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   uint8_t *p;
   uint8_t *pp;
   uint8_t num = 0, ulen, size, *pt;
@@ -107,7 +111,7 @@ uint8_t snd_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   return (NCI_STATUS_OK);
 }
 
-uint8_t snd_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
+uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
   tEMVCO_DISCOVER_PARAMS *p;
   uint8_t *pp, *p_start, *p_disc_size;
   int xx;
@@ -141,7 +145,139 @@ uint8_t snd_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
   return (NCI_STATUS_OK);
 }
 
-uint8_t snd_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data) {
+uint8_t send_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data) {
   send_ext_cmd(data_len, p_data);
   return (NCI_STATUS_OK);
+}
+
+static void handle_chained_status(int *status_len, int *apdu_len) {
+  if (*apdu_len == 1) {
+    nci_hal_ctrl.frag_rsp.data_pos -= 1;
+    *status_len = 0;
+    *apdu_len = 0;
+  } else {
+    *status_len = 2;
+  }
+}
+
+void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
+  LOG_EMVCOHAL_D("%s \n", __func__);
+  if (p_len < 1) {
+    LOG_EMVCOHAL_E("Not valid Non fragment APDU received length less than 1");
+  }
+  int status_len = 0;
+  int apdu_len = (int)p_ntf[2];
+  if (p_ntf[0] == PBF_SEGMENT_MSG) {
+    SET_CHAINED_DATA();
+    memcpy(nci_hal_ctrl.frag_rsp.p_data + nci_hal_ctrl.frag_rsp.data_pos,
+           (p_ntf + NCI_HEADER_SIZE), (p_len - NCI_HEADER_SIZE));
+    nci_hal_ctrl.frag_rsp.data_pos += (p_len - NCI_HEADER_SIZE);
+  } else if (p_ntf[0] == PBF_COMPLETE_MSG) {
+    handle_chained_status(&status_len, &apdu_len);
+    int data_len = apdu_len - status_len;
+
+    if (IS_CHAINED_DATA()) {
+      if (nci_hal_ctrl.frag_rsp.data_pos > 0 &&
+          (nci_hal_ctrl.frag_rsp.data_pos + data_len) < FRAG_MAX_DATA_LEN) {
+        memcpy(nci_hal_ctrl.frag_rsp.p_data + nci_hal_ctrl.frag_rsp.data_pos,
+               p_ntf + NCI_HEADER_SIZE, data_len);
+        nci_hal_ctrl.frag_rsp.data_pos += data_len;
+        (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.frag_rsp.data_pos,
+                                               nci_hal_ctrl.frag_rsp.p_data);
+      } else {
+        LOG_EMVCOHAL_E("Invalid APDU data length:%d received",
+                       nci_hal_ctrl.frag_rsp.data_pos + data_len);
+      }
+      nci_hal_ctrl.frag_rsp.data_pos = 0;
+      RESET_CHAINED_DATA();
+    } else {
+      (*nci_hal_ctrl.p_nfc_stack_data_cback)(data_len, nci_hal_ctrl.p_rx_data +
+                                                           NCI_HEADER_SIZE);
+    }
+  } else {
+    (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
+                                           nci_hal_ctrl.p_rx_data);
+  }
+}
+
+static uint8_t *get_nci_loopback_data(uint8_t pbf, uint8_t *p_data,
+                                      int data_len) {
+  p_nci_data = osal_malloc((data_len + NCI_HEADER_SIZE) * sizeof(uint8_t));
+  p_nci_data[0] = pbf;
+  p_nci_data[1] = 0x00;
+  p_nci_data[2] = data_len;
+  memcpy((p_nci_data + NCI_HEADER_SIZE), p_data, data_len);
+  return p_nci_data;
+}
+static void write_internal(uint8_t *p_data, uint16_t data_len) {
+  EMVCO_STATUS status = EMVCO_STATUS_INVALID_PARAMETER;
+  nci_hal_ctrl.retry_cnt = 0;
+  static uint8_t reset_ntf[] = {0x60, 0x00, 0x06, 0xA0, 0x00,
+                                0xC7, 0xD4, 0x00, 0x00};
+retry:
+  status = tml_write(p_data, data_len);
+  if (status != EMVCO_STATUS_SUCCESS) {
+    data_len = 0;
+    if (nci_hal_ctrl.retry_cnt++ < MAX_RETRY_COUNT) {
+      LOG_EMVCOHAL_D(
+          "write_unlocked failed - controller Maybe in Standby Mode - Retry");
+      /* 10ms delay to give NFCC wake up delay */
+      usleep(1000 * 10);
+      goto retry;
+    } else {
+      LOG_EMVCOHAL_E("write_unlocked failed - controller Maybe in Standby Mode "
+                     "(max count = "
+                     "0x%x)",
+                     nci_hal_ctrl.retry_cnt);
+
+      osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
+
+      status = tml_ioctl(ResetDevice);
+
+      if (EMVCO_STATUS_SUCCESS == status) {
+        LOG_EMVCOHAL_D("Controller Reset - SUCCESS\n");
+      } else {
+        LOG_EMVCOHAL_D("Controller Reset - FAILED\n");
+      }
+      if (nci_hal_ctrl.p_nfc_stack_data_cback != NULL &&
+          nci_hal_ctrl.p_rx_data != NULL &&
+          nci_hal_ctrl.hal_open_status == true) {
+        LOG_EMVCOHAL_D(
+            "Send the Core Reset NTF to upper layer, which will trigger the "
+            "recovery\n");
+        // Send the Core Reset NTF to upper layer, which will trigger the
+        // recovery.
+        nci_hal_ctrl.rx_data_len = sizeof(reset_ntf);
+        osal_memcpy(nci_hal_ctrl.p_rx_data, reset_ntf, sizeof(reset_ntf));
+        (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
+                                               nci_hal_ctrl.p_rx_data);
+      }
+    }
+  }
+}
+void send_emvco_data(uint8_t *p_data, uint16_t data_len) {
+  if ((p_data[0] == PBF_SEGMENT_MSG) || (p_data[0] == PBF_COMPLETE_MSG)) {
+    while (data_len > MAX_FRAGMENT_SIZE) {
+      LOG_EMVCOHAL_D("%s sending segment packet \n", __func__);
+      p_nci_data =
+          get_nci_loopback_data(PBF_SEGMENT_MSG, p_data, MAX_FRAGMENT_SIZE);
+      write_internal(p_nci_data, MAX_FRAGMENT_SIZE + NCI_HEADER_SIZE);
+      if (p_nci_data != NULL) {
+        free(p_nci_data);
+        p_nci_data = NULL;
+      }
+      data_len -= MAX_FRAGMENT_SIZE;
+      p_data += MAX_FRAGMENT_SIZE;
+    }
+    if (data_len > 0) {
+      p_nci_data = get_nci_loopback_data(PBF_COMPLETE_MSG, p_data, data_len);
+      write_internal(p_nci_data, data_len + NCI_HEADER_SIZE);
+      if (p_nci_data != NULL) {
+        free(p_nci_data);
+        p_nci_data = NULL;
+      }
+    }
+  } else {
+    write_internal(p_data, data_len);
+  }
 }
