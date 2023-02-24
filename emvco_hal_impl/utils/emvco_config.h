@@ -86,6 +86,38 @@ int get_byte_value(char *key, unsigned long *p_value, unsigned int *value_len);
  */
 int get_byte_array_value(char *key, char **p_value, unsigned int *value_len);
 
+/**
+ * @brief Determines if a given character is a digit in the specified number
+ * base.
+ * @param c The character to be evaluated.
+ * @param base The number base to be used for evaluation (valid values are 2 to
+ * 36).
+ * @return True if the character is a digit in the specified number base, false
+ * otherwise.
+ */
+bool isDigit(char c, int base);
+
+/**
+ * @brief Converts a character representation of a digit to its integer value in
+ * the specified number base.
+ *
+ * @param c The character representation of a digit.
+ * @param base The number base to use for the conversion.
+ *
+ * @return The integer value of the digit in the specified number base.
+ */
+int getDigitValue(char c, int base);
+
+/**
+ * @brief Determines if the input character is printable.
+ *
+ * @param c The character to check.
+ *
+ * @return True if the character is printable, false otherwise.
+ */
+bool isPrintable(char c);
+
+
 /* default configuration */
 #define emvco_hal_config_path "/vendor/etc/libemvco-nxp.conf"
 

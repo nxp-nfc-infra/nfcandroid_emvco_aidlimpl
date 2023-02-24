@@ -87,7 +87,7 @@ static size_t readConfigFile(const char *fileName, uint8_t **p_data) {
  * @return True if the character is a digit in the specified number base, false
  * otherwise.
  */
-inline bool isDigit(char c, int base) {
+bool isDigit(char c, int base) {
   if ('0' <= c && c <= '9')
     return true;
   if (base == 16) {
@@ -106,7 +106,7 @@ inline bool isDigit(char c, int base) {
  *
  * @return The integer value of the digit in the specified number base.
  */
-inline int getDigitValue(char c, int base) {
+int getDigitValue(char c, int base) {
   if ('0' <= c && c <= '9')
     return c - '0';
   if (base == 16) {
@@ -125,7 +125,7 @@ inline int getDigitValue(char c, int base) {
  *
  * @return True if the character is printable, false otherwise.
  */
-inline bool isPrintable(char c) {
+bool isPrintable(char c) {
   return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') ||
          (c >= '0' && c <= '9') || c == '/' || c == '_' || c == '-' || c == '.';
 }
