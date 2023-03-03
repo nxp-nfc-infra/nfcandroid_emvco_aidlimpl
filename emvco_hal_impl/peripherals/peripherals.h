@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@
  *  @brief      Interface for handling hardware peripherals
  *  @{
  */
+#include "emvco_tml_i2c.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,12 +31,12 @@ extern "C" {
 
 /**
  * @brief       This function sets the led according to emvco status
- * @param[in] emvco_status EMVCO_MODE_ON turn green led and EMVCO_MODE_OFF turns
+ * @param[in]   led_control GREEN_LED_ON turn green led and GREEN_LED_OFF turns
  * green led off
- * @return           void
+ * @return           EMVCO_STATUS
  *
  */
-void led_switch_control(emvco_status_t emvco_status);
+EMVCO_STATUS led_switch_control(led_control_t led_control);
 
 #ifdef __cplusplus
 }

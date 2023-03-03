@@ -37,5 +37,6 @@ package android.hardware.emvco;
 @Backing(type="int") @VintfStability
 enum EmvcoStatus {
   EMVCO_STATUS_OK = 0,
-  EMVCO_STATUS_FAILED = 1,
+  EMVCO_STATUS_INVALID_PARAMETER = 1,
+  EMVCO_STATUS_FAILED = 255,
 }

@@ -237,6 +237,23 @@ void Emvco::unregisterCallback(
   ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients = %d", (int)callbacks_.size());
 }
 
+::ndk::ScopedAStatus Emvco::stopRFDisovery(
+    ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: in_deactivationType:%d", __func__,
+           in_deactivationType);
+  *emvco_status = (EmvcoStatus)stop_rf_discovery((int)in_deactivationType);
+  return ndk::ScopedAStatus::ok();
+}
+::ndk::ScopedAStatus
+Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
+              ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: in_ledControl:%d", __func__, in_ledControl);
+
+  *emvco_status = (EmvcoStatus)set_led((int)in_ledControl);
+  return ndk::ScopedAStatus::ok();
+}
+
 } // namespace emvco
 } // namespace hardware
 } // namespace android

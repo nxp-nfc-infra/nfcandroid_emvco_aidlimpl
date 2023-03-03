@@ -52,12 +52,12 @@ enum NfccResetType : uint32_t {
   MODE_FW_GPIO_LOW
 };
 
-enum LEDControl : uint32_t {
+typedef enum LEDControl : uint32_t {
   RED_LED_OFF = 0x00,
   RED_LED_ON,
   GREEN_LED_OFF,
   GREEN_LED_ON
-};
+} led_control_t;
 
 /* Profile mode type */
 enum ProfileMode : uint32_t {

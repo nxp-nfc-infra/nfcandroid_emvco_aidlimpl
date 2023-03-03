@@ -23,6 +23,7 @@
 #include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
 #include <aidl/android/hardware/emvco/IEmvco.h>
 #include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
+#include <aidl/android/hardware/emvco/IEmvcoProfileDiscovery.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
 #include <android/binder_enums.h>
@@ -33,31 +34,33 @@
 #include <future>
 #include <log/log.h>
 
+using aidl::android::hardware::emvco::DeactivationType;
 using aidl::android::hardware::emvco::EmvcoEvent;
 using aidl::android::hardware::emvco::EmvcoStatus;
 using aidl::android::hardware::emvco::IEmvco;
 using aidl::android::hardware::emvco::IEmvcoClientCallback;
 using aidl::android::hardware::emvco::IEmvcoContactlessCard;
+using aidl::android::hardware::emvco::IEmvcoProfileDiscovery;
+using aidl::android::hardware::emvco::LedControl;
 using ndk::SpAIBinder;
 
 
 /* NCI Commands */
 #define NCI_START_DISCOVERY                                                    \
   { 0x21, 0x03, 0x05, 0x02, 0x00, 0x01, 0x01, 0x01 }
-#define NCI_STOP_DISCOVERY_IDLE                                                \
-  { 0x21, 0x06, 0x01, 0x00 }
-#define NCI_STOP_DISCOVERY_DISCOVER                                            \
-  { 0x21, 0x06, 0x01, 0x03 }
+
 #define NCI_SEND_PPSE                                                          \
   {                                                                            \
     0x00, 0xA4, 0x04, 0x00, 0x0E, 0x32, 0x50, 0x41, 0x59, 0x2E, 0x53, 0x59,    \
         0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31, 0x00                         \
   }
 
+#define RESP_APDU_TIMEOUT 3500
+#define DEACTIVATE_IDLE_TIMEOUT 15000
+#define MIN_LED_GLOW_DURATION 500
+#define MAX_LED_GLOW_DURATION 3000
+
 const std::vector<uint8_t> nci_start_discovery = NCI_START_DISCOVERY;
-const std::vector<uint8_t> nci_stop_discovery_idle = NCI_STOP_DISCOVERY_IDLE;
-const std::vector<uint8_t> nci_stop_discovery_discover =
-    NCI_STOP_DISCOVERY_DISCOVER;
 const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
 
 ::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
@@ -80,9 +83,13 @@ unsigned long long start_ts_, end_ts_;
 
 static std::vector<uint8_t> nci_send_loopback_;
 static volatile bool is_end_of_test_ = false;
+static volatile bool is_failure = false;
 static volatile bool is_aborted_ = false;
 static volatile bool is_removal_procedure = false;
 static volatile uint8_t pollingConfiguration = 0;
+// Set the led glow duration to 500 milli second by default
+static volatile uint32_t led_glow_duration = 500;
+
 const int NFC_A_PASSIVE_POLL_MODE = 0;
 const int NFC_B_PASSIVE_POLL_MODE = 1;
 const int NFC_F_PASSIVE_POLL_MODE = 2;
@@ -95,10 +102,18 @@ const int NFC_ABVAS_PASSIVE_POLL_MODE_SUPPORTED = 11;
 const int NFC_ABFVAS_PASSIVE_POLL_MODE_SUPPORTED = 15;
 
 std::mutex data_mutex_;
+std::mutex led_mutex_;
 int32_t aidl_return;
 
 std::shared_ptr<IEmvco> nxp_emvco_service_;
 std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_;
+std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
+
+void setLedState(LedControl ledControl) {
+  const std::lock_guard<std::mutex> lock(led_mutex_);
+  aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+  nxp_emvco_prof_disc_service_->setLed(ledControl, &_aidl_return);
+}
 
 class EmvcoClientCallback
     : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
@@ -130,10 +145,35 @@ private:
   std::function<void(EmvcoEvent, EmvcoStatus)> on_hal_event_cb_;
 };
 
+static void controlRedLed() {
+  setLedState(LedControl::RED_LED_ON);
+  std::chrono::milliseconds sleepTime(led_glow_duration);
+  std::this_thread::sleep_for(sleepTime);
+  setLedState(LedControl::RED_LED_OFF);
+}
 static bool isEndOfTest(std::vector<unsigned char> &data, int received_size) {
   ALOGI("%s\n", __func__);
   bool isEOT = false;
-  if ((data.at(0) == 0x61) && (data.at(1) == 0x06)) {
+  if (data.at(0) == 0x60 && data.at(1) == 0x08) {
+    ALOGI("Device Error");
+    switch (data.at(3)) {
+    case 0xB0:
+      ALOGI("Device lost - transmission error\n");
+      is_failure = true;
+      break;
+    case 0xB1:
+      ALOGI("Device lost - protocol error\n");
+      is_failure = true;
+      break;
+    case 0xB2:
+      ALOGI("Device lost - timeout error\n");
+      is_failure = true;
+      break;
+    default:
+      ALOGI("Default\n");
+      break;
+    }
+  } else if ((data.at(0) == 0x61) && (data.at(1) == 0x06)) {
     ALOGI("RF Deactivated received_size:%d\n", received_size);
     isEOT = true;
   } else if ((received_size >= 5) &&
@@ -145,6 +185,11 @@ static bool isEndOfTest(std::vector<unsigned char> &data, int received_size) {
       is_removal_procedure = true;
     }
     isEOT = true;
+
+    setLedState(LedControl::GREEN_LED_ON);
+    std::chrono::milliseconds sleepTime(led_glow_duration);
+    std::this_thread::sleep_for(sleepTime);
+    setLedState(LedControl::GREEN_LED_OFF);
   }
   return isEOT;
 }
@@ -194,7 +239,31 @@ int main(int argc, char **argv) {
   for (int i = 0; i < argc; ++i) {
     ALOGI("%s argv:", argv[i]);
   }
-  if (argc == 3) {
+  if (argc > 1) {
+    if (strstr(argv[1], "INTEROP") != 0 || strstr(argv[1], "interop") != 0) {
+      if ((argc > 3) && argv[3] != NULL) {
+        std::string duration_str = std::string(argv[3]);
+        if (!duration_str.empty()) {
+          int duration = std::stoi(argv[3]);
+          ALOGI("User provided duration:%d", duration);
+          if (duration > MIN_LED_GLOW_DURATION &&
+              duration <= MAX_LED_GLOW_DURATION) {
+            led_glow_duration = duration;
+          } else {
+            printf("Invalid duration. 500ms to 3sec is the supported LED glow "
+                   "duration \n. setting glow duration as 500ms \n");
+          }
+        }
+      }
+      ALOGI("Executing digital compliance with LED glow duration:%d",
+            led_glow_duration);
+    } else {
+      led_glow_duration = 0;
+      ALOGI("Executing digital compliance with out LED glow duration:%d",
+            led_glow_duration);
+    }
+  }
+  if (argc > 2) {
     if (strstr(argv[2], "A") != 0 || strstr(argv[2], "a") != 0) {
       setRFTechnologyMode(NFC_A_PASSIVE_POLL_MODE, true);
     }
@@ -209,9 +278,12 @@ int main(int argc, char **argv) {
     }
   } else {
     printf("\n Select atleast one polling technolgy to enable EMVCo mode\n "
-           "Example#1: \"./EMVCoAidlHalComplianceTest Type A\" will enable Type A "
-           "for polling \n Example#2: \"./EMVCoAidlHalComplianceTest Type AB\" "
-           "will enable Type AB for polling \n \n ");
+           "Example#1: \"./EMVCoAidlHalComplianceTest Type/interop A 600\" "
+           "will enable Type A "
+           "for polling with LED glow duration of 600ms \n Example#2: "
+           "\"./EMVCoAidlHalComplianceTest Type/interop AB 600\" "
+           "will enable Type/interop AB for polling with LED glow duration of "
+           "600ms\n \n ");
     return 0;
   }
 
@@ -223,10 +295,12 @@ int main(int argc, char **argv) {
     printf("\n Valid Technology selected for polling\n ");
   } else {
     printf("\n Select supported polling technolgy (AB) to enable EMVCo mode\n "
-           "Example: \"./EMVCoAidlHalComplianceTest Type "
-           "AB\" will enable Type AB for polling \n \n ");
+           "Example: \"./EMVCoAidlHalComplianceTest Type/interop "
+           "AB 600 \" will enable Type/interop AB for polling with LED glow "
+           "duration of 600ms\n \n ");
     return 0;
   }
+
   signal(SIGINT, signal_callback_handler);
 
   std::vector<std::future<void>> psse_cb_future;
@@ -249,6 +323,8 @@ int main(int argc, char **argv) {
                        mDeathRecipient.get(), 0);
 
   nxp_emvco_service_->getEmvcoContactlessCard(&nxp_emvco_cl_service_);
+  nxp_emvco_service_->getEmvcoProfileDiscoveryInterface(
+      &nxp_emvco_prof_disc_service_);
 
   auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
       [](auto event, auto status) {
@@ -289,6 +365,7 @@ int main(int argc, char **argv) {
 
   send(nxp_emvco_cl_service_, nci_send_ppse, aidl_return, "NCI_SEND_PPSE");
   psse_cb_future.at(APDU_COUNT).wait();
+
   APDU_COUNT++;
 
   while (true) {
@@ -321,12 +398,21 @@ int main(int argc, char **argv) {
     }
     if (is_removal_procedure) {
       is_removal_procedure = false;
-      send(nxp_emvco_cl_service_, nci_stop_discovery_discover, aidl_return,
-           "NCI_STOP_DISCOVERY_DISCOVER_DISCOVER");
+      ALOGI("stopRFDisovery with DISCOVER");
+      EmvcoStatus emvcoStatus;
+      nxp_emvco_cl_service_->stopRFDisovery(DeactivationType::DISCOVER,
+                                            &emvcoStatus);
     } else {
-      send(nxp_emvco_cl_service_, nci_stop_discovery_idle, aidl_return,
-           "NCI_STOP_DISCOVERY_IDLE");
-      usleep(15000);
+      ALOGI("stopRFDisovery with IDLE");
+      EmvcoStatus emvcoStatus;
+      nxp_emvco_cl_service_->stopRFDisovery(DeactivationType::IDLE,
+                                            &emvcoStatus);
+      std::chrono::microseconds sleepTime(DEACTIVATE_IDLE_TIMEOUT);
+      std::this_thread::sleep_for(sleepTime);
+    }
+    if (is_failure) {
+      is_failure = false;
+      controlRedLed();
     }
     psse_cb_future.at(APDU_COUNT).wait_for(5 * timeout);
     ++APDU_COUNT;

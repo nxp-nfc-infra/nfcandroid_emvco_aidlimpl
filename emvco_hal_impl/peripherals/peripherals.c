@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,15 +15,16 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include "emvco_tml_i2c.h"
 #include <emvco_log.h>
 #include <emvco_status.h>
 #include <emvco_tml.h>
 
-void led_switch_control(emvco_status_t emvco_status) {
-  LOG_EMVCOHAL_D("%s emvco_status:%d", __func__, emvco_status);
+EMVCO_STATUS led_switch_control(led_control_t led_control) {
+  LOG_EMVCOHAL_D("%s led_control:%d", __func__, led_control);
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
-  switch (emvco_status) {
-  case EMVCO_MODE_ON: {
+  switch (led_control) {
+  case GREEN_LED_ON: {
     status = tml_ioctl(GreenLedOn);
     if (EMVCO_STATUS_SUCCESS == status) {
       LOG_EMVCOHAL_D("GREEN LED ON - SUCCESS\n");
@@ -32,7 +33,7 @@ void led_switch_control(emvco_status_t emvco_status) {
     }
     break;
   }
-  case EMVCO_MODE_OFF: {
+  case GREEN_LED_OFF: {
     status = tml_ioctl(GreenLedOff);
     if (EMVCO_STATUS_SUCCESS == status) {
       LOG_EMVCOHAL_D("GREEN LED OFF - SUCCESS\n");
@@ -41,7 +42,26 @@ void led_switch_control(emvco_status_t emvco_status) {
     }
     break;
   }
+  case RED_LED_ON: {
+    status = tml_ioctl(RedLedOn);
+    if (EMVCO_STATUS_SUCCESS == status) {
+      LOG_EMVCOHAL_D("RED LED ON - SUCCESS\n");
+    } else {
+      LOG_EMVCOHAL_D("RED LED ON - FAILED\n");
+    }
+    break;
+  }
+  case RED_LED_OFF: {
+    status = tml_ioctl(RedLedOff);
+    if (EMVCO_STATUS_SUCCESS == status) {
+      LOG_EMVCOHAL_D("RED LED OFF - SUCCESS\n");
+    } else {
+      LOG_EMVCOHAL_D("RED LED OFF  - FAILED\n");
+    }
+    break;
+  }
   default:
     break;
   }
+  return status;
 }

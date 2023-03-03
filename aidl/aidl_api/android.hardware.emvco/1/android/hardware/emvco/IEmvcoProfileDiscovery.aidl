@@ -37,8 +37,9 @@ package android.hardware.emvco;
 @VintfStability
 interface IEmvcoProfileDiscovery {
   boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback emvcoClientCallback);
-  void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
-  void onNfcStateChange(android.hardware.emvco.NfcState in_nfcState);
-  boolean registerNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeRequestCallback in_nfcStateChangeCallback);
+  void setEMVCoMode(in byte config, boolean isStartEMVCo);
+  void onNfcStateChange(android.hardware.emvco.NfcState nfcState);
+  boolean registerNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeRequestCallback nfcStateChangeCallback);
   android.hardware.emvco.DiscoveryMode getCurrentDiscoveryMode();
+  android.hardware.emvco.EmvcoStatus setLed(in android.hardware.emvco.LedControl ledControl);
 }

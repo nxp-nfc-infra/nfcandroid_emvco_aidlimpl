@@ -22,6 +22,8 @@ import android.hardware.emvco.IEmvcoClientCallback;
 import android.hardware.emvco.INfcStateChangeRequestCallback;
 import android.hardware.emvco.NfcState;
 import android.hardware.emvco.DiscoveryMode;
+import android.hardware.emvco.LedControl;
+import android.hardware.emvco.EmvcoStatus;
 
 @VintfStability
 interface IEmvcoProfileDiscovery {
@@ -51,7 +53,7 @@ interface IEmvcoProfileDiscovery {
     * @return void
     *
     */
-    void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
+    void setEMVCoMode(in byte config, boolean isStartEMVCo);
 
     /**
     *
@@ -62,7 +64,7 @@ interface IEmvcoProfileDiscovery {
     *
     * @return void
     */
-    void onNfcStateChange(NfcState in_nfcState);
+    void onNfcStateChange(NfcState nfcState);
 
     /**
     *
@@ -74,7 +76,7 @@ interface IEmvcoProfileDiscovery {
     *
     * @return boolean returns true, if success and returns false, if failed to register
     */
-    boolean registerNFCStateChangeCallback(in INfcStateChangeRequestCallback in_nfcStateChangeCallback);
+    boolean registerNFCStateChangeCallback(in INfcStateChangeRequestCallback nfcStateChangeCallback);
 
     /**
     * @brief returns the current active profile type.
@@ -83,4 +85,15 @@ interface IEmvcoProfileDiscovery {
     *
     */
     DiscoveryMode getCurrentDiscoveryMode();
+
+    /**
+    * @brief allows to turn ON/OFF the specified LED.
+    *
+    * @param[in] in_ledControl specifies the LED to be turned ON or OFF
+    *
+    * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
+    *         is not processed due to in-valid state. EMVCo mode should be ON to call this API
+    *
+    */
+    EmvcoStatus setLed(in LedControl ledControl);
 }

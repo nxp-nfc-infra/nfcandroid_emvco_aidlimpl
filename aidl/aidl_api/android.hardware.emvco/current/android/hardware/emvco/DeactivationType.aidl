@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -34,10 +34,8 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.hardware.emvco;
-@VintfStability
-interface IEmvcoContactlessCard {
-  boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
-  int transceive(in byte[] in_data);
-  void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
-  android.hardware.emvco.EmvcoStatus stopRFDisovery(in android.hardware.emvco.DeactivationType deactivationType);
+@Backing(type="int") @VintfStability
+enum DeactivationType {
+  IDLE = 0,
+  DISCOVER = 3,
 }

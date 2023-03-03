@@ -19,15 +19,13 @@
 #ifndef _EMVCO_COMMON_H_
 #define _EMVCO_COMMON_H_
 
+#include "emvco_status.h"
 #include <stdbool.h>
 #include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#define EMVCO_STATUS_SUCCESS (0x0000)
-#define EMVCO_STATUS_FAILED (0x00FF)
 
 /**
  * @brief  boolean data type

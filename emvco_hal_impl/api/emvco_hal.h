@@ -132,10 +132,36 @@ discovery_mode_t get_current_discovery_mode();
  *
  * @param[in] in_nfcState specifies the NFC state
  *
- * @return ::ndk::ScopedAStatus indicates onNfcStateChange request processed by
- * EMVCo HAL successfully or not
+ * @return void
  */
 void on_nfc_state_change(int32_t nfc_state);
+
+/**
+ *
+ * @brief stops the RF field and moves in to the specified deactivation state.
+ *
+ *
+ * @param[in] deactivation_type specifies the state to be in after RF
+ * deactivation
+ *
+ * @return EMVCO_STATUS returns 0, if command processed successfully and returns
+ * 1, if command is not processed due to in-valid state. EMVCo mode should be ON
+ * to call this API
+ */
+EMVCO_STATUS stop_rf_discovery(uint8_t deactivation_type);
+
+/**
+ *
+ * @brief allows to turn ON/OFF the specified LED.
+ *
+ *
+ * @param[in] led_control specifies the LED to be turned ON or OFF
+ *
+ * @return EMVCO_STATUS returns 0, if command processed successfully and returns
+ * 1, if command is not processed due to in-valid state. EMVCo mode should be ON
+ * to call this API
+ */
+EMVCO_STATUS set_led(uint8_t led_control);
 
 #ifdef __cplusplus
 }

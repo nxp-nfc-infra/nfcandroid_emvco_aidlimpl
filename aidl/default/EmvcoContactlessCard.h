@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -81,6 +81,21 @@ public:
    *
    */
   ::ndk::ScopedAStatus setEMVCoMode(int8_t in_config, bool in_isStartEMVCo);
+
+  /**
+   * @brief stops the RF field and moves in to the specified deactivation state.
+   *
+   * @param[in] in_deactivationType specifies the state to be in after RF
+   * deactivation
+   *
+   * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
+   * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
+   * due to in-valid state. EMVCo mode should be ON to call this API
+   *
+   */
+  ::ndk::ScopedAStatus stopRFDisovery(
+      ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
+      ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) override;
 };
 
 } // namespace emvco

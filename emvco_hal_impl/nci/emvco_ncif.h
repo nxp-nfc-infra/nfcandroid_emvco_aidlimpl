@@ -123,5 +123,19 @@ void process_emvco_data(uint8_t *p_data, uint16_t data_len);
  **/
 void send_emvco_data(uint8_t *p_ntf, uint16_t p_len);
 
+/**
+ *
+ * @brief           Deactivates the RF field and moves in to deactivation type
+ *state
+ *
+ * @param[in]       de_act_type Idle or Discover state
+ *
+ * @return          NFC status:
+ *                  NFCSTATUS_SUCCESS - command processed successfully
+ *                  NFCSTATUS_FAILED - failed to process the command
+ *
+ **/
+uint8_t send_deactivate_cmd(uint8_t de_act_type);
+
 /** @}*/
 #endif /* EMVCO_NCIF_H */

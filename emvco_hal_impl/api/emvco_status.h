@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@
 #define _EMVCO_STATUS_H_
 
 #include <emvco_common.h>
-#include <emvco_types.h>
 /* Internally required by EMVCOSTVAL. */
 #define EMVCOSTSHL8 (8U)
 /* Required by EMVCOSTVAL. */
@@ -59,15 +58,18 @@
 #define PHNFCCID(emvco_status) (((emvco_status)&0xFF00U) >> 8)
 
 #define EMVCO_I2C_FRAGMENT_SIZE 512
+
 /*
- *  Status Codes
- *
- *  Generic Status codes for the EMVCO components. Combined with the Component
- * ID they build the value (status) returned by each function. Example:
- *      grp_comp_id "Component ID" -  e.g. 0x10, plus
- *      status code as listed in this file - e.g. 0x03
- *      result in a status value of 0x0003.
+ * Indicates the NFC state
  */
+typedef enum {
+  STATE_OFF = 1,
+  STATE_TURNING_ON,
+  STATE_ON,
+  STATE_TURNING_OFF
+} nfc_status_t;
+
+nfc_status_t nfc_status;
 
 /*
  * The function indicates successful completion
@@ -361,21 +363,5 @@
  * Indicates Connection failed
  */
 #define EMVCO_STATUS_CONNECTION_FAILED (0x0047)
-
-/*
- * Indicates the NFC state
- */
-typedef enum {
-  STATE_OFF = 1,
-  STATE_TURNING_ON,
-  STATE_ON,
-  STATE_TURNING_OFF
-} nfc_status_t;
-
-nfc_status_t nfc_status;
-
-typedef enum { EMVCO_MODE_ON = 1, EMVCO_MODE_OFF } emvco_mode_status_t;
-
-emvco_mode_status_t emvco_status;
 
 #endif /* _EMVCO_STATUS_H_ */

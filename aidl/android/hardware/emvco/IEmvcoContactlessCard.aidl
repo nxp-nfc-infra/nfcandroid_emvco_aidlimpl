@@ -19,6 +19,8 @@
 package android.hardware.emvco;
 
 import android.hardware.emvco.IEmvcoClientCallback;
+import android.hardware.emvco.DeactivationType;
+import android.hardware.emvco.EmvcoStatus;
 
 /** \addtogroup EMVCO_HAL_API_INTERFACE
  *  @{
@@ -78,6 +80,17 @@ interface IEmvcoContactlessCard {
     *
     */
     void setEMVCoMode(in byte in_config,boolean in_isStartEMVCo);
+
+    /**
+    * @brief stops the RF field and moves in to the specified deactivation state.
+    *
+    * @param[in] in_deactivationType specifies the state to be in after RF deactivation
+    *
+    * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
+	*         is not processed due to in-valid state. EMVCo mode should be ON to call this API
+    *
+    */
+    EmvcoStatus stopRFDisovery(in DeactivationType deactivationType);
 }
 
 /** @}*/

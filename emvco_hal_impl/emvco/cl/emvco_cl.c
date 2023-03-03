@@ -179,7 +179,7 @@ EMVCO_STATUS start_emvco_mode() {
 
 EMVCO_STATUS stop_emvco_mode() {
   LOG_EMVCOHAL_D("stop_emvco_mode nci_stop_discovery without modeswitch");
-  led_switch_control(EMVCO_MODE_OFF);
+  led_switch_control(GREEN_LED_OFF);
   int hal_close_status = close_app_data_channel(true);
   LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
 
@@ -250,4 +250,14 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
     break;
   }
   return EMVCO_STATUS_SUCCESS;
+}
+
+EMVCO_STATUS rf_deactivate(uint8_t deactivation_type) {
+  LOG_EMVCOHAL_D("rf_deactivate");
+  if (EMVCO != modeSwitchArgs->current_discovery_mode) {
+    LOG_EMVCOHAL_E("rf_deactivate failed - Not in EMVCo mode");
+    return EMVCO_STATUS_FAILED;
+  } else {
+    return send_deactivate_cmd(deactivation_type);
+  }
 }

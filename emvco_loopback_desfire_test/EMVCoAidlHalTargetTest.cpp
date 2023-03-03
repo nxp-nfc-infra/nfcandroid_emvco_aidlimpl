@@ -218,9 +218,9 @@ int main(int argc, char **argv) {
             }
           }
           // Validating NCI_SET_EMV_PROFILE and PPSE Response
-          if (length == 5) {
+          if (length == 2) {
             // PPSE 0x6A && 0x82
-            if (data.at(3) == 106 && data.at(4) == 130) {
+            if (data.at(0) == 106 && data.at(1) == 130) {
               ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
               psse_cb_promise.at(index).set_value();
             } else {

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,23 +23,23 @@ package android.hardware.emvco;
  */
 
 /**
- * @brief EMVCo Hal return status code as below
+ * @brief Deactivation types to be handled by EMVCo HAL
+ *
+ * The EMVCo Hal uses this event to specify the deactivation type as part of
+ * RF deactivation.
  */
 @VintfStability
 @Backing(type="int")
-enum EmvcoStatus {
+enum DeactivationType {
     /**
-     * Indicates success status.
+     * Deactivates the RF field and move to IDLE state
+     *
      */
-    EMVCO_STATUS_OK = 0,
+    IDLE                    = 0,
     /**
-     * Indicates invalid input parameter status.
+     * Deactivates the RF field and move to Discover state
      */
-    EMVCO_STATUS_INVALID_PARAMETER = 1,
-    /**
-     * Indicates failure status.
-     */
-    EMVCO_STATUS_FAILED = 255,
-}
+    DISCOVER                = 3,
 
+}
 /** @}*/

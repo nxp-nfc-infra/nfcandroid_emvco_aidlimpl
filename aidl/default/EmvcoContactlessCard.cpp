@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -44,6 +44,14 @@ EmvcoContactlessCard::transceive(const std::vector<uint8_t> &in_data,
                                                         bool in_isStartEMVCo) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_config:%d", __func__, in_config);
   return Emvco::getInstance()->setEMVCoMode(in_config, in_isStartEMVCo);
+}
+
+::ndk::ScopedAStatus EmvcoContactlessCard::stopRFDisovery(
+    ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->stopRFDisovery(in_deactivationType,
+                                              emvco_status);
 }
 
 } // namespace emvco

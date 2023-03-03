@@ -108,6 +108,12 @@ public:
       bool *_aidl_return);
   ::ndk::ScopedAStatus getCurrentDiscoveryMode(
       ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return);
+  ::ndk::ScopedAStatus stopRFDisovery(
+      ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
+      ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status);
+  ::ndk::ScopedAStatus
+  setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
+         ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status);
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);

@@ -146,5 +146,19 @@ discovery_mode_t get_current_mode();
  */
 void handle_nfc_state_change(int32_t nfc_state);
 
+/**
+ *
+ * @brief stops the RF field and moves in to the specified deactivation state.
+ *
+ *
+ * @param[in] deactivation_type specifies the state to be in after RF
+ * deactivation
+ *
+ * @return EMVCO_STATUS returns 0, if command processed successfully and returns
+ * 1, if command is not processed due to in-valid state. EMVCo mode should be ON
+ * to call this API
+ */
+EMVCO_STATUS rf_deactivate(uint8_t deactivation_type);
+
 /** @}*/
 #endif /* _EMVCO_CL_H_ */

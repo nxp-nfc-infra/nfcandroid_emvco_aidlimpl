@@ -108,6 +108,10 @@ public:
    */
   ::ndk::ScopedAStatus getCurrentDiscoveryMode(
       ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) override;
+
+  ::ndk::ScopedAStatus
+  setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
+         ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) override;
 };
 
 } // namespace emvco

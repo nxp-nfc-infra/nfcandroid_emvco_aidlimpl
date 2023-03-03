@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include "emvco_tml_i2c.h"
 #include <cutils/properties.h>
 #include <emvco_cl.h>
 #include <emvco_config.h>
@@ -259,6 +260,7 @@ int open_app_data_channelImpl(
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("open_app_data_channel nfc_status:%d", nfc_status);
+  read_config(emvco_hal_config_path);
 
   if (nci_hal_ctrl.halStatus == HAL_STATUS_OPEN) {
     LOG_EMVCOHAL_D("open_app_data_channel already open");
@@ -416,7 +418,7 @@ init_retry:
 
   mode_switch_status = tml_ioctl(NFCCModeSwitchOn);
   LOG_EMVCOHAL_D("%s modeswitch IOCTL status:%d", __func__, mode_switch_status);
-  led_switch_control(EMVCO_MODE_ON);
+  led_switch_control(GREEN_LED_ON);
   status = send_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_E("NCI_CORE_RESET: Failed");
@@ -500,6 +502,7 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
                           emvco_state_change_callback_t *p_nfc_state_cback) {
   LOG_EMVCOHAL_D("%s:", __func__);
+  read_config(emvco_hal_config_path);
   if (modeSwitchArgs == NULL) {
     modeSwitchArgs =
         (struct emvco_args *)osal_malloc(sizeof(struct emvco_args));
@@ -510,7 +513,6 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
   m_p_nfc_stack_cback = p_cback;
   m_p_nfc_stack_data_cback = p_data_cback;
   m_p_nfc_state_cback = p_nfc_state_cback;
-  read_config(emvco_hal_config_path);
 
   /* initialize log levels */
   initialize_debug_enabled_flag();

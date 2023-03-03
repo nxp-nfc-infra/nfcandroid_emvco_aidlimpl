@@ -39,4 +39,5 @@ interface IEmvcoContactlessCard {
   boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
   int transceive(in byte[] in_data);
   void setEMVCoMode(in byte in_config, boolean in_isStartEMVCo);
+  android.hardware.emvco.EmvcoStatus stopRFDisovery(in android.hardware.emvco.DeactivationType deactivationType);
 }

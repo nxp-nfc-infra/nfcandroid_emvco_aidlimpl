@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,23 +23,31 @@ package android.hardware.emvco;
  */
 
 /**
- * @brief EMVCo Hal return status code as below
+ * @brief LED types to be handled by EMVCo HAL
+ *
+ * The EMVCo Hal uses this event to control the Red and Green LED state
  */
 @VintfStability
 @Backing(type="int")
-enum EmvcoStatus {
+enum LedControl {
     /**
-     * Indicates success status.
+     * Turns off GREEN LED
      */
-    EMVCO_STATUS_OK = 0,
-    /**
-     * Indicates invalid input parameter status.
-     */
-    EMVCO_STATUS_INVALID_PARAMETER = 1,
-    /**
-     * Indicates failure status.
-     */
-    EMVCO_STATUS_FAILED = 255,
-}
+    RED_LED_OFF                  = 0,
 
+    /**
+     * Turns on RED LED
+     *
+     */
+    RED_LED_ON                   = 1,
+    /**
+     * Turns off GREEN LED
+     */
+    GREEN_LED_OFF                = 2,
+    /**
+     * Turns on GREEN LED
+     *
+     */
+    GREEN_LED_ON                 = 3,
+}
 /** @}*/

@@ -191,6 +191,7 @@ void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
       nci_hal_ctrl.frag_rsp.data_pos = 0;
       RESET_CHAINED_DATA();
     } else {
+      data_len = nci_hal_ctrl.p_rx_data[2];
       (*nci_hal_ctrl.p_nfc_stack_data_cback)(data_len, nci_hal_ctrl.p_rx_data +
                                                            NCI_HEADER_SIZE);
     }
@@ -280,4 +281,22 @@ void send_emvco_data(uint8_t *p_data, uint16_t data_len) {
   } else {
     write_internal(p_data, data_len);
   }
+}
+
+uint8_t send_deactivate_cmd(uint8_t de_act_type) {
+  uint8_t *pp, *p;
+  int len = NCI_MSG_HDR_SIZE + NCI_DISCOVER_PARAM_SIZE_DEACT;
+  p = (uint8_t *)osal_malloc(len);
+  if (p == NULL)
+    return (NCI_STATUS_FAILED);
+  pp = p;
+
+  NCI_MSG_BLD_HDR0(pp, MT_CMD, NCI_GID_RF_MANAGE);
+  NCI_MSG_BLD_HDR1(pp, NCI_MSG_RF_DEACTIVATE);
+  UINT8_TO_STREAM(pp, NCI_DISCOVER_PARAM_SIZE_DEACT);
+  UINT8_TO_STREAM(pp, de_act_type);
+
+  send_app_data(len, p);
+  free(p);
+  return (NCI_STATUS_OK);
 }

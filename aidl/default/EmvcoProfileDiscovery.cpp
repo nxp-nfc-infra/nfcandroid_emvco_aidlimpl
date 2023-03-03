@@ -59,6 +59,12 @@ EmvcoProfileDiscovery::onNfcStateChange(NfcState in_nfcState) {
   return Emvco::getInstance()->getCurrentDiscoveryMode(_aidl_return);
 }
 
+::ndk::ScopedAStatus EmvcoProfileDiscovery::setLed(
+    ::aidl::android::hardware::emvco::LedControl in_ledControl,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->setLed(in_ledControl, emvco_status);
+}
 } // namespace emvco
 } // namespace hardware
 } // namespace android

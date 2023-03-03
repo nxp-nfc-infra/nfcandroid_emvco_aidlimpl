@@ -20,6 +20,9 @@
 #include <emvco_dm.h>
 #include <emvco_hal.h>
 #include <emvco_log.h>
+#include <peripherals.h>
+
+extern emvco_args_t *modeSwitchArgs;
 
 int open_emvco_app_data_channel(
     emvco_stack_callback_t *p_cback, emvco_stack_data_callback_t *p_data_cback,
@@ -49,4 +52,18 @@ discovery_mode_t get_current_discovery_mode() {
 void on_nfc_state_change(int32_t nfc_state) {
   LOG_EMVCOHAL_D("on_nfc_state_change");
   handle_nfc_state_change(nfc_state);
+}
+
+EMVCO_STATUS stop_rf_discovery(uint8_t deactivation_type) {
+  LOG_EMVCOHAL_D("stop_rf_discovery");
+  return rf_deactivate(deactivation_type);
+}
+EMVCO_STATUS set_led(uint8_t led_control) {
+  LOG_EMVCOHAL_D("set_led");
+  if (EMVCO != modeSwitchArgs->current_discovery_mode) {
+    LOG_EMVCOHAL_E("set_led_state failed - Not in EMVCo mode");
+    return EMVCO_STATUS_FAILED;
+  } else {
+    return led_switch_control(led_control);
+  }
 }
