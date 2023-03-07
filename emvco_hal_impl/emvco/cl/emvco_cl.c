@@ -183,6 +183,7 @@ EMVCO_STATUS stop_emvco_mode() {
   int hal_close_status = close_app_data_channel(true);
   LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
 
+  modeSwitchArgs->current_discovery_mode = UNKNOWN;
   (*m_p_nfc_state_cback)(true);
   return EMVCO_STATUS_SUCCESS;
 }
