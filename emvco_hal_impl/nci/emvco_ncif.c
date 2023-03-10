@@ -150,22 +150,12 @@ uint8_t send_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data) {
   return (NCI_STATUS_OK);
 }
 
-static void handle_chained_status(int *status_len, int *apdu_len) {
-  if (*apdu_len == 1) {
-    nci_hal_ctrl.frag_rsp.data_pos -= 1;
-    *status_len = 0;
-    *apdu_len = 0;
-  } else {
-    *status_len = 2;
-  }
-}
-
 void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
   LOG_EMVCOHAL_D("%s \n", __func__);
   if (p_len < 1) {
     LOG_EMVCOHAL_E("Not valid Non fragment APDU received length less than 1");
   }
-  int status_len = 0;
+
   int apdu_len = (int)p_ntf[2];
   if (p_ntf[0] == PBF_SEGMENT_MSG) {
     SET_CHAINED_DATA();
@@ -173,26 +163,22 @@ void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
            (p_ntf + NCI_HEADER_SIZE), (p_len - NCI_HEADER_SIZE));
     nci_hal_ctrl.frag_rsp.data_pos += (p_len - NCI_HEADER_SIZE);
   } else if (p_ntf[0] == PBF_COMPLETE_MSG) {
-    handle_chained_status(&status_len, &apdu_len);
-    int data_len = apdu_len - status_len;
-
     if (IS_CHAINED_DATA()) {
       if (nci_hal_ctrl.frag_rsp.data_pos > 0 &&
-          (nci_hal_ctrl.frag_rsp.data_pos + data_len) < FRAG_MAX_DATA_LEN) {
+          (nci_hal_ctrl.frag_rsp.data_pos + apdu_len) < FRAG_MAX_DATA_LEN) {
         memcpy(nci_hal_ctrl.frag_rsp.p_data + nci_hal_ctrl.frag_rsp.data_pos,
-               p_ntf + NCI_HEADER_SIZE, data_len);
-        nci_hal_ctrl.frag_rsp.data_pos += data_len;
+               p_ntf + NCI_HEADER_SIZE, apdu_len);
+        nci_hal_ctrl.frag_rsp.data_pos += apdu_len;
         (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.frag_rsp.data_pos,
                                                nci_hal_ctrl.frag_rsp.p_data);
       } else {
         LOG_EMVCOHAL_E("Invalid APDU data length:%d received",
-                       nci_hal_ctrl.frag_rsp.data_pos + data_len);
+                       nci_hal_ctrl.frag_rsp.data_pos + apdu_len);
       }
       nci_hal_ctrl.frag_rsp.data_pos = 0;
       RESET_CHAINED_DATA();
     } else {
-      data_len = nci_hal_ctrl.p_rx_data[2];
-      (*nci_hal_ctrl.p_nfc_stack_data_cback)(data_len, nci_hal_ctrl.p_rx_data +
+      (*nci_hal_ctrl.p_nfc_stack_data_cback)(apdu_len, nci_hal_ctrl.p_rx_data +
                                                            NCI_HEADER_SIZE);
     }
   } else {

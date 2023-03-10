@@ -343,8 +343,9 @@ int main(int argc, char **argv) {
             ALOGI("End of Test\n");
             is_end_of_test_ = true;
             psse_cb_promise_.at(APDU_COUNT).set_value();
-          } else if ((data.at(0) == 0x00) || (data.at(0) == 0x10)) {
-            send(nxp_emvco_cl_service_, data, aidl_return, "LOOPBACK_APDU");
+          } else if (data.at(0) == 0x00) {
+            std::vector<uint8_t> apduData(in_data.begin(), in_data.end() - 2);
+            send(nxp_emvco_cl_service_, apduData, aidl_return, "LOOPBACK_APDU");
           } else if (data.at(0) == 0x61 &&
                      data.at(1) == 0x05) { // RF_ACTIVATION_NTF - 0x61 && 0x05
             ALOGI("RF_ACTIVATION_NTF VERIFIED");

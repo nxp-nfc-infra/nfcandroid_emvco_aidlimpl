@@ -210,15 +210,12 @@ int main(int argc, char **argv) {
         ALOGI("%s data callback data.size():%zu", __func__, length);
         // Validating RESET and NCI_DISABLE_STANDBY_MODE_CMD Response
         try {
-          if (length == 33) {
             // RF_ACTIVATION_NTF - 0x61 && 0x05
             if (data.at(0) == 97 && data.at(1) == 5) {
               start_discovery_emvco_cb_promise.set_value();
               ALOGI("%s  RF_ACTIVATION_NTF VERIFIED", __func__);
             }
-          }
           // Validating NCI_SET_EMV_PROFILE and PPSE Response
-          if (length == 2) {
             // PPSE 0x6A && 0x82
             if (data.at(0) == 106 && data.at(1) == 130) {
               ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
@@ -227,7 +224,6 @@ int main(int argc, char **argv) {
               ALOGI("%s  ELSE OF NCI_SET_EMV_PROFILE and PPSE Response",
                     __func__);
             }
-          }
         } catch (const std::future_error &e) {
           ALOGE("%s event future_error", e.what());
         }
