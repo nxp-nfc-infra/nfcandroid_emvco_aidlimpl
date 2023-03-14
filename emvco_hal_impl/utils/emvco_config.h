@@ -45,8 +45,13 @@
  */
 
 #include "map.h"
+#include <emvco_status.h>
 #include <stdbool.h>
-struct map *pconfig_map;
+#include <stdint.h>
+
+extern uint8_t cmd_idle_pwr_off_cfg[];
+
+struct map *fp_config_map;
 
 /**
  * @brief Reads the configuration from a file.
@@ -117,6 +122,25 @@ int getDigitValue(char c, int base);
  */
 bool isPrintable(char c);
 
+/**
+ * @brief Returns a pointer to the configuration map.
+ *
+ * This function returns a pointer to the configuration map, which is a `map`
+ * struct containing key-value pairs of configuration data.
+ *
+ * @return A pointer to the configuration map.
+ * @retval NULL If the configuration map is not found or cannot be accessed.
+ */
+struct map *get_config_map(void);
+
+/**
+ * @brief Sends the list of set configuration to NFCC which was saved
+ *        through setConfig API.
+ *
+ * @param void
+ * @return void.
+ */
+void send_dynamic_set_config(void);
 
 /* default configuration */
 #define emvco_hal_config_path "/vendor/etc/libemvco-nxp.conf"

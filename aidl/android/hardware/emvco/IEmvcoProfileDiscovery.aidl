@@ -24,6 +24,7 @@ import android.hardware.emvco.NfcState;
 import android.hardware.emvco.DiscoveryMode;
 import android.hardware.emvco.LedControl;
 import android.hardware.emvco.EmvcoStatus;
+import android.hardware.emvco.ConfigType;
 
 @VintfStability
 interface IEmvcoProfileDiscovery {
@@ -89,11 +90,50 @@ interface IEmvcoProfileDiscovery {
     /**
     * @brief allows to turn ON/OFF the specified LED.
     *
-    * @param[in] in_ledControl specifies the LED to be turned ON or OFF
+    * @param[in] ledControl specifies the LED to be turned ON or OFF
     *
     * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
     *         is not processed due to in-valid state. EMVCo mode should be ON to call this API
     *
     */
     EmvcoStatus setLed(in LedControl ledControl);
+
+    /**
+    * @brief allows to set the single byte value.
+    *
+    * @param[in] type - name of the config
+    * @param[in] length - length of the config value
+    * @param[in] value - actual byte value to be set
+    *
+    * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
+    *         is not processed successfully.
+    *
+    */
+    EmvcoStatus setByteConfig(in ConfigType type, in int length, in byte value);
+
+    /**
+    * @brief allows to set the byte array value.
+    *
+    * @param[in] type - name of the config
+    * @param[in] length - length of the config value
+    * @param[in] value - actual byte array value to be set
+    *
+    * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
+    *         is not processed successfully
+    *
+    */
+    EmvcoStatus setByteArrayConfig(in ConfigType type, in int length, in byte[] value);
+
+    /**
+    * @brief allows to set the string value.
+    *
+    * @param[in] type - name of the config
+    * @param[in] length - length of the config value
+    * @param[in] value - actual string value to be set
+    *
+    * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
+    *         is not processed successfully
+    *
+    */
+    EmvcoStatus setStringConfig(in ConfigType type, in int length, in String value);
 }

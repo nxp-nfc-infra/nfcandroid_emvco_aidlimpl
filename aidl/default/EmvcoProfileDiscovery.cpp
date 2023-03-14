@@ -65,6 +65,30 @@ EmvcoProfileDiscovery::onNfcStateChange(NfcState in_nfcState) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->setLed(in_ledControl, emvco_status);
 }
+::ndk::ScopedAStatus EmvcoProfileDiscovery::setByteConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    int8_t in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->setByteConfig(in_type, in_length, in_value,
+                                             _aidl_return);
+}
+::ndk::ScopedAStatus EmvcoProfileDiscovery::setByteArrayConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    const std::vector<uint8_t> &in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->setByteArrayConfig(in_type, in_length, in_value,
+                                                  _aidl_return);
+}
+::ndk::ScopedAStatus EmvcoProfileDiscovery::setStringConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    const std::string &in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->setStringConfig(in_type, in_length, in_value,
+                                               _aidl_return);
+}
 } // namespace emvco
 } // namespace hardware
 } // namespace android

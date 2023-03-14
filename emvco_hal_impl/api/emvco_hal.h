@@ -163,6 +163,51 @@ EMVCO_STATUS stop_rf_discovery(uint8_t deactivation_type);
  */
 EMVCO_STATUS set_led(uint8_t led_control);
 
+/**
+ * @brief allows to set the single byte value.
+ *
+ * @param[in] type - name of the config
+ * @param[in] length - length of the config value
+ * @param[in] value - actual byte value to be set
+ *
+ * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
+ * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
+ * successfully.
+ *
+ */
+EMVCO_STATUS set_byte_config(config_type_t type, const int32_t in_length,
+                             const int8_t in_value);
+
+/**
+ * @brief allows to set the byte array value.
+ *
+ * @param[in] type - name of the config
+ * @param[in] length - length of the config value
+ * @param[in] value - actual byte array value to be set
+ *
+ * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
+ * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
+ * successfully
+ *
+ */
+EMVCO_STATUS set_byte_array_config(config_type_t type, const int32_t in_length,
+                                   const uint8_t *in_value);
+
+/**
+ * @brief allows to set the string value.
+ *
+ * @param[in] type - name of the config
+ * @param[in] length - length of the config value
+ * @param[in] value - actual string value to be set
+ *
+ * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
+ * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
+ * successfully
+ *
+ */
+EMVCO_STATUS set_string_config(config_type_t type, const int32_t in_length,
+                               const char *p_value);
+
 #ifdef __cplusplus
 }
 #endif /*  C++ Compilation guard */

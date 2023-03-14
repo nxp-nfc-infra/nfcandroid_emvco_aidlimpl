@@ -114,6 +114,18 @@ public:
   ::ndk::ScopedAStatus
   setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
          ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status);
+  ::ndk::ScopedAStatus
+  setByteConfig(::aidl::android::hardware::emvco::ConfigType in_type,
+                int32_t in_length, int8_t in_value,
+                ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
+  ::ndk::ScopedAStatus setByteArrayConfig(
+      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+      const std::vector<uint8_t> &in_value,
+      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
+  ::ndk::ScopedAStatus
+  setStringConfig(::aidl::android::hardware::emvco::ConfigType in_type,
+                  int32_t in_length, const std::string &in_value,
+                  ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);

@@ -47,10 +47,25 @@ typedef uint8_t emvco_event_t;
  *
  */
 typedef uint8_t emvco_status_t;
-
+/**
+ * @brief discovery_mode_t stores the current active profile. NFC/EMVCO/UNKNOWN
+ *
+ */
 typedef enum { NFC = 1, EMVCO, UNKNOWN } discovery_mode_t;
 
 discovery_mode_t discovery_mode;
+/**
+ * @brief config_type_t defines the supported config key types
+ *        can be configured through setConfig API
+ *
+ */
+typedef enum { POLL_PROFILE_SEL = 0 } config_type_t;
+/**
+ * @brief deactivation_type_t defines the supported deactivation
+ *        types which will be used along with deactivation command.
+ *
+ */
+typedef enum { IDLE = 0, DISCOVER = 3 } deactivation_type_t;
 
 #ifdef __cplusplus
 }

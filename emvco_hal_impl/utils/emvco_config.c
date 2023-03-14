@@ -38,15 +38,19 @@
 #include "emvco_log.h"
 #include "emvco_osal_common.h"
 #include "osal_memory.h"
+#include <emvco_ncif.h>
 #include <math.h>
 #include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
 
-struct map *pconfig_map = NULL;
-uint8_t *p_buffer = NULL;
+struct map *fp_config_map = NULL;
+uint8_t *fp_buffer = NULL;
 pthread_mutex_t config_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+struct map *config_map = NULL;
+uint8_t cmd_idle_pwr_off_cfg[] = {0x04, 0xA0, 0x44, 0x01, 0x02};
 
 static size_t readConfigFile(const char *fileName, uint8_t **p_data) {
   FILE *fd = fopen(fileName, "rb");
@@ -62,17 +66,17 @@ static size_t readConfigFile(const char *fileName, uint8_t **p_data) {
     return 0;
   }
 
-  p_buffer = (uint8_t *)malloc(file_size + 1);
-  if (!p_buffer) {
+  fp_buffer = (uint8_t *)malloc(file_size + 1);
+  if (!fp_buffer) {
     fclose(fd);
     return 0;
   }
-  size_t read = fread(p_buffer, file_size, 1, fd);
+  size_t read = fread(fp_buffer, file_size, 1, fd);
   fclose(fd);
 
   if (read == 1) {
-    p_buffer[file_size] = '\n';
-    *p_data = p_buffer;
+    fp_buffer[file_size] = '\n';
+    *p_data = fp_buffer;
     return file_size + 1;
   }
   return 0;
@@ -132,7 +136,7 @@ bool isPrintable(char c) {
 
 bool read_config(const char *name) {
   pthread_mutex_lock(&config_mutex);
-  pconfig_map = map_create();
+  fp_config_map = map_create();
   enum {
     BEGIN_LINE = 1,
     TOKEN,
@@ -271,12 +275,12 @@ bool read_config(const char *name) {
         if (strlen(strValue) > 0) {
           LOG_EXTNS_D("%s map_set key:%s, value:%s \n", __func__, token,
                       strValue);
-          map_set(pconfig_map, &token, strlen(token) + 1, &strValue,
-                  strValue_index+1);
+          map_set(fp_config_map, &token, strlen(token) + 1, &strValue,
+                  strValue_index + 1);
         } else {
           int num_len = floor(log10(abs(numValue))) + 1;
           LOG_EXTNS_D("%s map_set key:%s, value:%d", __func__, token, numValue);
-          map_set(pconfig_map, &token, strlen(token) + 1, &numValue, num_len);
+          map_set(fp_config_map, &token, strlen(token) + 1, &numValue, num_len);
         }
         numValue = 0;
         osal_memset(token, '\0', sizeof(token));
@@ -290,7 +294,7 @@ bool read_config(const char *name) {
         state = END_LINE;
         LOG_EXTNS_D("%s map_set key:%s, value:%s \n ", __func__, token,
                     strValue);
-        map_set(pconfig_map, &token, strlen(token) + 1, &strValue,
+        map_set(fp_config_map, &token, strlen(token) + 1, &strValue,
                 strlen(strValue) + 1);
       } else if (isPrintable(c))
         strValue[strValue_index++] = c;
@@ -314,7 +318,7 @@ bool read_config(const char *name) {
 int get_byte_array_value(char *key, char **p_value, unsigned int *value_len) {
   pthread_mutex_lock(&config_mutex);
   unsigned int value_size;
-  void *value = map_get_value(pconfig_map, key, strlen(key) + 1, &value_size);
+  void *value = map_get_value(fp_config_map, key, strlen(key) + 1, &value_size);
   if (value != NULL) {
     *p_value = osal_malloc(value_size);
     if (!(*p_value)) {
@@ -336,7 +340,7 @@ int get_byte_array_value(char *key, char **p_value, unsigned int *value_len) {
 int get_byte_value(char *key, unsigned long *p_value, unsigned int *value_len) {
   pthread_mutex_lock(&config_mutex);
   unsigned long *num_value = (unsigned long *)map_get_value(
-      pconfig_map, key, strlen(key) + 1, value_len);
+      fp_config_map, key, strlen(key) + 1, value_len);
   if (num_value != NULL) {
     *p_value = *num_value;
     pthread_mutex_unlock(&config_mutex);
@@ -346,4 +350,52 @@ int get_byte_value(char *key, unsigned long *p_value, unsigned int *value_len) {
     pthread_mutex_unlock(&config_mutex);
     return FALSE;
   }
+}
+
+struct map *get_config_map(void) {
+  if (config_map == NULL) {
+    LOG_EXTNS_E("%s: config_map is NULL calling map_create \n", __func__);
+    config_map = map_create();
+  }
+  return config_map;
+}
+
+static void send_poll_profile_sel_set_config() {
+  LOG_EXTNS_E("%s:  \n", __func__);
+  int set_config_retry_cnt = 0;
+  uint8_t *p_cmd_idle_pwr_off_cfg = (uint8_t *)cmd_idle_pwr_off_cfg;
+  do {
+    if (EMVCO_STATUS_SUCCESS ==
+        send_core_set_config(&p_cmd_idle_pwr_off_cfg[1],
+                             p_cmd_idle_pwr_off_cfg[0])) {
+      break;
+    } else {
+      LOG_EMVCOHAL_E("NCI_SET_CONFIG_PROFILE_SELECTION: Failed");
+      ++set_config_retry_cnt;
+    }
+  } while (set_config_retry_cnt < 3);
+}
+
+void send_dynamic_set_config(void) {
+  struct map *m = get_config_map();
+  struct map_node *node = m->head;
+
+  while (node != NULL) {
+    int key = atoi((char *)node->key);
+    const int8_t *value = (int8_t *)node->value;
+    LOG_EXTNS_E("%s: POLL_PROFILE_SEL str_key:%s, value:%d \n", __func__,
+                (char *)node->key, *value);
+    switch (key) {
+    case POLL_PROFILE_SEL:
+      cmd_idle_pwr_off_cfg[4] = *value;
+      break;
+    default:
+      break;
+    }
+    node = node->next;
+  }
+
+  send_poll_profile_sel_set_config();
+
+  LOG_EXTNS_E("%s: end \n", __func__);
 }

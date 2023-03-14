@@ -140,7 +140,7 @@ uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
   *p_disc_size = (uint8_t)((pp - p_start) - NCI_MSG_HDR_SIZE);
   len = NCI_MSG_HDR_SIZE + (*p_disc_size);
 
-  send_app_data(len, p_start);
+  send_app_data_unlocked(len, p_start);
   free(p);
   return (NCI_STATUS_OK);
 }
@@ -282,7 +282,7 @@ uint8_t send_deactivate_cmd(uint8_t de_act_type) {
   UINT8_TO_STREAM(pp, NCI_DISCOVER_PARAM_SIZE_DEACT);
   UINT8_TO_STREAM(pp, de_act_type);
 
-  send_app_data(len, p);
+  send_app_data_unlocked(len, p);
   free(p);
   return (NCI_STATUS_OK);
 }

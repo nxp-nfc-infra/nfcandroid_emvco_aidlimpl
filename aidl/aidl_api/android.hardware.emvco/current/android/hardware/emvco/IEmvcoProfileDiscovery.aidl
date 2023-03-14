@@ -42,4 +42,7 @@ interface IEmvcoProfileDiscovery {
   boolean registerNFCStateChangeCallback(in android.hardware.emvco.INfcStateChangeRequestCallback nfcStateChangeCallback);
   android.hardware.emvco.DiscoveryMode getCurrentDiscoveryMode();
   android.hardware.emvco.EmvcoStatus setLed(in android.hardware.emvco.LedControl ledControl);
+  android.hardware.emvco.EmvcoStatus setByteConfig(in android.hardware.emvco.ConfigType type, in int length, in byte value);
+  android.hardware.emvco.EmvcoStatus setByteArrayConfig(in android.hardware.emvco.ConfigType type, in int length, in byte[] value);
+  android.hardware.emvco.EmvcoStatus setStringConfig(in android.hardware.emvco.ConfigType type, in int length, in String value);
 }

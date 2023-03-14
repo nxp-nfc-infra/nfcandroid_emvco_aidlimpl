@@ -16,11 +16,12 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "emvco_aidl_hal_test"
+#define LOG_TAG "emvco_compliance_test"
 
 #include <aidl/Gtest.h>
 #include <aidl/android/hardware/emvco/BnEmvco.h>
 #include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
+#include <aidl/android/hardware/emvco/ConfigType.h>
 #include <aidl/android/hardware/emvco/IEmvco.h>
 #include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
 #include <aidl/android/hardware/emvco/IEmvcoProfileDiscovery.h>
@@ -34,6 +35,7 @@
 #include <future>
 #include <log/log.h>
 
+using aidl::android::hardware::emvco::ConfigType;
 using aidl::android::hardware::emvco::DeactivationType;
 using aidl::android::hardware::emvco::EmvcoEvent;
 using aidl::android::hardware::emvco::EmvcoStatus;
@@ -44,30 +46,18 @@ using aidl::android::hardware::emvco::IEmvcoProfileDiscovery;
 using aidl::android::hardware::emvco::LedControl;
 using ndk::SpAIBinder;
 
-
-/* NCI Commands */
-#define NCI_START_DISCOVERY                                                    \
-  { 0x21, 0x03, 0x05, 0x02, 0x00, 0x01, 0x01, 0x01 }
-
 #define NCI_SEND_PPSE                                                          \
   {                                                                            \
     0x00, 0xA4, 0x04, 0x00, 0x0E, 0x32, 0x50, 0x41, 0x59, 0x2E, 0x53, 0x59,    \
         0x53, 0x2E, 0x44, 0x44, 0x46, 0x30, 0x31, 0x00                         \
   }
-
 #define RESP_APDU_TIMEOUT 3500
 #define DEACTIVATE_IDLE_TIMEOUT 15000
 #define MIN_LED_GLOW_DURATION 500
 #define MAX_LED_GLOW_DURATION 3000
-
-const std::vector<uint8_t> nci_start_discovery = NCI_START_DISCOVERY;
-const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
-
-::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
-
+#define EMVCO_POLLING_STARTED_EVT 4
 // 638 test case *7 APDU including start discovery + 638 discovery = 5104
 #define PPSE_SEND_MAX_TIMES 5104
-
 #define PRINT_CAPDU(y, z)                                                      \
   {                                                                            \
     int loop;                                                                  \
@@ -76,7 +66,8 @@ const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
       ALOGI("%02.02X ", y[loop]);                                              \
   }
 
-constexpr static int CALLBACK_TIMEOUT = 100;
+const std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
+::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
 volatile static int APDU_COUNT = 0;
 static std::vector<std::promise<void>> psse_cb_promise_;
 unsigned long long start_ts_, end_ts_;
@@ -100,6 +91,8 @@ const int NFC_F_PASSIVE_POLL_MODE_SUPPORTED = 4;
 const int NFC_ABF_PASSIVE_POLL_MODE_SUPPORTED = 7;
 const int NFC_ABVAS_PASSIVE_POLL_MODE_SUPPORTED = 11;
 const int NFC_ABFVAS_PASSIVE_POLL_MODE_SUPPORTED = 15;
+const int pollProfileSelection = 0b00000010;
+int count = 0;
 
 std::mutex data_mutex_;
 std::mutex led_mutex_;
@@ -200,7 +193,6 @@ static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
   ALOGI("%s\n transceive data:%s", __func__, dataTag.c_str());
   nxp_emvco_cl_service_->transceive(data, &aidl_return);
 }
-
 
 void signal_callback_handler(int signum) {
   ALOGI("%s Self test App abort requested, signum:%d", __func__, signum);
@@ -305,8 +297,6 @@ int main(int argc, char **argv) {
 
   std::vector<std::future<void>> psse_cb_future;
 
-  std::chrono::milliseconds timeout{CALLBACK_TIMEOUT};
-
   for (int i = 0; i < PPSE_SEND_MAX_TIMES; i++) {
     std::promise<void> ppse_promise;
     psse_cb_future.push_back(ppse_promise.get_future());
@@ -325,12 +315,25 @@ int main(int argc, char **argv) {
   nxp_emvco_service_->getEmvcoContactlessCard(&nxp_emvco_cl_service_);
   nxp_emvco_service_->getEmvcoProfileDiscoveryInterface(
       &nxp_emvco_prof_disc_service_);
+  aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+  int tempPollProfileSelection = pollProfileSelection;
+  while (tempPollProfileSelection != 0) {
+    tempPollProfileSelection /= 10;
+    ++count;
+  }
+  ALOGI("setByteConfig called with pollProfileSelection:%d, count:%d",
+        pollProfileSelection, count);
+  nxp_emvco_prof_disc_service_->setByteConfig(
+      ConfigType::POLL_PROFILE_SEL, count, pollProfileSelection, &_aidl_return);
 
   auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
       [](auto event, auto status) {
-        ALOGI("Event callback");
-        (void)event;
+        ALOGI("Event callback event:%d", event);
         (void)status;
+        if (EMVCO_POLLING_STARTED_EVT == (int)event) {
+          setLedState(LedControl::RED_LED_OFF);
+          setLedState(LedControl::GREEN_LED_OFF);
+        }
       },
       [](auto &in_data) {
         ALOGI("Data callback");
@@ -372,8 +375,6 @@ int main(int argc, char **argv) {
   while (true) {
     // NCI_START_DISCOVERY
     if (is_end_of_test_ == false) {
-      send(nxp_emvco_cl_service_, nci_start_discovery, aidl_return,
-           "NCI_START_DISCOVERY");
       ALOGI("\n Loopback application running - waiting for test equipment "
             "discovery ...\n");
       psse_cb_future.at(APDU_COUNT).wait();
@@ -397,12 +398,17 @@ int main(int argc, char **argv) {
     } else {
       ALOGI("EOT RECEIVED ");
     }
+    if (is_failure) {
+      is_failure = false;
+      controlRedLed();
+    }
     if (is_removal_procedure) {
       is_removal_procedure = false;
       ALOGI("stopRFDisovery with DISCOVER");
       EmvcoStatus emvcoStatus;
       nxp_emvco_cl_service_->stopRFDisovery(DeactivationType::DISCOVER,
                                             &emvcoStatus);
+      psse_cb_future.at(APDU_COUNT).wait();
     } else {
       ALOGI("stopRFDisovery with IDLE");
       EmvcoStatus emvcoStatus;
@@ -410,15 +416,12 @@ int main(int argc, char **argv) {
                                             &emvcoStatus);
       std::chrono::microseconds sleepTime(DEACTIVATE_IDLE_TIMEOUT);
       std::this_thread::sleep_for(sleepTime);
+      ALOGI("Poll again through setEMVCoMode");
+      nxp_emvco_cl_service_->setEMVCoMode(pollingConfiguration, true);
     }
-    if (is_failure) {
-      is_failure = false;
-      controlRedLed();
-    }
-    psse_cb_future.at(APDU_COUNT).wait_for(5 * timeout);
     ++APDU_COUNT;
-    is_end_of_test_ =
-        false; // Reset is_end_of_test_ to send the PPSE in loop next time
+    // Reset is_end_of_test_ to send the PPSE in loop next time
+    is_end_of_test_ = false;
     ALOGI("NCI_STOP_DISCOVERY completed");
   }
   nxp_emvco_cl_service_->setEMVCoMode(pollingConfiguration, false);

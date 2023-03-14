@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 #include <emvco_cl.h>
+#include <emvco_common.h>
+#include <emvco_config.h>
 #include <emvco_dm.h>
 #include <emvco_log.h>
 #include <emvco_nci_ext.h>
@@ -102,14 +104,25 @@ bool is_valid_emvco_polling_tech(int8_t emvco_config) {
 }
 
 void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
-  LOG_EMVCOHAL_D("%s emvco_config:%d is_start_emvco:%d", __func__, emvco_config,
-                 is_start_emvco);
+  LOG_EMVCOHAL_D(
+      "%s emvco_config:%d, is_start_emvco:%d, current_discovery_mode:%d",
+      __func__, emvco_config, is_start_emvco,
+      modeSwitchArgs->current_discovery_mode);
   pthread_mutex_lock(&emvco_lock);
   modeSwitchArgs->is_start_emvco = is_start_emvco;
   modeSwitchArgs->emvco_config = emvco_config;
   if (is_start_emvco) {
     if (is_valid_emvco_polling_tech(emvco_config)) {
-      m_p_nfc_state_cback(false);
+      if (EMVCO == modeSwitchArgs->current_discovery_mode) {
+        uint8_t num_params;
+        tEMVCO_DISCOVER_PARAMS disc_params[MAX_DISC_PARAMS];
+        num_params = get_rf_discover_config(modeSwitchArgs->emvco_config,
+                                            disc_params, MAX_DISC_PARAMS);
+        LOG_EMVCOHAL_D("RFDiscover num_params:%d", num_params);
+        send_discover_cmd(num_params, disc_params);
+      } else {
+        m_p_nfc_state_cback(false);
+      }
     } else {
       LOG_EMVCOHAL_D("%s In-valid polling technlogy", __func__);
       (*m_p_nfc_stack_cback)(EMVCO_POOLING_START_EVT, STATUS_FAILED);
@@ -172,6 +185,7 @@ uint8_t get_rf_discover_config(tDISC_TECH_PROTO_MASK dm_disc_mask,
 
 EMVCO_STATUS start_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
+  send_dynamic_set_config();
   uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
   send_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
   return EMVCO_STATUS_SUCCESS;

@@ -17,11 +17,14 @@
  ******************************************************************************/
 
 #include <emvco_cl.h>
+#include <emvco_config.h>
 #include <emvco_dm.h>
 #include <emvco_hal.h>
 #include <emvco_log.h>
+#include <emvco_ncif.h>
+#include <map.h>
 #include <peripherals.h>
-
+#define MAX_KEY_LENGTH 3
 extern emvco_args_t *modeSwitchArgs;
 
 int open_emvco_app_data_channel(
@@ -66,4 +69,33 @@ EMVCO_STATUS set_led(uint8_t led_control) {
   } else {
     return led_switch_control(led_control);
   }
+}
+
+EMVCO_STATUS set_byte_config(config_type_t type, const int32_t length,
+                             const int8_t value) {
+  char token[MAX_KEY_LENGTH];
+  sprintf(token, "%d", (int)type);
+  LOG_EMVCOHAL_D("set_byte_config token:%s, value:%x", token, value);
+
+  struct map *m = get_config_map();
+  map_set(m, &token, strlen(token) + 1, &value, length);
+  return EMVCO_STATUS_SUCCESS;
+}
+
+EMVCO_STATUS set_byte_array_config(config_type_t type, const int32_t in_length,
+                                   const uint8_t *in_value) {
+  LOG_EMVCOHAL_D("set_byte_array_config not supported yet");
+  (void)type;
+  (void)in_length;
+  (void)in_value;
+  return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+}
+
+EMVCO_STATUS set_string_config(config_type_t type, const int32_t in_length,
+                               const char *p_value) {
+  LOG_EMVCOHAL_D("set_string_config not supported yet");
+  (void)type;
+  (void)in_length;
+  (void)p_value;
+  return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
 }

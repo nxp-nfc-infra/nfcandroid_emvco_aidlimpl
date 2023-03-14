@@ -32,10 +32,22 @@ enum EmvcoStatus {
      * Indicates success status.
      */
     EMVCO_STATUS_OK = 0,
+
     /**
      * Indicates invalid input parameter status.
      */
     EMVCO_STATUS_INVALID_PARAMETER = 1,
+
+    /**
+     * Indicates action requested on invalid state
+     */
+    EMVCO_STATUS_INVALID_STATE = 11,
+
+    /**
+     * Indicates feature not supported yet.
+     */
+    EMVCO_STATUS_FEATURE_NOT_SUPPORTED = 33,
+
     /**
      * Indicates failure status.
      */

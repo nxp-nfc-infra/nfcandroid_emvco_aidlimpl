@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2023 NXP
+ *  Copyright 2023 NXP
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -35,10 +35,6 @@
 
 package android.hardware.emvco;
 @Backing(type="int") @VintfStability
-enum EmvcoStatus {
-  EMVCO_STATUS_OK = 0,
-  EMVCO_STATUS_INVALID_PARAMETER = 1,
-  EMVCO_STATUS_INVALID_STATE = 11,
-  EMVCO_STATUS_FEATURE_NOT_SUPPORTED = 33,
-  EMVCO_STATUS_FAILED = 255,
+enum ConfigType {
+  POLL_PROFILE_SEL = 0,
 }

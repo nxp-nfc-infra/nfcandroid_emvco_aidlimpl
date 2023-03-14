@@ -315,9 +315,7 @@ int min_open_app_data_channel() {
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("phNxpNci_MinOpen(): enter");
-  const uint8_t cmd_idle_pwr_off_cfg[] = {0x04, 0xA0, 0x44, 0x01, 0x02};
 
-  uint8_t *p_cmd_idle_pwr_off_cfg = (uint8_t *)cmd_idle_pwr_off_cfg;
 
   if (nci_hal_ctrl.halStatus == HAL_STATUS_MIN_OPEN) {
     LOG_EMVCOHAL_D("min_open_app_data_channel(): already open");
@@ -450,19 +448,6 @@ init_retry:
     wConfigStatus = EMVCO_STATUS_FAILED;
     goto clean_and_return;
   }
-  do {
-    status = send_core_set_config(&p_cmd_idle_pwr_off_cfg[1],
-                                  p_cmd_idle_pwr_off_cfg[0]);
-    if (status == EMVCO_STATUS_SUCCESS) {
-      set_config_retry_cnt = 0;
-      break;
-    } else {
-      LOG_EMVCOHAL_E("NCI_SET_CONFIG_DEACTIVATE : Failed");
-      ++set_config_retry_cnt;
-    }
-  } while (set_config_retry_cnt < 3);
-
-  set_config_retry_cnt = 0;
 
   get_byte_array_value(NAME_NXP_VAS_ECP, &buffer, &bufflen);
   if (buffer != NULL) {
@@ -574,15 +559,14 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
   static lib_emvco_message_t msg;
   if (nci_hal_ctrl.halStatus != HAL_STATUS_OPEN) {
+    LOG_EMVCOHAL_E("cmd_len exceeds limit NCI_MAX_DATA_LEN");
     return EMVCO_STATUS_FAILED;
   }
-  /* (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT) = 0x20 */
-  if ((p_data[0] & (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT)) &&
-      (data_len > NCI_MAX_DATA_LEN)) {
-    LOG_EMVCOHAL_E("cmd_len exceeds limit NCI_MAX_DATA_LEN");
-    __osal_log_error_write(0x534e4554, "121267042");
-    goto clean_and_return;
+  if ((p_data[0] & (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT))) {
+    LOG_EMVCOHAL_E("NCI command not allowed to send to controller");
+    return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
   }
+
   /* Create local copy of cmd_data */
   osal_memcpy(nci_hal_ctrl.p_cmd_data, p_data, data_len);
   nci_hal_ctrl.cmd_len = data_len;

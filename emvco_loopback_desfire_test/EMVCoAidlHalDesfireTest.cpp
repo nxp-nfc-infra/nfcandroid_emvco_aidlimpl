@@ -52,6 +52,8 @@ using ndk::ScopedAStatus;
 using ndk::SharedRefBase;
 using ndk::SpAIBinder;
 
+using aidl::android::hardware::emvco::ConfigType;
+using aidl::android::hardware::emvco::IEmvcoProfileDiscovery;
 using android::getAidlHalInstanceNames;
 using android::PrintInstanceNameToString;
 using android::base::StringPrintf;
@@ -59,7 +61,6 @@ using ndk::enum_range;
 using ndk::ScopedAStatus;
 using ndk::SharedRefBase;
 using ndk::SpAIBinder;
-
 /* NCI Commands */
 
 #define NCI_SEND_PPSE                                                          \
@@ -82,7 +83,10 @@ const int NFC_A_PASSIVE_POLL_MODE = 0;
 const int NFC_B_PASSIVE_POLL_MODE = 1;
 const int NFC_F_PASSIVE_POLL_MODE = 2;
 const int NFC_VAS_PASSIVE_POLL_MODE = 3;
+const int pollProfileSelection = 0b00000010;
+int count = 0;
 ::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
+std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
 
 class EmvcoClientCallback
     : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
@@ -210,20 +214,20 @@ int main(int argc, char **argv) {
         ALOGI("%s data callback data.size():%zu", __func__, length);
         // Validating RESET and NCI_DISABLE_STANDBY_MODE_CMD Response
         try {
-            // RF_ACTIVATION_NTF - 0x61 && 0x05
-            if (data.at(0) == 97 && data.at(1) == 5) {
-              start_discovery_emvco_cb_promise.set_value();
-              ALOGI("%s  RF_ACTIVATION_NTF VERIFIED", __func__);
-            }
+          // RF_ACTIVATION_NTF - 0x61 && 0x05
+          if (data.at(0) == 97 && data.at(1) == 5) {
+            start_discovery_emvco_cb_promise.set_value();
+            ALOGI("%s  RF_ACTIVATION_NTF VERIFIED", __func__);
+          }
           // Validating NCI_SET_EMV_PROFILE and PPSE Response
-            // PPSE 0x6A && 0x82
-            if (data.at(0) == 106 && data.at(1) == 130) {
-              ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
-              psse_cb_promise.at(index).set_value();
-            } else {
-              ALOGI("%s  ELSE OF NCI_SET_EMV_PROFILE and PPSE Response",
-                    __func__);
-            }
+          // PPSE 0x6A && 0x82
+          if (data.at(0) == 106 && data.at(1) == 130) {
+            ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
+            psse_cb_promise.at(index).set_value();
+          } else {
+            ALOGI("%s  ELSE OF NCI_SET_EMV_PROFILE and PPSE Response",
+                  __func__);
+          }
         } catch (const std::future_error &e) {
           ALOGE("%s event future_error", e.what());
         }
@@ -237,6 +241,18 @@ int main(int argc, char **argv) {
   AIBinder_linkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
 
   iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
+
+  iIEmvco_->getEmvcoProfileDiscoveryInterface(&nxp_emvco_prof_disc_service_);
+  aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+  int tempPollProfileSelection = pollProfileSelection;
+  while (tempPollProfileSelection != 0) {
+    tempPollProfileSelection /= 10;
+    ++count;
+  }
+  ALOGI("setByteConfig called with pollProfileSelection:%d, count:%d",
+        pollProfileSelection, count);
+  nxp_emvco_prof_disc_service_->setByteConfig(
+      ConfigType::POLL_PROFILE_SEL, count, pollProfileSelection, &_aidl_return);
 
   // Open and wait for OPEN_CPLT
   ALOGI("registerEMVCoEventListener");

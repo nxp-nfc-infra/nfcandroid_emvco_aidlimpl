@@ -1,11 +1,11 @@
 cc_test {
-    name: "EMVCoAidlHalDesfireTest",
+    name: "EMVCoAidlHalTransacTest",
     defaults: [
         "VtsHalTargetTestDefaults",
         "use_libaidlvintf_gtest_helper_static",
     ],
     srcs: [
-        "EMVCoAidlHalDesfireTest.cpp",
+        "EMVCoAidlHalTransacTest.cpp",
     ],
     shared_libs: [
         "libbinder",

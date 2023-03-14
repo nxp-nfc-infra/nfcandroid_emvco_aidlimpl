@@ -254,6 +254,40 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   return ndk::ScopedAStatus::ok();
 }
 
+::ndk::ScopedAStatus Emvco::setByteConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    int8_t in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: in_value:%d", __func__, in_value);
+
+  *emvco_status =
+      (EmvcoStatus)set_byte_config((config_type_t)in_type, in_length, in_value);
+  return ndk::ScopedAStatus::ok();
+}
+
+::ndk::ScopedAStatus Emvco::setByteArrayConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    const std::vector<uint8_t> &in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  (void)in_length;
+  std::vector<uint8_t> data(in_value.begin(), in_value.end());
+  for (int8_t value : data) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: value:%d", __func__, value);
+  }
+  *emvco_status = (EmvcoStatus)set_byte_array_config(
+      (config_type_t)in_type, data.size(), (uint8_t *)data.data());
+  return ndk::ScopedAStatus::ok();
+}
+::ndk::ScopedAStatus Emvco::setStringConfig(
+    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+    const std::string &in_value,
+    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: in_value:%s", __func__, in_value.c_str());
+
+  *emvco_status = (EmvcoStatus)set_string_config((config_type_t)in_type,
+                                                 in_length, in_value.c_str());
+  return ndk::ScopedAStatus::ok();
+}
 } // namespace emvco
 } // namespace hardware
 } // namespace android

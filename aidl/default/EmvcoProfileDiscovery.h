@@ -112,6 +112,18 @@ public:
   ::ndk::ScopedAStatus
   setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
          ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) override;
+  ::ndk::ScopedAStatus setByteConfig(
+      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+      int8_t in_value,
+      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
+  ::ndk::ScopedAStatus setByteArrayConfig(
+      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+      const std::vector<uint8_t> &in_value,
+      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
+  ::ndk::ScopedAStatus setStringConfig(
+      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+      const std::string &in_value,
+      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
 };
 
 } // namespace emvco

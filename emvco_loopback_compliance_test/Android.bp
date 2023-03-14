@@ -5,7 +5,7 @@ cc_test {
         "use_libaidlvintf_gtest_helper_static",
     ],
     srcs: [
-        "EMVCoAidlHalTargetTest.cpp",
+        "EMVCoAidlHalComplianceTest.cpp",
     ],
     shared_libs: [
         "libbinder",
