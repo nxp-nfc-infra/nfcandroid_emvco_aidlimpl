@@ -68,8 +68,11 @@ void open_app_data_channel_internal() {
 void handle_nfc_state_change(int32_t nfc_state) {
   LOG_EMVCOHAL_D("%s nfc_state:%d", __func__, nfc_state);
   nfc_status = nfc_state;
-  if (nfc_status == STATE_OFF && modeSwitchArgs->is_start_emvco) {
-    open_app_data_channel_internal();
+  if (nfc_status == STATE_OFF) {
+    modeSwitchArgs->current_discovery_mode = UNKNOWN;
+    if (modeSwitchArgs->is_start_emvco) {
+      open_app_data_channel_internal();
+    }
   } else if (nfc_status == STATE_ON) {
     modeSwitchArgs->current_discovery_mode = NFC;
   }
@@ -121,7 +124,11 @@ void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
         LOG_EMVCOHAL_D("RFDiscover num_params:%d", num_params);
         send_discover_cmd(num_params, disc_params);
       } else {
-        m_p_nfc_state_cback(false);
+        if (nfc_status == STATE_OFF) {
+          open_app_data_channel_internal();
+        } else {
+          m_p_nfc_state_cback(false);
+        }
       }
     } else {
       LOG_EMVCOHAL_D("%s In-valid polling technlogy", __func__);

@@ -167,10 +167,10 @@ typedef struct nci_info {
 } nci_info_t;
 /* NCI Control structure */
 typedef struct nci_hal_ctrl {
-  emvco_hal_status halStatus;  /* Indicate if hal is open or closed */
+  emvco_hal_status halStatus;        /* Indicate if hal is open or closed */
   pthread_t emvco_hal_client_thread; /* Integration thread handle */
-  uint8_t thread_running;      /* Thread running if set to 1, else set to 0 */
-  driver_config_data gDrvCfg;  /* Driver config data */
+  uint8_t thread_running;     /* Thread running if set to 1, else set to 0 */
+  driver_config_data gDrvCfg; /* Driver config data */
 
   /* Rx data */
   uint8_t *p_rx_data;

@@ -150,146 +150,153 @@ void EmvcoHalBinderDied(void *cookie) {
 
 int main(int argc, char **argv) {
   ABinderProcess_startThreadPool();
-
-  ALOGI("%s Entered %d arguments", __func__, argc);
-  for (int i = 0; i < argc; ++i) {
-    ALOGI("%s argv:", argv[i]);
-  }
-  if (argc == 3) {
-    if (strstr(argv[2], "A") != 0 || strstr(argv[2], "a") != 0) {
-      setRFTechnologyMode(NFC_A_PASSIVE_POLL_MODE, true);
+  try {
+    ALOGI("%s Entered %d arguments", __func__, argc);
+    for (int i = 0; i < argc; ++i) {
+      ALOGI("%s argv:", argv[i]);
     }
-    if (strstr(argv[2], "B") != 0 || strstr(argv[2], "b") != 0) {
-      setRFTechnologyMode(NFC_B_PASSIVE_POLL_MODE, true);
-    }
-    if (strstr(argv[2], "F") != 0 || strstr(argv[2], "f") != 0) {
-      setRFTechnologyMode(NFC_F_PASSIVE_POLL_MODE, true);
-    }
-    if (strstr(argv[2], "V") != 0 || strstr(argv[2], "v") != 0) {
-      setRFTechnologyMode(NFC_VAS_PASSIVE_POLL_MODE, true);
-    }
-  } else {
-    printf("\n Select atleast one polling technolgy to enable EMVCo mode\n "
-           "Example#1: \"./EMVCoAidlHalDesfireTest Type A\" will enable Type A "
-           "for polling \n Example#2: \"./EMVCoAidlHalDesfireTest Type AB\" "
-           "will enable Type AB for polling \n \n ");
-    return 0;
-  }
-
-  if (pollingConfiguration == 0) {
-    printf(
-        "\n Select supported polling technolgy (A/B/F) to enable EMVCo mode\n "
-        "Example#1: \"./EMVCoAidlHalDesfireTest Type A\" will enable "
-        "Type A for polling \n Example#2: \"./EMVCoAidlHalDesfireTest Type "
-        "AB\" will enable Type AB for polling \n \n ");
-    return 0;
-  }
-  signal(SIGINT, signal_callback_handler);
-
-  std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
-  std::promise<void> start_discovery_emvco_cb_promise;
-
-  auto start_discovery_emvco_cb_future =
-      start_discovery_emvco_cb_promise.get_future();
-  std::vector<std::future<void>> psse_cb_future;
-
-  std::chrono::milliseconds timeout{kCallbackTimeoutMs};
-
-  for (int i = 0; i < PPSE_SEND_MAX_TIMES; i++) {
-    std::promise<void> promise;
-    psse_cb_future.push_back(promise.get_future());
-    psse_cb_promise.push_back(std::move(promise));
-  }
-
-  auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
-      [](auto event, auto status) {
-        ALOGI("%s event callback", __func__);
-        (void)event;
-        (void)status;
-      },
-      [&start_discovery_emvco_cb_promise](auto &in_data) {
-        ALOGI("%s data callback", __func__);
-        std::vector<uint8_t> data(in_data.begin(), in_data.end());
-        size_t length = data.size();
-        ALOGI("%s data callback data.size():%zu", __func__, length);
-        // Validating RESET and NCI_DISABLE_STANDBY_MODE_CMD Response
-        try {
-          // RF_ACTIVATION_NTF - 0x61 && 0x05
-          if (data.at(0) == 97 && data.at(1) == 5) {
-            start_discovery_emvco_cb_promise.set_value();
-            ALOGI("%s  RF_ACTIVATION_NTF VERIFIED", __func__);
-          }
-          // Validating NCI_SET_EMV_PROFILE and PPSE Response
-          // PPSE 0x6A && 0x82
-          if (data.at(0) == 106 && data.at(1) == 130) {
-            ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
-            psse_cb_promise.at(index).set_value();
-          } else {
-            ALOGI("%s  ELSE OF NCI_SET_EMV_PROFILE and PPSE Response",
-                  __func__);
-          }
-        } catch (const std::future_error &e) {
-          ALOGE("%s event future_error", e.what());
-        }
-      });
-
-  const std::string instance = std::string() + IEmvco::descriptor + "/default";
-  SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
-  iIEmvco_ = IEmvco::fromBinder(binder);
-  mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
-      AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
-  AIBinder_linkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
-
-  iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
-
-  iIEmvco_->getEmvcoProfileDiscoveryInterface(&nxp_emvco_prof_disc_service_);
-  aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
-  int tempPollProfileSelection = pollProfileSelection;
-  while (tempPollProfileSelection != 0) {
-    tempPollProfileSelection /= 10;
-    ++count;
-  }
-  ALOGI("setByteConfig called with pollProfileSelection:%d, count:%d",
-        pollProfileSelection, count);
-  nxp_emvco_prof_disc_service_->setByteConfig(
-      ConfigType::POLL_PROFILE_SEL, count, pollProfileSelection, &_aidl_return);
-
-  // Open and wait for OPEN_CPLT
-  ALOGI("registerEMVCoEventListener");
-  bool register_status;
-  EXPECT_TRUE((*(iEmvcoContactlessCard_))
-                  .registerEMVCoEventListener(mCallback, &register_status)
-                  .isOk());
-
-  iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, true);
-  start_discovery_emvco_cb_future.wait();
-
-  // NCI_SEND_PPSE
-  while (true) {
-    ALOGI("%s NCI_SEND_PPSE COUNT=%d", __func__, index);
-    if (index <= PPSE_SEND_MAX_TIMES - 1) {
-      const std::vector<uint8_t> &data6 = NCI_SEND_PPSE;
-      int32_t ppse_aidl_return1;
-      struct timespec tm;
-      clock_gettime(CLOCK_MONOTONIC, &tm);
-      start_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
-      ALOGI("%s PPSE command Sent at:%llu", __func__, start_ts);
-      iEmvcoContactlessCard_->transceive(data6, &ppse_aidl_return1);
-      EXPECT_EQ(psse_cb_future.at(index).wait_for(3 * timeout),
-                std::future_status::ready);
-      clock_gettime(CLOCK_MONOTONIC, &tm);
-      end_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
-      ALOGI("%s PPSE response received at:%llu", __func__, end_ts);
-      ALOGI("%s PPSE command and response duration :%llu microsec", __func__,
-            end_ts - start_ts);
-      ++index;
+    if (argc == 3) {
+      if (strstr(argv[2], "A") != 0 || strstr(argv[2], "a") != 0) {
+        setRFTechnologyMode(NFC_A_PASSIVE_POLL_MODE, true);
+      }
+      if (strstr(argv[2], "B") != 0 || strstr(argv[2], "b") != 0) {
+        setRFTechnologyMode(NFC_B_PASSIVE_POLL_MODE, true);
+      }
+      if (strstr(argv[2], "F") != 0 || strstr(argv[2], "f") != 0) {
+        setRFTechnologyMode(NFC_F_PASSIVE_POLL_MODE, true);
+      }
+      if (strstr(argv[2], "V") != 0 || strstr(argv[2], "v") != 0) {
+        setRFTechnologyMode(NFC_VAS_PASSIVE_POLL_MODE, true);
+      }
     } else {
-      ALOGI("%s not sending NCI_SEND_PPSE_RSP as index> 99 ", __func__);
-      break;
+      printf(
+          "\n Select atleast one polling technolgy to enable EMVCo mode\n "
+          "Example#1: \"./EMVCoAidlHalDesfireTest Type A\" will enable Type A "
+          "for polling \n Example#2: \"./EMVCoAidlHalDesfireTest Type AB\" "
+          "will enable Type AB for polling \n \n ");
+      return 0;
     }
+
+    if (pollingConfiguration == 0) {
+      printf(
+          "\n Select supported polling technolgy (A/B/F) to enable EMVCo "
+          "mode\n "
+          "Example#1: \"./EMVCoAidlHalDesfireTest Type A\" will enable "
+          "Type A for polling \n Example#2: \"./EMVCoAidlHalDesfireTest Type "
+          "AB\" will enable Type AB for polling \n \n ");
+      return 0;
+    }
+    signal(SIGINT, signal_callback_handler);
+
+    std::vector<uint8_t> nci_send_ppse = NCI_SEND_PPSE;
+    std::promise<void> start_discovery_emvco_cb_promise;
+
+    auto start_discovery_emvco_cb_future =
+        start_discovery_emvco_cb_promise.get_future();
+    std::vector<std::future<void>> psse_cb_future;
+
+    std::chrono::milliseconds timeout{kCallbackTimeoutMs};
+
+    for (int i = 0; i < PPSE_SEND_MAX_TIMES; i++) {
+      std::promise<void> promise;
+      psse_cb_future.push_back(promise.get_future());
+      psse_cb_promise.push_back(std::move(promise));
+    }
+
+    auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
+        [](auto event, auto status) {
+          ALOGI("%s event callback", __func__);
+          (void)event;
+          (void)status;
+        },
+        [&start_discovery_emvco_cb_promise](auto &in_data) {
+          ALOGI("%s data callback", __func__);
+          std::vector<uint8_t> data(in_data.begin(), in_data.end());
+          size_t length = data.size();
+          ALOGI("%s data callback data.size():%zu", __func__, length);
+          // Validating RESET and NCI_DISABLE_STANDBY_MODE_CMD Response
+          try {
+            // RF_ACTIVATION_NTF - 0x61 && 0x05
+            if (data.at(0) == 97 && data.at(1) == 5) {
+              start_discovery_emvco_cb_promise.set_value();
+              ALOGI("%s  RF_ACTIVATION_NTF VERIFIED", __func__);
+            }
+            // Validating NCI_SET_EMV_PROFILE and PPSE Response
+            // PPSE 0x6A && 0x82
+            if (data.at(0) == 106 && data.at(1) == 130) {
+              ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
+              psse_cb_promise.at(index).set_value();
+            } else {
+              ALOGI("%s  ELSE OF NCI_SET_EMV_PROFILE and PPSE Response",
+                    __func__);
+            }
+          } catch (const std::future_error &e) {
+            ALOGE("%s event future_error", e.what());
+          }
+        });
+
+    const std::string instance =
+        std::string() + IEmvco::descriptor + "/default";
+    SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
+    iIEmvco_ = IEmvco::fromBinder(binder);
+    mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
+        AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
+    AIBinder_linkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
+
+    iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
+
+    iIEmvco_->getEmvcoProfileDiscoveryInterface(&nxp_emvco_prof_disc_service_);
+    aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+    int tempPollProfileSelection = pollProfileSelection;
+    while (tempPollProfileSelection != 0) {
+      tempPollProfileSelection /= 10;
+      ++count;
+    }
+    ALOGI("setByteConfig called with pollProfileSelection:%d, count:%d",
+          pollProfileSelection, count);
+
+    nxp_emvco_prof_disc_service_->setByteConfig(ConfigType::POLL_PROFILE_SEL,
+                                                count, pollProfileSelection,
+                                                &_aidl_return);
+
+    // Open and wait for OPEN_CPLT
+    ALOGI("registerEMVCoEventListener");
+    bool register_status;
+    EXPECT_TRUE((*(iEmvcoContactlessCard_))
+                    .registerEMVCoEventListener(mCallback, &register_status)
+                    .isOk());
+
+    iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, true);
+    start_discovery_emvco_cb_future.wait();
+
+    // NCI_SEND_PPSE
+    while (true) {
+      ALOGI("%s NCI_SEND_PPSE COUNT=%d", __func__, index);
+      if (index <= PPSE_SEND_MAX_TIMES - 1) {
+        const std::vector<uint8_t> &data6 = NCI_SEND_PPSE;
+        int32_t ppse_aidl_return1;
+        struct timespec tm;
+        clock_gettime(CLOCK_MONOTONIC, &tm);
+        start_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
+        ALOGI("%s PPSE command Sent at:%llu", __func__, start_ts);
+        iEmvcoContactlessCard_->transceive(data6, &ppse_aidl_return1);
+        EXPECT_EQ(psse_cb_future.at(index).wait_for(3 * timeout),
+                  std::future_status::ready);
+        clock_gettime(CLOCK_MONOTONIC, &tm);
+        end_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
+        ALOGI("%s PPSE response received at:%llu", __func__, end_ts);
+        ALOGI("%s PPSE command and response duration :%llu microsec", __func__,
+              end_ts - start_ts);
+        ++index;
+      } else {
+        ALOGI("%s not sending NCI_SEND_PPSE_RSP as index> 99 ", __func__);
+        break;
+      }
+    }
+
+    iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, false);
+  } catch (const std::length_error &e) {
+    ALOGE("%s std::length_error", e.what());
   }
-
-  iEmvcoContactlessCard_->setEMVCoMode(pollingConfiguration, false);
-
   ALOGI("TEST APP EXITED");
 }

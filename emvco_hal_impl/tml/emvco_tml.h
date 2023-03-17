@@ -166,9 +166,9 @@ typedef struct tml_emvco_context {
       b_thread_done; /*Flag to decide whether to run or abort the thread */
   config_retrans_t e_config; /*Retransmission of Nci Packet during timeout */
   uint8_t b_retry_count;     /*Number of times retransmission shall happen */
-  uint32_t dw_timer_id;    /* Timer used to retransmit nci packet */
-  tml_read_write_info_t t_read_info;  /*Pointer to Reader Thread Structure */
-  void *p_dev_handle;                 /* Pointer to Device Handle */
+  uint32_t dw_timer_id;      /* Timer used to retransmit nci packet */
+  tml_read_write_info_t t_read_info; /*Pointer to Reader Thread Structure */
+  void *p_dev_handle;                /* Pointer to Device Handle */
   uintptr_t dw_callback_thread_id; /* Thread ID to which message to be posted */
   uint8_t b_enable_crc; /*Flag to validate/not CRC for input buffer */
   sem_t rx_semaphore;
@@ -319,7 +319,8 @@ EMVCO_STATUS tml_write(uint8_t *p_buffer, uint16_t w_length);
  *
  * @param[in]       p_buffer - data to be sent
  * @param[in]       w_length - length of data buffer
- * @param[in]       pTmlWriteComplete  pointer to the function to be invoked upon
+ * @param[in]       pTmlWriteComplete  pointer to the function to be invoked
+ upon
  * completion
  * @param[in]       p_context        context provided by upper layer
  *

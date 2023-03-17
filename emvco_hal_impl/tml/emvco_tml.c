@@ -513,7 +513,6 @@ static void tml_readDeferredCb(void *pParams) {
   return;
 }
 
-
 EMVCO_STATUS tml_shutdown_cleanup() {
   EMVCO_STATUS wShutdownStatus = tml_shutdown();
   tml_cleanup();

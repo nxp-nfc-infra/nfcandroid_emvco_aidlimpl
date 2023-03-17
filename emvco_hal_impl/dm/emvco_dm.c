@@ -77,7 +77,6 @@ rf_setting_t phNxpNciRfSet = {false, {0}};
 
 eeprom_area_t eeprom_area = {false, {0}};
 
-
 /**************** local methods used in this file only ************************/
 static void open_app_data_channel_complete(EMVCO_STATUS status);
 static int min_open_app_data_channel();
@@ -315,7 +314,6 @@ int min_open_app_data_channel() {
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("phNxpNci_MinOpen(): enter");
-
 
   if (nci_hal_ctrl.halStatus == HAL_STATUS_MIN_OPEN) {
     LOG_EMVCOHAL_D("min_open_app_data_channel(): already open");
