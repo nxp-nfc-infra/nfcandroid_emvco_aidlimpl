@@ -228,6 +228,15 @@ static void *emvco_hal_client_thread(void *arg) {
       REENTRANCE_UNLOCK();
       break;
     }
+    case EMVCO_UN_SUPPORTED_CARD_MSG: {
+      REENTRANCE_LOCK();
+      if (nci_hal_ctrl.p_nfc_stack_cback != NULL) {
+        (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_UN_SUPPORTED_CARD_EVT,
+                                          STATUS_OK);
+      }
+      REENTRANCE_UNLOCK();
+      break;
+    }
     }
   }
 

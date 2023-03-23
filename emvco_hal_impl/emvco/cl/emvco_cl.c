@@ -208,6 +208,18 @@ EMVCO_STATUS stop_emvco_mode() {
   (*m_p_nfc_state_cback)(true);
   return EMVCO_STATUS_SUCCESS;
 }
+void static send_poll_event_to_upper_layer() {
+  LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
+  nci_hal_ctrl.frag_rsp.data_pos = 0;
+  RESET_CHAINED_DATA();
+
+  modeSwitchArgs->current_discovery_mode = EMVCO;
+  lib_emvco_message_t msg;
+  msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
+  msg.p_msg_data = NULL;
+  msg.size = 0;
+  tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
+}
 
 EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
   LOG_EMVCOHAL_D("process_emvco_mode_rsp");
@@ -253,19 +265,11 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
       break;
     case NCI_GID_RF_MANAGE:
       switch (op_code) {
+      case RF_DEACTIVATE_NTF: {
+        send_poll_event_to_upper_layer();
+      }
       case MSG_RF_DISCOVER_RSP: {
-        if (p_len == 4) {
-          LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
-          nci_hal_ctrl.frag_rsp.data_pos = 0;
-          RESET_CHAINED_DATA();
-
-          modeSwitchArgs->current_discovery_mode = EMVCO;
-          lib_emvco_message_t msg;
-          msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
-          msg.p_msg_data = NULL;
-          msg.size = 0;
-          tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-        }
+        send_poll_event_to_upper_layer();
       } break;
       }
     }

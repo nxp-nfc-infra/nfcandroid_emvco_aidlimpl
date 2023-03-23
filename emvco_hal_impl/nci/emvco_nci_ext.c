@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include "emvco_cl.h"
 #include <emvco_config.h>
 #include <emvco_dm.h>
 #include <emvco_log.h>
@@ -30,11 +31,26 @@
 /* Timeout value to wait for response from PN548AD */
 #define HAL_EXTNS_WRITE_RSP_TIMEOUT (1000)
 
+#define INDEX_OF_NFCID1_LEN 12
+#define SEL_RES_LEN 1
+#define SEL_RES_DATA_LEN 1
+#define PROTOCOL_T3T 0x03
+#define PROTOCOL_ISO_DEP 0x04
+#define TYPE_4A_TAG_MASK 0x20
+#define TYPE_4B_TAG_MASK 0x01
+#define RF_TECH_MODE_NFC_A_PASSIVE_POLL 0x00
+#define RF_TECH_MODE_NFC_B_PASSIVE_POLL 0x01
+#define SENSB_RESP_PROTOCOL_TYPE_INDEX 20
+#define RF_PROTOCOL_INDEX 5
+#define RF_TECH_MODE_INDEX 6
+#define RF_INTF_ACTIVATED_NTF_BYTE_0 0x61
+#define RF_INTF_ACTIVATED_NTF_BYTE_1 0x05
 #undef P2P_PRIO_LOGIC_HAL_IMP
 
 /******************* Global variables *****************************************/
 extern nci_hal_ctrl_t nci_hal_ctrl;
 extern nci_profile_Control_t nxpprofile_ctrl;
+extern tml_emvco_context_t *gptml_emvco_context;
 // extern uint32_t cleanup_timer;
 extern bool emvco_debug_enabled;
 uint8_t icode_detected = 0x00;
@@ -79,8 +95,18 @@ void nci_ext_init(void) {
   EnableP2P_PrioLogic = false;
 }
 
+static void phNxpNciHal_ext_process_non_emvco_card_ntf() {
+  lib_emvco_message_t msg;
+  msg.e_msgType = EMVCO_UN_SUPPORTED_CARD_MSG;
+  msg.p_msg_data = NULL;
+  msg.size = 0;
+  tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
+  rf_deactivate(DISCOVER);
+}
+
 EMVCO_STATUS process_ext_rsp(uint8_t *p_ntf, uint16_t *p_len) {
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  int select_index = 0;
 
   if (p_ntf[0] == 0x61 && p_ntf[1] == 0x05 && *p_len < 14) {
 
@@ -90,6 +116,49 @@ EMVCO_STATUS process_ext_rsp(uint8_t *p_ntf, uint16_t *p_len) {
     LOG_EMVCOHAL_E("RF_INTF_ACTIVATED_NTF length error!");
     status = EMVCO_STATUS_FAILED;
     return status;
+  }
+
+  if (p_ntf[0] == RF_INTF_ACTIVATED_NTF_BYTE_0 &&
+      p_ntf[1] == RF_INTF_ACTIVATED_NTF_BYTE_1) {
+    if (p_ntf[RF_PROTOCOL_INDEX] == PROTOCOL_T3T) {
+      LOG_EMVCOHAL_D("T3T EMVCo card detected in EmvCo profile");
+    } else if ((p_ntf[RF_PROTOCOL_INDEX] == PROTOCOL_ISO_DEP) &&
+               (p_ntf[RF_TECH_MODE_INDEX] == RF_TECH_MODE_NFC_A_PASSIVE_POLL) &&
+               (*p_len >= INDEX_OF_NFCID1_LEN)) {
+      select_index = INDEX_OF_NFCID1_LEN + p_ntf[INDEX_OF_NFCID1_LEN] +
+                     SEL_RES_LEN + SEL_RES_DATA_LEN;
+      /* Checking the SEL_RES Response format byte to confirm T4A Tag Platform
+       * Enablement */
+      if (p_ntf[select_index] & TYPE_4A_TAG_MASK) {
+        LOG_EMVCOHAL_D("Type-A  ISO DEP EMVCo card detected in EmvCo profile");
+      } else {
+        LOG_EMVCOHAL_D("InValid SAK. Non EMVCo card detected in EmvCo profile "
+                       "- Restart polling");
+        phNxpNciHal_ext_process_non_emvco_card_ntf();
+        status = EMVCO_STATUS_FAILED;
+        return status;
+      }
+    } else if ((p_ntf[RF_PROTOCOL_INDEX] == PROTOCOL_ISO_DEP) &&
+               (p_ntf[RF_TECH_MODE_INDEX] == RF_TECH_MODE_NFC_B_PASSIVE_POLL) &&
+               (*p_len >= INDEX_OF_NFCID1_LEN)) {
+      /* Checking the SENSB_RES Response format byte to confirm T4B Tag Platform
+       * Enablement */
+      if (p_ntf[SENSB_RESP_PROTOCOL_TYPE_INDEX] & TYPE_4B_TAG_MASK) {
+        LOG_EMVCOHAL_D("Type-B ISO DEP EMVCo card detected in EmvCo profile");
+      } else {
+        LOG_EMVCOHAL_D("InValid SAK. Non EMVCo card detected in EmvCo profile "
+                       "- Restart polling");
+        phNxpNciHal_ext_process_non_emvco_card_ntf();
+        status = EMVCO_STATUS_FAILED;
+        return status;
+      }
+    } else {
+      LOG_EMVCOHAL_D("RF_INTF_ACTIVATED_NTF length error. Non EMVCo card "
+                     "detected in EmvCo profile - Restart polling");
+      phNxpNciHal_ext_process_non_emvco_card_ntf();
+      status = EMVCO_STATUS_FAILED;
+      return status;
+    }
   }
 
   if (p_ntf[0] == 0x61 && p_ntf[1] == 0x05 && p_ntf[4] == 0x03 &&
