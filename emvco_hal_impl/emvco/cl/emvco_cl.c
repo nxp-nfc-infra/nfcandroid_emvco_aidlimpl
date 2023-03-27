@@ -265,9 +265,7 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
       break;
     case NCI_GID_RF_MANAGE:
       switch (op_code) {
-      case RF_DEACTIVATE_NTF: {
-        send_poll_event_to_upper_layer();
-      }
+      case RF_DEACTIVATE_NTF:
       case MSG_RF_DISCOVER_RSP: {
         send_poll_event_to_upper_layer();
       } break;
