@@ -315,8 +315,6 @@ clean_and_return:
 int min_open_app_data_channel() {
   osal_emvco_config_t tOsalConfig;
   tml_emvco_Config_t tTmlConfig;
-  char *buffer = NULL;
-  unsigned int bufflen = 0;
   char *p_nfc_dev_node = NULL;
   unsigned int dev_node_size = 0;
   uint32_t mode_switch_status;
@@ -329,7 +327,7 @@ int min_open_app_data_channel() {
     return EMVCO_STATUS_SUCCESS;
   }
 
-  int init_retry_cnt = 0, set_config_retry_cnt = 0;
+  int init_retry_cnt = 0;
   int8_t ret_val = 0x00;
 
   /*Create the timer for extns write response*/
@@ -455,25 +453,6 @@ init_retry:
     wConfigStatus = EMVCO_STATUS_FAILED;
     goto clean_and_return;
   }
-
-  get_byte_array_value(NAME_NXP_VAS_ECP, &buffer, &bufflen);
-  if (buffer != NULL) {
-    do {
-      status = send_ext_cmd(bufflen, (uint8_t *)buffer);
-      if (status == EMVCO_STATUS_SUCCESS) {
-        set_config_retry_cnt = 0;
-        break;
-      } else {
-        LOG_EMVCOHAL_E("NCI_SET_CONFIG_VAS Failed");
-        ++set_config_retry_cnt;
-      }
-    } while (set_config_retry_cnt < 3);
-  } else {
-    LOG_EMVCOHAL_E("NCI_SET_CONFIG_VAS command not found from config. "
-                   "NCI_SET_CONFIG_VAS Failed");
-  }
-  free(buffer);
-  buffer = NULL;
 
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);
