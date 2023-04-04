@@ -89,7 +89,8 @@ int get_byte_value(char *key, unsigned long *p_value, unsigned int *value_len);
  * @return Returns `TRUE` if the value was successfully retrieved, `FALSE`
  * otherwise
  */
-int get_byte_array_value(char *key, char **p_value, unsigned int *value_len);
+int get_byte_array_value(const char *key, char **p_value,
+                         unsigned int *value_len);
 
 /**
  * @brief Determines if a given character is a digit in the specified number

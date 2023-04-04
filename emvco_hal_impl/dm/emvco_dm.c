@@ -38,6 +38,9 @@
 /*********************** Global Variables *************************************/
 #define PN547C2_CLOCK_SETTING
 #define CORE_RES_STATUS_BYTE 3
+
+static void get_set_config_impl(const char *p_nxp_conf);
+
 /* Processing of ISO 15693 EOF */
 extern uint8_t icode_send_eof;
 extern uint8_t icode_detected;
@@ -454,6 +457,10 @@ init_retry:
     goto clean_and_return;
   }
 
+  get_set_config_impl(NAME_NXP_PCD_SETTINGS);
+  get_set_config_impl(NAME_NXP_SET_CONFIG);
+  get_set_config_impl(NAME_NXP_GET_CONFIG);
+
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);
   LOG_EMVCOHAL_D("min_open_app_data_channel(): exit");
@@ -467,6 +474,43 @@ clean_and_return:
     p_nfc_dev_node = NULL;
   }
   return EMVCO_STATUS_FAILED;
+}
+
+/******************************************************************************
+ * Function         get_set_config_impl
+ *
+ * Description      This function gets/sets the configuration command using
+ *config key and sends the set config command to controller
+ *
+ * Parameter        Takes the configuration key as input
+ *
+ * Returns          void.
+ *
+ ******************************************************************************/
+static void get_set_config_impl(const char *p_conf_key) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  int retry_cnt = 0;
+  char *buffer = NULL;
+  unsigned int bufflen = 0;
+
+  if ((get_byte_array_value(p_conf_key, &buffer, &bufflen)) &&
+      (buffer != NULL)) {
+    do {
+      if (EMVCO_STATUS_SUCCESS == send_ext_cmd(bufflen, (uint8_t *)buffer)) {
+        retry_cnt = 0;
+        break;
+      } else {
+        LOG_EMVCOHAL_E("Failed to set %s configuration\n ", p_conf_key);
+        ++retry_cnt;
+      }
+    } while (retry_cnt < 3);
+  } else {
+    LOG_EMVCOHAL_E("Failed to set %s configuration. Please re-try by updating "
+                   "the configuration file with proper value \n ",
+                   p_conf_key);
+  }
+  free(buffer);
+  buffer = NULL;
 }
 
 int open_app_data_channel(emvco_stack_callback_t *p_cback,

@@ -315,7 +315,8 @@ bool read_config(const char *name) {
   return true;
 }
 
-int get_byte_array_value(char *key, char **p_value, unsigned int *value_len) {
+int get_byte_array_value(const char *key, char **p_value,
+                         unsigned int *value_len) {
   pthread_mutex_lock(&config_mutex);
   unsigned int value_size;
   void *value = map_get_value(fp_config_map, key, strlen(key) + 1, &value_size);

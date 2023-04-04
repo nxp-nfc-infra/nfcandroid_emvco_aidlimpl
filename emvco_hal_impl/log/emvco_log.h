@@ -53,6 +53,9 @@ extern bool emvco_debug_enabled;
 #define NAME_NXP_EMVCO_DEBUG_ENABLED "NXP_EMVCO_DEBUG_ENABLED"
 #define NAME_NXP_EMVCO_DEV_NODE "NXP_EMVCO_DEV_NODE"
 #define NAME_NXP_ACT_PROP_EXTN "NXP_ACT_PROP_EXTN"
+#define NAME_NXP_PCD_SETTINGS "NXP_PCD_SETTINGS"
+#define NAME_NXP_SET_CONFIG "NXP_SET_CONFIG"
+#define NAME_NXP_GET_CONFIG "NXP_GET_CONFIG"
 /* ####################### Set the log module name by Android property
  * ########################## */
 #define PROP_NAME_LOG_GLOBAL_LOGLEVEL "emvco.log_level_global"
