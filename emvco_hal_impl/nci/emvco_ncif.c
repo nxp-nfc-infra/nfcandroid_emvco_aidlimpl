@@ -27,6 +27,10 @@
 /* NCI HAL Control structure */
 nci_hal_ctrl_t nci_hal_ctrl;
 uint8_t *p_nci_data = NULL;
+pthread_mutex_t nci_data_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static uint8_t *get_nci_loopback_data(uint8_t pbf, uint8_t *p_data,
+                                      int data_len);
 
 uint8_t send_core_reset(uint8_t reset_type) {
   uint8_t *pp, *p;
@@ -169,8 +173,17 @@ void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
         memcpy(nci_hal_ctrl.frag_rsp.p_data + nci_hal_ctrl.frag_rsp.data_pos,
                p_ntf + NCI_HEADER_SIZE, apdu_len);
         nci_hal_ctrl.frag_rsp.data_pos += apdu_len;
-        (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.frag_rsp.data_pos,
-                                               nci_hal_ctrl.frag_rsp.p_data);
+        pthread_mutex_lock(&nci_data_lock);
+        p_nci_data = get_nci_loopback_data(PBF_COMPLETE_MSG,
+                                           nci_hal_ctrl.frag_rsp.p_data,
+                                           nci_hal_ctrl.frag_rsp.data_pos);
+        (*nci_hal_ctrl.p_nfc_stack_data_cback)(
+            nci_hal_ctrl.frag_rsp.data_pos + NCI_HEADER_SIZE, p_nci_data);
+        if (p_nci_data != NULL) {
+          free(p_nci_data);
+          p_nci_data = NULL;
+        }
+        pthread_mutex_unlock(&nci_data_lock);
       } else {
         LOG_EMVCOHAL_E("Invalid APDU data length:%d received",
                        nci_hal_ctrl.frag_rsp.data_pos + apdu_len);
@@ -178,8 +191,8 @@ void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
       nci_hal_ctrl.frag_rsp.data_pos = 0;
       RESET_CHAINED_DATA();
     } else {
-      (*nci_hal_ctrl.p_nfc_stack_data_cback)(apdu_len, nci_hal_ctrl.p_rx_data +
-                                                           NCI_HEADER_SIZE);
+      (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
+                                             nci_hal_ctrl.p_rx_data);
     }
   } else {
     (*nci_hal_ctrl.p_nfc_stack_data_cback)(nci_hal_ctrl.rx_data_len,
@@ -242,27 +255,28 @@ retry:
     }
   }
 }
+static void send_emvco_data_impl(int pbf, uint8_t *p_data, int data_len) {
+  LOG_EMVCOHAL_D("%s \n", __func__);
+  pthread_mutex_lock(&nci_data_lock);
+  p_nci_data = get_nci_loopback_data(pbf, p_data, data_len);
+  write_internal(p_nci_data, data_len + NCI_HEADER_SIZE);
+  if (p_nci_data != NULL) {
+    free(p_nci_data);
+    p_nci_data = NULL;
+  }
+  pthread_mutex_unlock(&nci_data_lock);
+}
 void send_emvco_data(uint8_t *p_data, uint16_t data_len) {
-  if ((p_data[0] == PBF_SEGMENT_MSG) || (p_data[0] == PBF_COMPLETE_MSG)) {
+  if (data_len > MAX_FRAGMENT_SIZE) {
     while (data_len > MAX_FRAGMENT_SIZE) {
       LOG_EMVCOHAL_D("%s sending segment packet \n", __func__);
-      p_nci_data =
-          get_nci_loopback_data(PBF_SEGMENT_MSG, p_data, MAX_FRAGMENT_SIZE);
-      write_internal(p_nci_data, MAX_FRAGMENT_SIZE + NCI_HEADER_SIZE);
-      if (p_nci_data != NULL) {
-        free(p_nci_data);
-        p_nci_data = NULL;
-      }
+      send_emvco_data_impl(PBF_SEGMENT_MSG, p_data + NCI_HEADER_SIZE,
+                           MAX_FRAGMENT_SIZE - NCI_HEADER_SIZE);
       data_len -= MAX_FRAGMENT_SIZE;
       p_data += MAX_FRAGMENT_SIZE;
     }
     if (data_len > 0) {
-      p_nci_data = get_nci_loopback_data(PBF_COMPLETE_MSG, p_data, data_len);
-      write_internal(p_nci_data, data_len + NCI_HEADER_SIZE);
-      if (p_nci_data != NULL) {
-        free(p_nci_data);
-        p_nci_data = NULL;
-      }
+      send_emvco_data_impl(PBF_COMPLETE_MSG, p_data, data_len);
     }
   } else {
     write_internal(p_data, data_len);

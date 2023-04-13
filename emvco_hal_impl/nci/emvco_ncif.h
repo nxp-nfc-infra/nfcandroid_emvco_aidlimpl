@@ -26,7 +26,7 @@
 #include <emvco_cl.h>
 #include <stdint.h>
 
-#define MAX_FRAGMENT_SIZE 253
+#define MAX_FRAGMENT_SIZE 256
 #define PBF_COMPLETE_MSG 0x00
 #define PBF_SEGMENT_MSG 0x10
 /* Macros to update the chained data state */

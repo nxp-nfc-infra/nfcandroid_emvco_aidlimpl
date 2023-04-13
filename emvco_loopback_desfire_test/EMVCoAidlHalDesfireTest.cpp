@@ -148,6 +148,19 @@ void EmvcoHalBinderDied(void *cookie) {
   ALOGI("Self test App aborted due to EMVCo HAL crash");
 }
 
+static std::vector<uint8_t> getNCILoopbackData(uint8_t packetBoundaryFlag,
+                                               std::vector<uint8_t> apduData,
+                                               int dataLength) {
+  ALOGI("%s\n dataLength", __func__);
+  std::vector<uint8_t> nci_send_loopback_;
+  nci_send_loopback_.insert(nci_send_loopback_.begin(), packetBoundaryFlag);
+  nci_send_loopback_.insert(nci_send_loopback_.begin() + 1, 0x00);
+  nci_send_loopback_.insert(nci_send_loopback_.begin() + 2, dataLength);
+  nci_send_loopback_.insert(nci_send_loopback_.begin() + 3, apduData.begin(),
+                            apduData.end());
+  return nci_send_loopback_;
+}
+
 int main(int argc, char **argv) {
   ABinderProcess_startThreadPool();
   try {
@@ -223,7 +236,7 @@ int main(int argc, char **argv) {
             }
             // Validating NCI_SET_EMV_PROFILE and PPSE Response
             // PPSE 0x6A && 0x82
-            if (data.at(0) == 106 && data.at(1) == 130) {
+            if (data.at(3) == 106 && data.at(4) == 130) {
               ALOGI("%s  PPSE RESPONSE VERIFIED", __func__);
               psse_cb_promise.at(index).set_value();
             } else {
@@ -279,7 +292,8 @@ int main(int argc, char **argv) {
         clock_gettime(CLOCK_MONOTONIC, &tm);
         start_ts = tm.tv_nsec * 1e-3 + tm.tv_sec * 1e+6;
         ALOGI("%s PPSE command Sent at:%llu", __func__, start_ts);
-        iEmvcoContactlessCard_->transceive(data6, &ppse_aidl_return1);
+        iEmvcoContactlessCard_->transceive(getNCILoopbackData(0x00, data6, 20),
+                                           &ppse_aidl_return1);
         EXPECT_EQ(psse_cb_future.at(index).wait_for(3 * timeout),
                   std::future_status::ready);
         clock_gettime(CLOCK_MONOTONIC, &tm);

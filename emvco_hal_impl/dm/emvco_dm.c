@@ -675,6 +675,21 @@ static bool is_data_credit_received(osal_transact_info_t *pInfo) {
   }
 }
 
+static bool is_rf_link_loss_received(osal_transact_info_t *pInfo) {
+  if ((5 == pInfo->w_length) &&
+      (pInfo->p_buff[0] == NCI_RF_NTF &&
+       pInfo->p_buff[1] == NCI_RF_DEACTIVATE_RES_NTF &&
+       pInfo->p_buff[2] == NCI_DEACTIVATE_NTF_LEN &&
+       pInfo->p_buff[3] == NCI_DEACT_TYPE_DISCOVERY &&
+       pInfo->p_buff[4] == NCI_DEACT_RESON_RF_LINK_LOSS)) {
+    nci_hal_ctrl.frag_rsp.data_pos = 0;
+    RESET_CHAINED_DATA();
+    return true;
+  } else {
+    return false;
+  }
+}
+
 static void read_app_data_complete(void *p_context,
                                    osal_transact_info_t *pInfo) {
   EMVCO_STATUS status = EMVCO_STATUS_FAILED;
@@ -688,7 +703,7 @@ static void read_app_data_complete(void *p_context,
     osal_sem_getvalue(&(nci_hal_ctrl.sync_nci_write), &sem_val);
 
     if (((pInfo->p_buff[0] & NCI_MT_MASK) == NCI_MT_RSP ||
-         is_data_credit_received(pInfo)) &&
+         is_data_credit_received(pInfo) || is_rf_link_loss_received(pInfo)) &&
         sem_val == 0) {
       osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
     }
