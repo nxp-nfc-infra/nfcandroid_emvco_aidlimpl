@@ -49,18 +49,16 @@ void open_app_data_channel_internal() {
   int hal_open_status = open_app_data_channelImpl(
       m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
   LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, hal_open_status);
+  lib_emvco_message_t msg;
+  msg.p_msg_data = NULL;
+  memset(msg.data, 0, sizeof(msg.data));
+  msg.size = 0;
   if (hal_open_status == EMVCO_STATUS_SUCCESS) {
-    lib_emvco_message_t msg;
     msg.e_msgType = EMVCO_POOLING_STARTING_MSG;
-    msg.p_msg_data = NULL;
-    msg.size = 0;
     tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
     start_emvco_mode();
   } else {
-    lib_emvco_message_t msg;
     msg.e_msgType = EMVCO_POOLING_START_FAILED_MSG;
-    msg.p_msg_data = NULL;
-    msg.size = 0;
     tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
   }
 }
@@ -217,6 +215,7 @@ void static send_poll_event_to_upper_layer() {
   lib_emvco_message_t msg;
   msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
   msg.p_msg_data = NULL;
+  memset(msg.data, 0, sizeof(msg.data));
   msg.size = 0;
   tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
 }
