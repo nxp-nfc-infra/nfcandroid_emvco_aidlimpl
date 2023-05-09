@@ -25,12 +25,12 @@
 
 #include <emvco_hal.h>
 #include <emvco_util.h>
-#include <nci_defs.h>
 #include <pthread.h>
 /********************* Definitions and structures *****************************/
 #define DEF_NFC_DEV_NODE "/dev/nxpnfc"
 #define MAX_INIT_RETRY_COUNT 3
 #define MAX_RETRY_COUNT 5
+#define NCI_MAX_DATA_LEN 300
 #define FRAG_MAX_DATA_LEN 1024
 #define NCI_POLL_DURATION 500
 #define HAL_EMVCO_ENABLE_I2C_FRAGMENTATION_EVT 0x07
@@ -164,7 +164,6 @@ typedef struct frag_rsp {
 typedef struct nci_info {
   uint8_t nci_version;
   bool_t wait_for_ntf;
-  bool_t wait_for_rsp;
 } nci_info_t;
 /* NCI Control structure */
 typedef struct nci_hal_ctrl {
@@ -335,18 +334,6 @@ int send_app_data(uint16_t data_len, const uint8_t *p_data);
  *
  ******************************************************************************/
 int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data);
-
-/**
- * @brief           Invokes tml_read Read to make sure always read thread is
- *                  pending
- *
- * @param[in]       void
- *
- * @return          void
- *
- ******************************************************************************/
-void enable_tml_read();
-
 int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
                               emvco_stack_data_callback_t *p_data_cback,
                               emvco_state_change_callback_t *p_nfc_state_cback);

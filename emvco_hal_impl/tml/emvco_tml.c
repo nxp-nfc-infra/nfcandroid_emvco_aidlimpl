@@ -21,7 +21,6 @@
  */
 
 #include <emvco_config.h>
-#include <emvco_dm.h>
 #include <emvco_log.h>
 #include <emvco_tml.h>
 #include <emvco_tml_i2c.h>
@@ -250,10 +249,10 @@ static void *emvco_tml_thread(void *pParam) {
           /* Fill the Transaction info structure to be passed to Callback
            * Function */
           tTransactionInfo.w_status = w_status;
-          memcpy(tMsg.data, gptml_emvco_context->t_read_info.p_buffer,
-                 gptml_emvco_context->t_read_info.w_length);
-
+          tTransactionInfo.p_buff = gptml_emvco_context->t_read_info.p_buffer;
+          /* Actual number of bytes read is filled in the structure */
           tTransactionInfo.w_length = gptml_emvco_context->t_read_info.w_length;
+
           /* Read operation completed successfully. Post a Message onto Callback
            * Thread*/
           /* Prepare the message to be posted on User thread */
@@ -261,8 +260,7 @@ static void *emvco_tml_thread(void *pParam) {
           tDeferredInfo.p_parameter = &tTransactionInfo;
           tMsg.e_msgType = EMVCO_DEFERRED_CALL_MSG;
           tMsg.p_msg_data = &tDeferredInfo;
-          /* Actual number of bytes read is filled in the structure */
-          tMsg.size = gptml_emvco_context->t_read_info.w_length;
+          tMsg.size = sizeof(tDeferredInfo);
           // pthread_mutex_unlock(&gptml_emvco_context->read_info_update_mutex);
           osal_mutex_unlock(&gptml_emvco_context->read_info_update_mutex);
           LOG_EMVCO_TML_D("PN72X - Posting read message.....\n");
@@ -509,7 +507,6 @@ static void tml_readDeferredCb(void *pParams) {
 
   /* Reset the flag to accept another Read Request */
   gptml_emvco_context->t_read_info.b_thread_busy = false;
-  enable_tml_read();
   gptml_emvco_context->t_read_info.p_thread_callback(
       gptml_emvco_context->t_read_info.p_context, pTransactionInfo);
 

@@ -100,7 +100,6 @@ static void phNxpNciHal_ext_process_non_emvco_card_ntf() {
   msg.e_msgType = EMVCO_UN_SUPPORTED_CARD_MSG;
   msg.p_msg_data = NULL;
   msg.size = 0;
-  memset(msg.data, 0, sizeof(msg.data));
   tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
   rf_deactivate(DISCOVER);
 }
