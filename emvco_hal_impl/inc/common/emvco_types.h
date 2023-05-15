@@ -31,14 +31,14 @@
 #ifndef _EMVCO_TYPES_H_
 #define _EMVCO_TYPES_H_
 
+#include <emvco_common.h>
+#include <nci_defs.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-
-#include <emvco_common.h>
 
 #ifndef TRUE
 #define TRUE (0x01) /* Logical True Value */
@@ -119,6 +119,8 @@ typedef struct lib_emvco_message {
   uint32_t e_msgType; /* Type of the message to be posted*/
   void *p_msg_data;   /* Pointer to message specific data block in case any*/
   uint32_t size;      /* Size of the datablock*/
+  uint8_t data[NCI_MAX_DATA_LEN]; /* Message data maintained with MAX*/
+  EMVCO_STATUS w_status;          /* Status of the Transaction Completion*/
 } lib_emvco_message_t, *plib_emvco_message_t;
 
 /**

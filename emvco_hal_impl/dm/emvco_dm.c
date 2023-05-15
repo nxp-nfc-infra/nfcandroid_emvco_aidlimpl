@@ -163,11 +163,17 @@ static void *emvco_hal_client_thread(void *arg) {
       lib_emvco_deferred_call_t *deferCall =
           (lib_emvco_deferred_call_t *)(msg.p_msg_data);
 
-      deferCall->p_callback(deferCall->p_parameter);
-
-      osal_transact_info_t *pTransactionInfo =
-          (osal_transact_info_t *)deferCall->p_parameter;
-      process_emvco_mode_rsp(pTransactionInfo);
+      osal_transact_info_t osal_transact_info;
+      osal_transact_info_t *pTransactionInfo = &osal_transact_info;
+      if (pTransactionInfo != NULL && msg.size > 0) {
+        pTransactionInfo->p_buff = msg.data;
+        pTransactionInfo->w_length = msg.size;
+        pTransactionInfo->w_status = msg.w_status;
+        deferCall->p_callback(pTransactionInfo);
+        process_emvco_mode_rsp(pTransactionInfo);
+      } else {
+        LOG_EMVCOHAL_E("TransInfo is invalid");
+      }
       REENTRANCE_UNLOCK();
 
       break;
@@ -423,7 +429,7 @@ int min_open_app_data_channel() {
 
   /* call read pending */
   status =
-      tml_read(nci_hal_ctrl.p_cmd_data, NCI_MAX_DATA_LEN,
+      tml_read(nci_hal_ctrl.p_rsp_data, NCI_MAX_DATA_LEN,
                (transact_completion_callback_t)&read_app_data_complete, NULL);
   if (status != EMVCO_STATUS_PENDING) {
     LOG_EMVCOHAL_E("TML Read status error status = %x", status);
@@ -689,6 +695,21 @@ static bool is_data_credit_received(osal_transact_info_t *pInfo) {
   }
 }
 
+void enable_tml_read() {
+  if (nci_hal_ctrl.halStatus == HAL_STATUS_CLOSE &&
+      nci_hal_ctrl.nci_info.wait_for_rsp == FALSE) {
+    return;
+  }
+  /* Read again because read must be pending always.*/
+  gptml_emvco_context->t_read_info.b_thread_busy = false;
+
+  EMVCO_STATUS status =
+      tml_read(nci_hal_ctrl.p_rsp_data, NCI_MAX_DATA_LEN,
+               (transact_completion_callback_t)&read_app_data_complete, NULL);
+  if (status != EMVCO_STATUS_PENDING) {
+    LOG_EMVCOHAL_E("read status error status = %x", status);
+  }
+}
 static bool is_rf_link_loss_received(osal_transact_info_t *pInfo) {
   if ((5 == pInfo->w_length) &&
       (pInfo->p_buff[0] == NCI_RF_NTF &&
@@ -746,6 +767,7 @@ static void read_app_data_complete(void *p_context,
       if ((nci_hal_ctrl.p_rx_data[0x00] & NCI_MT_MASK) == NCI_MT_RSP ||
           ((icode_detected == true) && (icode_send_eof == 3))) {
         /* Unlock semaphore */
+        nci_hal_ctrl.nci_info.wait_for_rsp = FALSE;
         SEM_POST(&(nci_hal_ctrl.ext_cb_data));
       }
     } // Notification Checking
@@ -765,19 +787,6 @@ static void read_app_data_complete(void *p_context,
     LOG_EMVCOHAL_E("read error status = 0x%x", pInfo->w_status);
   }
 
-  if (nci_hal_ctrl.halStatus == HAL_STATUS_CLOSE &&
-      nci_hal_ctrl.nci_info.wait_for_ntf == FALSE) {
-    return;
-  }
-  /* Read again because read must be pending always.*/
-  status = tml_read(
-      // Rx_data, NCI_MAX_DATA_LEN,
-      nci_hal_ctrl.p_rsp_data, NCI_MAX_DATA_LEN,
-      (transact_completion_callback_t)&read_app_data_complete, NULL);
-  if (status != EMVCO_STATUS_PENDING) {
-    LOG_EMVCOHAL_E("read status error status = %x", status);
-    /* TODO: Not sure how to handle this ? */
-  }
 
   return;
 }
@@ -805,6 +814,7 @@ int close_app_data_channel(bool bShutdown) {
       LOG_EMVCOHAL_E("CMD_VEN_DISABLE_NCI: Failed");
     }
   }
+  nci_hal_ctrl.nci_info.wait_for_rsp = true;
   nci_hal_ctrl.halStatus = HAL_STATUS_CLOSE;
   status = send_core_reset(NCI_RESET_TYPE_KEEP_CFG);
   if (status != EMVCO_STATUS_SUCCESS) {

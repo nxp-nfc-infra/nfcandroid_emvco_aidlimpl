@@ -79,7 +79,7 @@
 #define NCI_MSG_RF_DEACTIVATE 6
 #define NCI_MSG_RF_FIELD 7
 #define NCI_DISCOVER_PARAM_SIZE_DEACT 0x01
-
+#define NCI_MAX_DATA_LEN 300
 /* builds byte0 of NCI Command and Notification packet */
 #define NCI_MSG_BLD_HDR0(p, mt, gid)                                           \
   *(p)++ = (uint8_t)(((mt) << NCI_MT_SHIFT) | (gid));
