@@ -46,6 +46,7 @@
 extern tml_emvco_context_t *gptml_emvco_context;
 extern nci_hal_ctrl_t nci_hal_ctrl;
 emvco_args_t *modeSwitchArgs;
+extern fp_init_ecp_vas_t fp_init_ecp_vas;
 
 pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -206,6 +207,9 @@ uint8_t get_rf_discover_config(tDISC_TECH_PROTO_MASK dm_disc_mask,
 EMVCO_STATUS start_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
   send_dynamic_set_config();
+  if (fp_init_ecp_vas != NULL) {
+    fp_init_ecp_vas();
+  }
   uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
   send_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
   return EMVCO_STATUS_SUCCESS;

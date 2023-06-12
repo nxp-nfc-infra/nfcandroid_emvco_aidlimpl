@@ -364,4 +364,6 @@ void enable_tml_read();
 int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
                               emvco_stack_data_callback_t *p_data_cback,
                               emvco_state_change_callback_t *p_nfc_state_cback);
+void get_set_config(const char *p_nxp_conf);
+typedef void (*fp_init_ecp_vas_t)();
 #endif /* _EMVCO_DM_H_ */

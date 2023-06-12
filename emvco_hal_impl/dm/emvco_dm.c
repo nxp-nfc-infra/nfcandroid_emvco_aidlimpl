@@ -32,6 +32,7 @@
 
 #include "emvco_tml_i2c.h"
 #include <cutils/properties.h>
+#include <dlfcn.h>
 #include <emvco_cl.h>
 #include <emvco_config.h>
 #include <emvco_dm.h>
@@ -53,7 +54,8 @@
 #define PN547C2_CLOCK_SETTING
 #define CORE_RES_STATUS_BYTE 3
 
-static void get_set_config_impl(const char *p_nxp_conf);
+void *p_emvco_ecp_vas_handle = NULL;
+fp_init_ecp_vas_t fp_init_ecp_vas = NULL;
 
 /* Processing of ISO 15693 EOF */
 extern uint8_t icode_send_eof;
@@ -323,6 +325,21 @@ clean_and_return:
   return EMVCO_STATUS_FAILED;
 }
 
+void initialize_emvco_ecp_vas() {
+  LOG_EMVCOHAL_D("%s", __func__);
+  p_emvco_ecp_vas_handle =
+      dlopen("/system/vendor/lib64/emvco_ecp_vas.so", RTLD_NOW);
+  if (p_emvco_ecp_vas_handle == NULL) {
+    LOG_EMVCOHAL_D(
+        "Error : opening (/system/vendor/lib64/emvco_ecp_vas.so) !!");
+    return;
+  }
+  if ((fp_init_ecp_vas = (fp_init_ecp_vas_t)dlsym(p_emvco_ecp_vas_handle,
+                                                  "init_ecp_vas")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (init_ecp_vas) !!");
+    return;
+  }
+}
 /******************************************************************************
  * Function         min_open_app_data_channel
  *
@@ -380,6 +397,7 @@ int min_open_app_data_channel() {
   /*nci version NCI_VERSION_UNKNOWN version by default*/
   nci_hal_ctrl.nci_info.nci_version = NCI_VERSION_UNKNOWN;
 
+  initialize_emvco_ecp_vas();
   /* Read the nfc device node name */
   if (!get_byte_array_value(NAME_NXP_EMVCO_DEV_NODE, &p_nfc_dev_node,
                             &dev_node_size)) {
@@ -477,9 +495,9 @@ init_retry:
     goto clean_and_return;
   }
 
-  get_set_config_impl(NAME_NXP_PCD_SETTINGS);
-  get_set_config_impl(NAME_NXP_SET_CONFIG);
-  get_set_config_impl(NAME_NXP_GET_CONFIG);
+  get_set_config(NAME_NXP_PCD_SETTINGS);
+  get_set_config(NAME_NXP_SET_CONFIG);
+  get_set_config(NAME_NXP_GET_CONFIG);
 
   /* Call open complete */
   min_open_app_data_channel_complete(wConfigStatus);
@@ -497,7 +515,7 @@ clean_and_return:
 }
 
 /******************************************************************************
- * Function         get_set_config_impl
+ * Function         get_set_config
  *
  * Description      This function gets/sets the configuration command using
  *config key and sends the set config command to controller
@@ -507,7 +525,7 @@ clean_and_return:
  * Returns          void.
  *
  ******************************************************************************/
-static void get_set_config_impl(const char *p_conf_key) {
+void get_set_config(const char *p_conf_key) {
   LOG_EMVCOHAL_D("%s", __func__);
   int retry_cnt = 0;
   char *buffer = NULL;
