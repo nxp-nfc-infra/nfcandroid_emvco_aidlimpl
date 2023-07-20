@@ -359,43 +359,35 @@ void initialize_emvco_ct() {
       dlopen("/system/vendor/lib64/emvco_tda.so", RTLD_NOW);
   if (p_emvco_ct_one_bin_handle == NULL) {
     LOG_EMVCOHAL_D("Error : opening (/system/vendor/lib64/emvco_tda.so) !!");
-    return;
   }
   if ((fp_init_ct_ext = (fp_init_ct_ext_t)dlsym(p_emvco_ct_one_bin_handle,
                                                 "init_ct_ext")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (init_ct_ext) !!");
-    return;
   }
   if ((fp_de_init_ct_ext = (fp_de_init_ct_ext_t)dlsym(
            p_emvco_ct_one_bin_handle, "de_init_ct_ext")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (de_init_ct_ext) !!");
-    return;
   }
 
   if ((fp_ct_process_emvco_mode_rsp = (fp_ct_process_emvco_mode_rsp_t)dlsym(
            p_emvco_ct_one_bin_handle, "ct_process_emvco_mode_rsp")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (ct_process_emvco_mode_rsp) !!");
-    return;
   }
   if ((fp_send_core_conn_create = (fp_send_core_conn_create_t)dlsym(
            p_emvco_ct_one_bin_handle, "send_core_conn_create")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (send_core_conn_create) !!");
-    return;
   }
   if ((fp_send_core_conn_close = (fp_send_core_conn_close_t)dlsym(
            p_emvco_ct_one_bin_handle, "send_core_conn_close")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (send_core_conn_close) !!");
-    return;
   }
   if ((fp_transceive = (fp_transceive_t)dlsym(p_emvco_ct_one_bin_handle,
                                               "transceive")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (transceive) !!");
-    return;
   }
   if ((fp_read_tda_data_complete = (fp_read_tda_data_complete_t)dlsym(
            p_emvco_ct_one_bin_handle, "read_tda_data_complete")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (read_tda_data_complete) !!");
-    return;
   }
 }
 /******************************************************************************
