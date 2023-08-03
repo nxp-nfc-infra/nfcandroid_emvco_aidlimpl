@@ -37,6 +37,7 @@
  *  @{
  */
 
+#include "emvco_tda.h"
 #include <emvco_hal.h>
 #include <emvco_tml.h>
 #include <emvco_util.h>
@@ -375,15 +376,16 @@ void get_set_config(const char *p_nxp_conf);
 void ct_process_emvco_mode_rsp_impl(osal_transact_info_t *pTransactionInfo);
 
 typedef void (*fp_init_ecp_vas_t)();
-typedef EMVCO_STATUS (*fp_init_ct_ext_t)();
-typedef EMVCO_STATUS (*fp_de_init_ct_ext_t)();
-typedef void (*fp_ct_process_emvco_mode_rsp_t)();
-typedef EMVCO_STATUS (*fp_ct_open_t)(uint8_t, uint8_t *);
-typedef EMVCO_STATUS (*fp_ct_close_t)();
-typedef EMVCO_STATUS (*fp_get_tda_channel_num_t)();
-typedef EMVCO_STATUS (*fp_transceive_t)();
+typedef EMVCO_STATUS (*fp_ct_init_ext_t)();
+typedef EMVCO_STATUS (*fp_ct_de_init_ext_t)();
+typedef void (*fp_ct_process_emvco_mode_rsp_t)(uint8_t *, uint16_t);
+typedef EMVCO_STATUS (*fp_ct_open_t)(int8_t, int8_t *);
+typedef EMVCO_STATUS (*fp_ct_close_t)(int8_t);
+typedef EMVCO_STATUS (*fp_is_ct_send_app_data_t)(const uint8_t *, uint16_t,
+                                                 bool);
+typedef EMVCO_STATUS (*fp_transceive_t)(tda_data *, tda_data *);
 
 typedef EMVCO_STATUS (*fp_ct_discover_tda_t)(tda_control_t *);
-typedef EMVCO_STATUS (*fp_is_ct_data_credit_received_t)();
-
+typedef bool (*fp_is_ct_data_credit_received_t)(uint8_t *, uint16_t);
+typedef bool (*fp_is_ct_data_rsp_t)(uint8_t *, uint16_t);
 #endif /* _EMVCO_DM_H_ */

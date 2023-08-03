@@ -376,7 +376,7 @@ struct map *get_config_map(void) {
 }
 
 static void send_poll_profile_sel_set_config() {
-  LOG_EXTNS_E("%s:  \n", __func__);
+  LOG_EXTNS_D("%s:  \n", __func__);
   int set_config_retry_cnt = 0;
   uint8_t *p_cmd_idle_pwr_off_cfg = (uint8_t *)cmd_idle_pwr_off_cfg;
   do {
@@ -412,5 +412,5 @@ void send_dynamic_set_config(void) {
 
   send_poll_profile_sel_set_config();
 
-  LOG_EXTNS_E("%s: end \n", __func__);
+  LOG_EXTNS_D("%s: end \n", __func__);
 }

@@ -420,18 +420,11 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
                                     int8_t *out_connID) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_tdaID:%d", __func__, in_tdaID);
   (void)in_standBy;
-  uint8_t connID = -1;
-  uint8_t tdaID = (uint8_t)in_tdaID;
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter tdaID:%d", __func__, tdaID);
-
-  EMVCO_STATUS status = open_tda(tdaID, &connID);
-  if (status == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
-    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
-             __func__);
-    return ndk::ScopedAStatus::fromServiceSpecificError(
-        EMVCO_STATUS_FEATURE_NOT_SUPPORTED);
+  EMVCO_STATUS status = open_tda(in_tdaID, out_connID);
+  if (status != EMVCO_STATUS_OK) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
+    return ndk::ScopedAStatus::fromServiceSpecificError(status);
   }
-  *out_connID = (int8_t)connID;
   return ndk::ScopedAStatus::ok();
 }
 
@@ -439,11 +432,9 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   (void)in_standBy;
   EMVCO_STATUS status = close_tda(in_tdaID);
-  if (status == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
-    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
-             __func__);
-    return ndk::ScopedAStatus::fromServiceSpecificError(
-        EMVCO_STATUS_FEATURE_NOT_SUPPORTED);
+  if (status != EMVCO_STATUS_OK) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
+    return ndk::ScopedAStatus::fromServiceSpecificError(status);
   }
   return ndk::ScopedAStatus::ok();
 }
@@ -468,11 +459,9 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   }
 
   EMVCO_STATUS status = transceive_tda(&cmd_apdu, &rsp_apdu);
-  if (status == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
-    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
-             __func__);
-    return ndk::ScopedAStatus::fromServiceSpecificError(
-        EMVCO_STATUS_FEATURE_NOT_SUPPORTED);
+  if (status != EMVCO_STATUS_OK) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
+    return ndk::ScopedAStatus::fromServiceSpecificError(status);
   }
   result.resize(rsp_apdu.len);
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: resp size:%d", __func__, rsp_apdu.len);

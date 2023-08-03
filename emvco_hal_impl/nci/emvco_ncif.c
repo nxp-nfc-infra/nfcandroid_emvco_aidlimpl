@@ -118,12 +118,7 @@ uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   UINT8_TO_STREAM(pp, num);
   ARRAY_TO_STREAM(pp, p_param_tlvs, tlv_size);
 
-  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
-
-  if (0 == send_app_data_unlocked(len, p)) {
-    status = EMVCO_STATUS_FAILED;
-  }
-  return status;
+  return send_ext_cmd(len, p);
 }
 
 uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
@@ -165,9 +160,11 @@ uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
 }
 
 uint8_t send_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data) {
-  LOG_EMVCOHAL_D("%s withsend_app_data_unlocked \n", __func__);
-  send_app_data_unlocked(data_len, p_data);
-  return (NCI_STATUS_OK);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  if (0 == send_app_data_unlocked(data_len, p_data)) {
+    status = EMVCO_STATUS_FAILED;
+  }
+  return status;
 }
 
 void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {

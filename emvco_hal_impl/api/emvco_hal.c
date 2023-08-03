@@ -120,12 +120,12 @@ EMVCO_STATUS discover_tda(tda_control_t *tda_control) {
   return discover_tda_slots(tda_control);
 }
 
-EMVCO_STATUS open_tda(uint8_t tda_id, uint8_t *conn_id) {
+EMVCO_STATUS open_tda(int8_t tda_id, int8_t *conn_id) {
   LOG_EMVCOHAL_D("%s", __func__);
   return open_tda_slot(tda_id, conn_id);
 }
 
-EMVCO_STATUS close_tda(uint8_t tda_id) {
+EMVCO_STATUS close_tda(int8_t tda_id) {
   LOG_EMVCOHAL_D("%s", __func__);
   return close_tda_slot(tda_id);
 }

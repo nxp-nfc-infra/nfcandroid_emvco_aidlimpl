@@ -43,8 +43,6 @@
 extern "C" {
 #endif
 
-extern tda_control_t g_tda_ctrl;
-
 tda_type_t g_tda_type;
 
 /**
@@ -73,7 +71,7 @@ EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control);
  * not supported
  *
  */
-EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id);
+EMVCO_STATUS open_tda_slot(int8_t tda_id, int8_t *conn_id);
 
 /**
  * @brief closes the contactcard.
@@ -85,7 +83,7 @@ EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id);
  * not supported
  *
  */
-EMVCO_STATUS close_tda_slot(uint8_t tda_id);
+EMVCO_STATUS close_tda_slot(int8_t tda_id);
 
 /**
  *

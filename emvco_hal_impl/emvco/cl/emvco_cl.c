@@ -47,9 +47,8 @@ extern tml_emvco_context_t *gptml_emvco_context;
 extern nci_hal_ctrl_t nci_hal_ctrl;
 emvco_args_t *modeSwitchArgs;
 extern fp_init_ecp_vas_t fp_init_ecp_vas;
-extern fp_init_ct_ext_t fp_init_ct_ext;
-extern fp_de_init_ct_ext_t fp_de_init_ct_ext;
-
+extern fp_ct_de_init_ext_t fp_ct_de_init_ext;
+extern fp_ct_init_ext_t fp_ct_init_ext;
 pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* the RF Discovery Frequency for each technology */
@@ -212,8 +211,8 @@ EMVCO_STATUS start_emvco_mode() {
   if (fp_init_ecp_vas != NULL) {
     fp_init_ecp_vas();
   }
-  if (fp_init_ct_ext != NULL) {
-    EMVCO_STATUS status = fp_init_ct_ext();
+  if (fp_ct_init_ext != NULL) {
+    EMVCO_STATUS status = fp_ct_init_ext();
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_D("CT command Failed. start CL");
       ct_init_completed();
@@ -232,8 +231,8 @@ void ct_init_completed() {
 }
 EMVCO_STATUS stop_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
-  if (fp_de_init_ct_ext != NULL) {
-    EMVCO_STATUS status = fp_de_init_ct_ext();
+  if (fp_ct_de_init_ext != NULL) {
+    EMVCO_STATUS status = fp_ct_de_init_ext();
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_D("%s Failed to de-init CT", __func__);
     }

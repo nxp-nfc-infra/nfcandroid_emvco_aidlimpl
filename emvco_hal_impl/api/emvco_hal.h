@@ -248,7 +248,7 @@ EMVCO_STATUS discover_tda(tda_control_t *tda_control);
  * not supported
  *
  */
-EMVCO_STATUS open_tda(uint8_t tda_id, uint8_t *conn_id);
+EMVCO_STATUS open_tda(int8_t tda_id, int8_t *conn_id);
 
 /**
  * @brief closes the contactcard.
@@ -260,7 +260,7 @@ EMVCO_STATUS open_tda(uint8_t tda_id, uint8_t *conn_id);
  * not supported
  *
  */
-EMVCO_STATUS close_tda(uint8_t tda_id);
+EMVCO_STATUS close_tda(int8_t tda_id);
 
 /**
  *

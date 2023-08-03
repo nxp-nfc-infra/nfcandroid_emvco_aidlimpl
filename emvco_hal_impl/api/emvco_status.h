@@ -179,15 +179,21 @@ nfc_status_t nfc_status;
 
 /**
  * Indicates core connection close NCI command failed.
- * Ensure TDA was opened and ry to call closeTDA api with proper TDA ID.
+ * Ensure TDA was opened and try to call closeTDA api with proper TDA ID.
  */
 #define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x0F)
 
 /**
  * Indicates mode set disable NCI command failed.
- * Ensure TDA was opened and ry to call closeTDA api with proper TDA ID.
+ * Ensure TDA was opened and try to call closeTDA api with proper TDA ID.
  */
 #define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x10)
+
+/**
+ * Indicates mode set enable command timeout and failed.
+ * Try to call openTDA api with proper TDA ID.
+ */
+#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_TIMEOUT (0x11)
 
 /*
  * Status code for failure

@@ -69,7 +69,7 @@ extern tml_emvco_context_t *gptml_emvco_context;
 // extern uint32_t cleanup_timer;
 extern bool emvco_debug_enabled;
 extern emvco_args_t *modeSwitchArgs;
-extern fp_init_ct_ext_t fp_init_ct_ext;
+extern fp_ct_init_ext_t fp_ct_init_ext;
 
 uint8_t icode_detected = 0x00;
 uint8_t icode_send_eof = 0x00;
