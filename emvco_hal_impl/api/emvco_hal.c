@@ -44,9 +44,12 @@ extern emvco_args_t *modeSwitchArgs;
 
 int open_emvco_app_data_channel(
     emvco_stack_callback_t *p_cback, emvco_stack_data_callback_t *p_data_cback,
-    emvco_state_change_callback_t *p_nfc_state_cback) {
+    emvco_state_change_callback_t *p_nfc_state_cback,
+    emvco_tda_state_change_t *p_tda_state_change,
+    emvco_cl_state_change_t *p_cl_state_change) {
   LOG_EMVCOHAL_D("open_emvco_app_data_channel");
-  return open_app_data_channel(*p_cback, *p_data_cback, *p_nfc_state_cback);
+  return open_app_data_channel(*p_cback, *p_data_cback, *p_nfc_state_cback,
+                               *p_tda_state_change, *p_cl_state_change);
 }
 
 int send_emvco_app_data(uint16_t data_len, const uint8_t *p_data) {
@@ -120,14 +123,14 @@ EMVCO_STATUS discover_tda(tda_control_t *tda_control) {
   return discover_tda_slots(tda_control);
 }
 
-EMVCO_STATUS open_tda(int8_t tda_id, int8_t *conn_id) {
+EMVCO_STATUS open_tda(int8_t tda_id, bool in_standBy, int8_t *conn_id) {
   LOG_EMVCOHAL_D("%s", __func__);
-  return open_tda_slot(tda_id, conn_id);
+  return open_tda_slot(tda_id, in_standBy, conn_id);
 }
 
-EMVCO_STATUS close_tda(int8_t tda_id) {
+EMVCO_STATUS close_tda(int8_t tda_id, bool in_standBy) {
   LOG_EMVCOHAL_D("%s", __func__);
-  return close_tda_slot(tda_id);
+  return close_tda_slot(tda_id, in_standBy);
 }
 
 EMVCO_STATUS transceive_tda(tda_data *cmd_apdu, tda_data *rsp_apdu) {

@@ -34,7 +34,6 @@
 #define _EMVCO_COMMON_H_
 
 #include "emvco_status.h"
-#include "emvco_tda.h"
 #include <stdbool.h>
 #include <stdint.h>
 

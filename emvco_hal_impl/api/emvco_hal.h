@@ -38,7 +38,7 @@
  *  @{
  */
 
-#include <emvco_common.h>
+#include <emvco_tda.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -69,6 +69,20 @@ typedef void(emvco_stack_data_callback_t)(uint16_t data_len, uint8_t *p_data);
 typedef void(emvco_state_change_callback_t)(bool enableNfc);
 
 /**
+ * @brief
+ * The callback passed in from the EMVCo HAL that EMVCo
+ * stack can use to pass emvco tda state change to EMVCo HAL.
+ */
+typedef void(emvco_tda_state_change_t)(void *tda_info, char *p_dbg_reason);
+
+/**
+ * @brief
+ * The callback passed in from the EMVCo HAL that EMVCo
+ * stack can use to pass emvco cl state change and card detection to EMVCo HAL.
+ */
+typedef void(emvco_cl_state_change_t)(uint8_t emvco_state, char *p_dbg_reason);
+
+/**
 
  *
  * @brief           This function is called by EMVCo HAL during the
@@ -88,7 +102,9 @@ typedef void(emvco_state_change_callback_t)(bool enableNfc);
  */
 int open_emvco_app_data_channel(
     emvco_stack_callback_t *p_cback, emvco_stack_data_callback_t *p_data_cback,
-    emvco_state_change_callback_t *p_nfc_state_cback);
+    emvco_state_change_callback_t *p_nfc_state_cback,
+    emvco_tda_state_change_t *p_tda_state_change,
+    emvco_cl_state_change_t *p_cl_state_change);
 
 /**
  *
@@ -241,6 +257,14 @@ EMVCO_STATUS discover_tda(tda_control_t *tda_control);
  * @brief opens the contactcard and returns the logical channel.
  *
  * @param[in] tda_id id of the contact card to be opened
+ * @param[in]  standBy false, opens the communication with TDA freshely and mode
+ * set enable command is sent to controller. standBy true, resumes the
+ * communication from partial close and does not send mode set enable command to
+ * controller
+ *
+ * @note       use standby false, if you are opening the TDA for first time.
+ *             use standby true, if you are opening the TDA followed by partial
+ * close of another TDA
  * @param[out] returns the conn_id id of the contact card
  *
  * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
@@ -248,19 +272,28 @@ EMVCO_STATUS discover_tda(tda_control_t *tda_control);
  * not supported
  *
  */
-EMVCO_STATUS open_tda(int8_t tda_id, int8_t *conn_id);
+EMVCO_STATUS open_tda(int8_t tda_id, bool in_standBy, int8_t *conn_id);
 
 /**
  * @brief closes the contactcard.
  *
  * @param[in] tda_id id of the contact card to be closed
+ * @param[in]  standBy true, closes the communication with TDA fully and allows
+ * the system to go in standbymode standBy false, closes the communication
+ * partially and does not allow the system to go in standbymode.
+ *
+ * @note       use standby false, If you are closing the current TDA to open
+ * another TDA for communication then use false to get better performance use
+ * standby true, If you are closing the current TDA to stop the communication
+ * with it fully and allow system to enter standby mode
+ *
  *
  * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
  * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
  * not supported
  *
  */
-EMVCO_STATUS close_tda(int8_t tda_id);
+EMVCO_STATUS close_tda(int8_t tda_id, bool in_standBy);
 
 /**
  *

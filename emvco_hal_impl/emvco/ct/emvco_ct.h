@@ -37,13 +37,11 @@
  *  @{
  */
 
-#include <emvco_common.h>
+#include <emvco_tda.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-tda_type_t g_tda_type;
 
 /**
  * @brief discovers the smart card connected to TDA and returns the smart card
@@ -64,6 +62,14 @@ EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control);
  * @brief opens the contactcard.
  *
  * @param[in] tda_id id of the contact card to be opened
+ * @param[in]  standBy false, opens the communication with TDA freshely and mode
+ * set enable command is sent to controller. standBy true, resumes the
+ * communication from partial close and does not send mode set enable command to
+ * controller
+ *
+ * @note       use standby false, if you are opening the TDA for first time.
+ *             use standby true, if you are opening the TDA followed by partial
+ * close of another TDA
  * @param[out] returns the conn_id id of the contact card
  *
  * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
@@ -71,19 +77,27 @@ EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control);
  * not supported
  *
  */
-EMVCO_STATUS open_tda_slot(int8_t tda_id, int8_t *conn_id);
+EMVCO_STATUS open_tda_slot(int8_t tda_id, bool in_standBy, int8_t *conn_id);
 
 /**
  * @brief closes the contactcard.
  *
  * @param[in] tda_id id of the contact card to be closed
+ * @param[in]  standBy true, closes the communication with TDA fully and allows
+ * the system to go in standbymode standBy false, closes the communication
+ * partially and does not allow the system to go in standbymode.
+ *
+ * @note       use standby false, If you are closing the current TDA to open
+ * another TDA for communication then use false to get better performance use
+ * standby true, If you are closing the current TDA to stop the communication
+ * with it fully and allow system to enter standby mode
  *
  * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
  * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
  * not supported
  *
  */
-EMVCO_STATUS close_tda_slot(int8_t tda_id);
+EMVCO_STATUS close_tda_slot(int8_t tda_id, bool in_standBy);
 
 /**
  *

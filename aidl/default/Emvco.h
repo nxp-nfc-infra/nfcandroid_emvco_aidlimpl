@@ -143,7 +143,8 @@ public:
                   ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
 
   ::ndk::ScopedAStatus registerEMVCoCTListener(
-      const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback);
+      const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+      bool *_aidl_return);
   ::ndk::ScopedAStatus
   discoverTDA(std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
                   *emvcoTDAInfo);
@@ -155,6 +156,8 @@ public:
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);
+  static void onCLStateChange(uint8_t state, char *debugReason);
+  static void onTDAStateChange(void *tda, char *debugReason);
   static std::shared_ptr<Emvco> getInstance();
   static void setNfcState(bool enableNfc);
   static std::shared_ptr<INfcStateChangeRequestCallback>
@@ -163,17 +166,20 @@ public:
 private:
   friend LinkedCallback;
   static std::shared_ptr<Emvco> emvco_service_;
-  static std::vector<std::unique_ptr<LinkedCallback>> callbacks_;
+  static std::vector<std::unique_ptr<LinkedCallback>> cl_callbacks_;
+  static std::vector<std::unique_ptr<LinkedCallback>> ct_callbacks_;
   static std::mutex callbacks_lock_;
   ndk::ScopedAIBinder_DeathRecipient death_recipient_;
-  std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_profile_discovery_;
+  std::shared_ptr<IEmvcoProfileDiscovery> emvco_profile_discovery_;
   std::shared_ptr<IEmvcoTDA> nxp_emvco_tda_;
-  std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_contactless_card;
-  static std::shared_ptr<IEmvcoTDACallback> mEmvcoTDACallback;
+  std::shared_ptr<IEmvcoContactlessCard> emvco_contactless_card;
+  static std::shared_ptr<IEmvcoTDACallback> emvco_tda_callback;
 
   void registerCallback(const std::shared_ptr<IEmvcoClientCallback> &callback);
   void
   unregisterCallback(const std::shared_ptr<IEmvcoClientCallback> &callback);
+  void registerCTCallback(const std::shared_ptr<IEmvcoTDACallback> &callback);
+  void unregisterCTCallback(const std::shared_ptr<IEmvcoTDACallback> &callback);
   void setEMVCoModeImpl(int8_t in_config);
 };
 

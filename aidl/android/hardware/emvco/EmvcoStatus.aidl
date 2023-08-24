@@ -89,46 +89,147 @@ enum EmvcoStatus {
     EMVCO_STATUS_WRITE_FAILED = 8,
 
     /**
+    * Indicates NFCEE Discovery failed.
+    * Try start the EMVCo mode again, if CT is supported and TDA present in the
+    * hardware.
+    */
+    EMVCO_STATUS_TDA_INIT_FAILED = 9,
+
+    /**
      * Indicates NFCEE Discovery not completed.
-     * Try start the EMVCo mode again, if CT is supported and TDA present in the hardware.
+     * Try start the EMVCo mode again, if CT is supported and TDA present in the
+     * hardware.
      */
-    EMVCO_STATUS_TDA_INIT_NOT_COMPLETED = 9,
+    EMVCO_STATUS_INVALID_STATE_TDA_INIT_NOT_COMPLETED = 10,
+
     /**
-     * Indicates NFCEE Discovery failed.
-     * Try start the EMVCo mode again, if CT is supported and TDA present in the hardware.
+     * Indicates NFCEE Discovery already completed.
+     * No need to discover NFCEE again
+     *
      */
-    EMVCO_STATUS_TDA_INIT_FAILED = 10,
-    /**
-     * Indicates NCI Error response for NCI command.
-     * COntroller is not in proper state to accept the NCI command.
-     * Try start the EMVCo mode again, if CT is supported and TDA present in the hardware.
-     */
-    EMVCO_STATUS_NCI_RESPONSE_ERR = 11,
-    /**
-     * Indicates mode set mode set NCI command failed.
-     * Try call openTDA api with proper TDA ID and standby false.
-     */
-    EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_FAILED = 12,
+    EMVCO_STATUS_INVALID_STATE_TDA_DISCOVERED_ALREADY = 11,
+
     /**
      * Indicates core connection create NCI command failed.
-     * Try call openTDA api with proper TDA ID.
+     * Try to call openTDA api with proper TDA ID standby flag as true and try open again
      */
-    EMVCO_STATUS_CORE_CONN_CREATE_FAILED = 13,
+    EMVCO_STATUS_CORE_CONN_CREATE_FAILED = 12,
+
     /**
-     * Indicates transceive NCI data command failed.
-     * Try call closeAPI and then openTDA api with proper TDA ID to recover and send the transceive data.
+     * Indicates core connection created already NCI.
+     * Try to call closeTDA api with proper TDA ID & standby flag as false and
+     * and try open again with proper TDA ID & standby flag as true
      */
-    EMVCO_STATUS_TRANSCEIVE_FAILED = 14,
+    EMVCO_STATUS_CORE_CONN_CREATED_ALREADY = 13,
+
+   /**
+    * Indicates core connection created already NCI.
+    * Try to call closeTDA api with proper TDA ID & standby flag as false and
+    * and try open again with proper TDA ID & standby flag as true
+    */
+    EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_FAILED = 14,
+
     /**
-     * Indicates core connection close NCI command failed.
-     * Try call closeTDA api with proper TDA ID.
+     * Indicates mode set enable command timeout and failed.
+     * Try to call openTDA api with proper TDA ID & standby flag as false.
      */
-    EMVCO_STATUS_CORE_CONN_CLOSE_FAILED = 15,
+    EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_TIMEOUT = 15,
+
     /**
-     * Indicates mode set disable NCI command failed.
-     * Try call closeTDA api with proper TDA ID.
+     * Indicates that TDA is not opened
+     * Try to call openTDA api with proper TDA ID & standby flag as false.
      */
-    EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED = 16,
+    EMVCO_STATUS_INVALID_STATE_OPEN_NOT_COMPLETED = 16,
+
+    /**
+     * Indicates that TDA is not opened
+     * Try to call openTDA api with proper TDA ID & standby flag as true.
+     */
+    EMVCO_STATUS_INVALID_STATE_CORE_CONN_CREATE_NOT_COMPLETED = 17,
+
+    /**
+     * Indicates that TDA is already opened
+     * Try to call closeTDA api with proper TDA ID & standby flag as false and
+     * and try open again with proper TDA ID & standby flag as true
+     */
+    EMVCO_STATUS_INVALID_STATE_TDA_OPENED_ALREADY = 18,
+
+    /**
+     * Indicates that TDA is already opened
+     * Try to call closeTDA api with proper TDA ID & standby flag as false and
+     * and try open again with proper TDA ID & standby flag as true
+     */
+     EMVCO_STATUS_INVALID_STATE_CORE_CONN_CREATED_ALREADY = 19,
+
+     /**
+      * Indicates transceive NCI data command failed.
+      * Try to call closeTDA api with proper TDA ID & standby flag as true and
+      * and try open again with proper TDA ID & standby flag as true to recover and
+      * send the transceive data.
+      */
+      EMVCO_STATUS_TRANSCEIVE_FAILED = 20,
+
+      /**
+       * Indicates core connection close NCI command failed.
+       * Try to call closeTDA api with proper TDA ID & standby flag as false and
+       * and try open again with proper TDA ID & standby flag as true
+       */
+      EMVCO_STATUS_CORE_CONN_CLOSE_FAILED = 21,
+
+     /**
+      * Indicates mode set disable NCI command failed.
+      * Try to call closeTDA api with proper TDA ID & standby flag as true and
+      * and try to call openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED = 22,
+
+     /**
+      * Indicates nfcee interface activation failure.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NFCEE_INTERFACE_ACTIVATION_FAILED = 23,
+
+     /**
+      * Indicates nfcee interface activation failure.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NFCEE_TRANSMISSION_ERROR = 24,
+
+     /**
+      * Indicates nfcee interface activation failure.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_INVALID_STATE_TDA_IN_CLOSED = 25,
+
+     /**
+      * Indicates nfcee interface activation failure.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_INVALID_STATE_CORE_CONN_CLOSED_ALREADY = 26,
+
+     /**
+      * Indicates TDA in already closed state.
+      * No need to close again
+      */
+     EMVCO_STATUS_INVALID_STATE_TDA_CLOSED_ALREADY = 27,
+
+     /**
+      * Indicates nfcee protocol error.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NFCEE_PROTOCOL_ERROR = 28,
+
+     /**
+      * Indicates nfcee protocol error.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NFCEE_TIMEOUT_ERROR = 29,
+
+     /**
+      * Indicates nfcee protocol error.
+      * Try call to openTDA again with proper TDA ID & standby flag as false
+      */
+     EMVCO_STATUS_NCI_RESPONSE_ERR = 30,
 
     /**
      * Indicates failure status.

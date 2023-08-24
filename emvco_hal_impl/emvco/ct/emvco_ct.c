@@ -52,11 +52,11 @@ EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control) {
   return status;
 }
 
-EMVCO_STATUS open_tda_slot(int8_t tda_id, int8_t *conn_id) {
+EMVCO_STATUS open_tda_slot(int8_t tda_id, bool in_standBy, int8_t *conn_id) {
   LOG_EMVCOHAL_D("%s", __func__);
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   if (fp_ct_open != NULL) {
-    status = fp_ct_open(tda_id, conn_id);
+    status = fp_ct_open(tda_id, in_standBy, conn_id);
   } else {
     LOG_EMVCOHAL_D("%s", __func__);
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
@@ -64,11 +64,11 @@ EMVCO_STATUS open_tda_slot(int8_t tda_id, int8_t *conn_id) {
   return status;
 }
 
-EMVCO_STATUS close_tda_slot(int8_t tda_id) {
+EMVCO_STATUS close_tda_slot(int8_t tda_id, bool in_standBy) {
   LOG_EMVCOHAL_D("%s", __func__);
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   if (fp_ct_close != NULL) {
-    status = fp_ct_close(tda_id);
+    status = fp_ct_close(tda_id, in_standBy);
   } else {
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
   }

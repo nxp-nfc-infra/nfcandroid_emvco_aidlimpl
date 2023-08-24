@@ -69,6 +69,7 @@ fp_transceive_t fp_transceive = NULL;
 fp_ct_discover_tda_t fp_ct_discover_tda = NULL;
 fp_is_ct_data_credit_received_t fp_is_ct_data_credit_received = NULL;
 fp_is_ct_data_rsp_t fp_is_ct_data_rsp = NULL;
+fp_on_emvco_rf_pool_start_t fp_on_emvco_rf_pool_start = NULL;
 
 /* Processing of ISO 15693 EOF */
 extern uint8_t icode_send_eof;
@@ -243,6 +244,9 @@ static void *emvco_hal_client_thread(void *arg) {
         /* Send the event */
         LOG_EMVCOHAL_E("EMVCO_POLLING_STARTED_EVT propagted to upper layer");
         (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POLLING_STARTED_EVT, STATUS_OK);
+        if (fp_on_emvco_rf_pool_start != NULL) {
+          fp_on_emvco_rf_pool_start();
+        }
       }
       REENTRANCE_UNLOCK();
       break;
@@ -296,13 +300,16 @@ static void kill_emvco_hal_client_thread(nci_hal_ctrl_t *p_nci_hal_ctrl) {
   p_nci_hal_ctrl->p_nfc_stack_data_cback = NULL;
   p_nci_hal_ctrl->p_nfc_state_cback = NULL;
   p_nci_hal_ctrl->thread_running = 0;
-
+  p_nci_hal_ctrl->p_tda_state_change = NULL;
+  p_nci_hal_ctrl->p_cl_state_change = NULL;
   return;
 }
 
-int open_app_data_channelImpl(
-    emvco_stack_callback_t *p_cback, emvco_stack_data_callback_t *p_data_cback,
-    emvco_state_change_callback_t *p_nfc_state_cback) {
+int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
+                              emvco_stack_data_callback_t *p_data_cback,
+                              emvco_state_change_callback_t *p_nfc_state_cback,
+                              emvco_tda_state_change_t *p_tda_state_change,
+                              emvco_cl_state_change_t *p_cl_state_change) {
   EMVCO_STATUS wConfigStatus = EMVCO_STATUS_SUCCESS;
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
   LOG_EMVCOHAL_D("open_app_data_channel nfc_status:%d", nfc_status);
@@ -321,6 +328,9 @@ int open_app_data_channelImpl(
   nci_hal_ctrl.p_nfc_stack_cback = p_cback;
   nci_hal_ctrl.p_nfc_stack_data_cback = p_data_cback;
   nci_hal_ctrl.p_nfc_state_cback = p_nfc_state_cback;
+  nci_hal_ctrl.p_tda_state_change = p_tda_state_change;
+  nci_hal_ctrl.p_cl_state_change = p_cl_state_change;
+
   open_app_data_channel_complete(wConfigStatus);
 
   return wConfigStatus;
@@ -403,6 +413,10 @@ void initialize_emvco_ct() {
   if ((fp_is_ct_data_rsp = (fp_is_ct_data_rsp_t)dlsym(
            p_emvco_ct_one_bin_handle, "is_ct_data_rsp")) == NULL) {
     LOG_EMVCOHAL_D("Error while linking (is_ct_data_rsp) !!");
+  }
+  if ((fp_on_emvco_rf_pool_start = (fp_on_emvco_rf_pool_start_t)dlsym(
+           p_emvco_ct_one_bin_handle, "on_emvco_rf_pool_start")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (on_emvco_rf_pool_start) !!");
   }
 }
 /******************************************************************************
@@ -620,7 +634,9 @@ void get_set_config(const char *p_conf_key) {
 
 int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
-                          emvco_state_change_callback_t *p_nfc_state_cback) {
+                          emvco_state_change_callback_t *p_nfc_state_cback,
+                          emvco_tda_state_change_t *p_tda_state_change,
+                          emvco_cl_state_change_t *p_cl_state_change) {
   LOG_EMVCOHAL_D("%s:", __func__);
   read_config(emvco_hal_config_path);
   if (modeSwitchArgs == NULL) {
@@ -633,6 +649,8 @@ int open_app_data_channel(emvco_stack_callback_t *p_cback,
   m_p_nfc_stack_cback = p_cback;
   m_p_nfc_stack_data_cback = p_data_cback;
   m_p_nfc_state_cback = p_nfc_state_cback;
+  m_p_tda_state_change = p_tda_state_change;
+  m_p_cl_state_change = p_cl_state_change;
 
   /* initialize log levels */
   initialize_debug_enabled_flag();
@@ -698,18 +716,18 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data,
     LOG_EMVCOHAL_E("cmd_len exceeds limit NCI_MAX_DATA_LEN");
     return EMVCO_STATUS_FAILED;
   }
-
-  if (p_data[0] & (NCI_MSG_TYPE_RSP << NCI_MT_SHIFT)) {
+  int msg_type = p_data[0] & (NCI_MSG_TYPE_RSP << NCI_MT_SHIFT);
+  if (NCI_MSG_CMD_ABS_VAL == msg_type) {
     if (fp_is_ct_send_app_data != NULL) {
       if (fp_is_ct_send_app_data(p_data, data_len, is_tda) == false) {
         LOG_EMVCOHAL_E("NCI command not allowed to send to controller");
-        return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+        return 0; // Zero bytes written
       } else {
         LOG_EMVCOHAL_D("NCI command initiated from CT");
       }
     } else {
       LOG_EMVCOHAL_E("NCI command not allowed to send to controller");
-      return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+      return 0; // Zero bytes written
     }
   }
 
@@ -843,6 +861,7 @@ static void read_app_data_complete(void *p_context,
     if (((pInfo->p_buff[0] & NCI_MT_MASK) == NCI_MT_RSP ||
          is_data_credit_received(pInfo) || is_rf_link_loss_received(pInfo)) &&
         sem_val == 0) {
+      LOG_EMVCOHAL_D("CT crdeit ntfc received. Unlocking")
       osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
     }
     /*Check the Omapi command response and store in dedicated buffer to solve

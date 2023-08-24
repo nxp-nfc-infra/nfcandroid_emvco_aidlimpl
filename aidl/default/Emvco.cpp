@@ -31,6 +31,7 @@
  ******************************************************************************/
 #include "Emvco.h"
 #include "LinkedCallback.h"
+#include <emvco_common.h>
 #include <emvco_hal.h>
 #define CHK_STATUS(x)                                                          \
   ((x) == EMVCO_STATUS_SUCCESS)                                                \
@@ -46,12 +47,13 @@ using ::aidl::android::hardware::emvco::DiscoveryMode;
 using ::aidl::android::hardware::emvco::EmvcoEvent;
 using ::aidl::android::hardware::emvco::EmvcoStatus;
 
-std::vector<std::unique_ptr<LinkedCallback>> Emvco::callbacks_;
+std::vector<std::unique_ptr<LinkedCallback>> Emvco::cl_callbacks_;
+std::vector<std::unique_ptr<LinkedCallback>> Emvco::ct_callbacks_;
 std::mutex Emvco::callbacks_lock_;
 std::shared_ptr<Emvco> Emvco::emvco_service_;
 std::shared_ptr<INfcStateChangeRequestCallback>
     Emvco::nfc_State_change_callback = nullptr;
-std::shared_ptr<IEmvcoTDACallback> Emvco::mEmvcoTDACallback = nullptr;
+std::shared_ptr<IEmvcoTDACallback> Emvco::emvco_tda_callback = nullptr;
 
 void Emvco::setNfcState(bool enableNfc) {
   if (Emvco::nfc_State_change_callback != nullptr) {
@@ -65,7 +67,7 @@ void Emvco::setNfcState(bool enableNfc) {
 void Emvco::eventCallback(uint8_t event, uint8_t status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::lock_guard<std::mutex> lock(callbacks_lock_);
-  for (auto &it : callbacks_) {
+  for (auto &it : cl_callbacks_) {
     it->callback()->sendEvent((EmvcoEvent)event, (EmvcoStatus)status);
   }
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
@@ -75,10 +77,64 @@ void Emvco::dataCallback(uint16_t data_len, uint8_t *p_data) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   std::lock_guard<std::mutex> lock(callbacks_lock_);
   std::vector<uint8_t> data(p_data, p_data + data_len);
-  for (auto &it : callbacks_) {
+  for (auto &it : cl_callbacks_) {
     it->callback()->sendData(data);
   }
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
+}
+
+void Emvco::onCLStateChange(uint8_t state, char *debugReason) {
+  std::string dbgReason = debugReason;
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s state:%d, dbgReason:%s", __func__, state,
+           dbgReason.c_str());
+  EmvcoState emvcoState = (EmvcoState)(state);
+  if (emvco_tda_callback != nullptr) {
+    emvco_tda_callback->onEMVCoCLStateChange(emvcoState, dbgReason);
+  }
+}
+
+void Emvco::onTDAStateChange(void *tda_info, char *debugReason) {
+  std::string dbgReason = debugReason;
+  tda_t *tda = (tda_t *)tda_info;
+  aidl::android::hardware::emvco::EmvcoTDAInfo tdaInfo;
+
+  tdaInfo.id = tda->id;
+  tdaInfo.status = (EmvcoTDAStatus)tda->status;
+  tdaInfo.numberOfProtocols = tda->number_of_protocols;
+  std::vector<::aidl::android::hardware::emvco::Protocols> protocols;
+  if (tdaInfo.numberOfProtocols > 0) {
+    for (int j = 0; j < tdaInfo.numberOfProtocols; j++) {
+      int protocolVal = (int)(*((uint8_t *)(tda->protocols_t) + j));
+      ::aidl::android::hardware::emvco::Protocols protocol =
+          Protocols(protocolVal);
+      protocols.push_back(protocol);
+    }
+  }
+  tdaInfo.protocols = protocols;
+  tdaInfo.numberOfCardInfo = tda->number_of_card_info;
+  std::vector<::aidl::android::hardware::emvco::CardTLVInfo> cardTLVInfos;
+  if (tdaInfo.numberOfCardInfo > 0) {
+    for (int k = 0; k < tdaInfo.numberOfCardInfo; k++) {
+      ::aidl::android::hardware::emvco::CardTLVInfo cardtlvInfo;
+      cardtlvInfo.type = tda->card_tlv_info->type;
+      cardtlvInfo.length = tda->card_tlv_info->length;
+      if (cardtlvInfo.length > 0) {
+        std::vector<uint8_t> values;
+        for (int l = 0; l < cardtlvInfo.length; l++) {
+          uint8_t *value = ((uint8_t *)(tda->card_tlv_info->value) + l);
+          values.push_back(*value);
+        }
+        cardtlvInfo.value = values;
+      }
+      cardTLVInfos.push_back(cardtlvInfo);
+    }
+  }
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: adding cardTLVInfos", __func__);
+  tdaInfo.cardTLVInfo = cardTLVInfos;
+
+  if (emvco_tda_callback != nullptr) {
+    emvco_tda_callback->onTDAStateChange(tdaInfo, dbgReason);
+  }
 }
 
 void OnCallbackDiedWrapped(void *cookie) {
@@ -106,22 +162,21 @@ Emvco::Emvco()
     std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoProfileDiscovery>
         *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  if (nxp_emvco_profile_discovery_ == nullptr) {
-    nxp_emvco_profile_discovery_ =
+  if (emvco_profile_discovery_ == nullptr) {
+    emvco_profile_discovery_ =
         ::ndk::SharedRefBase::make<EmvcoProfileDiscovery>();
   }
-  *_aidl_return = nxp_emvco_profile_discovery_;
+  *_aidl_return = emvco_profile_discovery_;
   return ndk::ScopedAStatus::ok();
 }
 ::ndk::ScopedAStatus Emvco::getEmvcoContactlessCard(
     std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoContactlessCard>
         *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  if (nxp_emvco_contactless_card == nullptr) {
-    nxp_emvco_contactless_card =
-        ::ndk::SharedRefBase::make<EmvcoContactlessCard>();
+  if (emvco_contactless_card == nullptr) {
+    emvco_contactless_card = ::ndk::SharedRefBase::make<EmvcoContactlessCard>();
   }
-  *_aidl_return = nxp_emvco_contactless_card;
+  *_aidl_return = emvco_contactless_card;
   return ndk::ScopedAStatus::ok();
 }
 ::ndk::ScopedAStatus
@@ -193,7 +248,8 @@ binder_status_t Emvco::dump(int fd, const char **p, uint32_t q) {
 ::ndk::ScopedAStatus Emvco::open() {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   EMVCO_STATUS status =
-      open_emvco_app_data_channel(eventCallback, dataCallback, setNfcState);
+      open_emvco_app_data_channel(eventCallback, dataCallback, setNfcState,
+                                  onTDAStateChange, onCLStateChange);
 
   return CHK_STATUS(status);
 }
@@ -226,8 +282,8 @@ void Emvco::registerCallback(
   }
   {
     std::lock_guard<std::mutex> lock(callbacks_lock_);
-    callbacks_.emplace_back(LinkedCallback::Make(ref<Emvco>(), callback));
-    ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients=%d", (int)callbacks_.size());
+    cl_callbacks_.emplace_back(LinkedCallback::Make(ref<Emvco>(), callback));
+    ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients=%d", (int)cl_callbacks_.size());
   }
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
 }
@@ -243,15 +299,36 @@ void Emvco::unregisterCallback(
   auto matches = [callback](const auto &linked) {
     return linked->callback()->asBinder() == callback->asBinder();
   };
-  auto it1 = std::remove_if(callbacks_.begin(), callbacks_.end(),
-                            std::move(matches));
-  bool removed = (it1 != callbacks_.end());
+  auto it1 =
+      std::remove_if(cl_callbacks_.begin(), cl_callbacks_.end(), matches);
+  bool removed = (it1 != cl_callbacks_.end());
   if (removed) {
-    callbacks_.erase(it1, callbacks_.end());
+    cl_callbacks_.erase(it1, cl_callbacks_.end());
   } else {
     LOG(ERROR) << __func__ << "unregisterCallback failed";
   }
-  ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients = %d", (int)callbacks_.size());
+  ALOGD_IF(EMVCO_HAL_DEBUG, "Total clients = %d", (int)cl_callbacks_.size());
+}
+
+void Emvco::registerCTCallback(
+    const std::shared_ptr<IEmvcoTDACallback> &callback) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  if (callback == nullptr) {
+    LOG(ERROR) << __func__ << "Client callback is NULL";
+    return;
+  }
+  emvco_tda_callback = callback;
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Exit", __func__);
+}
+
+void Emvco::unregisterCTCallback(
+    const std::shared_ptr<IEmvcoTDACallback> &callback) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  if (callback == nullptr) {
+    LOG(ERROR) << __func__ << "Client callback is NULL";
+    return;
+  }
+  emvco_tda_callback = nullptr;
 }
 
 ::ndk::ScopedAStatus Emvco::stopRFDisovery(
@@ -307,9 +384,11 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
 }
 
 ::ndk::ScopedAStatus Emvco::registerEMVCoCTListener(
-    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback) {
+    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+    bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  Emvco::mEmvcoTDACallback = in_clientCallback;
+  Emvco::emvco_tda_callback = in_clientCallback;
+  *_aidl_return = true;
   return ndk::ScopedAStatus::ok();
 }
 
@@ -318,7 +397,6 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   tda_control_t tda_control;
   EMVCO_STATUS status = discover_tda(&tda_control);
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
   if (status != EMVCO_STATUS_SUCCESS) {
     return ndk::ScopedAStatus::fromServiceSpecificError(status);
   }
@@ -329,23 +407,15 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
 
   for (int i = 0; i < tda_control.num_tda_supported; i++) {
     if ((tda_control.p_tda + i) != nullptr) {
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL ID:%d", __func__,
-               ((tda_control.p_tda + i)->id));
       aidl::android::hardware::emvco::EmvcoTDAInfo tda;
       tda.id = (tda_control.p_tda + i)->id;
       tda.status = (EmvcoTDAStatus)(tda_control.p_tda + i)->status;
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL ID:%d", __func__,
-               (EmvcoTDAStatus)(tda_control.p_tda + i)->status);
       tda.numberOfProtocols = (tda_control.p_tda + i)->number_of_protocols;
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL num_of_proto:%d", __func__,
-               (tda_control.p_tda + i)->number_of_protocols);
       std::vector<::aidl::android::hardware::emvco::Protocols> protocols;
       if (tda.numberOfProtocols > 0) {
         for (int j = 0; j < tda.numberOfProtocols; j++) {
           int protocolVal =
               (int)(*((uint8_t *)((tda_control.p_tda + i)->protocols_t) + j));
-          ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL protocolVal:%d",
-                   __func__, protocolVal);
           ::aidl::android::hardware::emvco::Protocols protocol =
               Protocols(protocolVal);
           protocols.push_back(protocol);
@@ -353,8 +423,6 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
       }
       tda.protocols = protocols;
       tda.numberOfCardInfo = (tda_control.p_tda + i)->number_of_card_info;
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL num_of_card:%d", __func__,
-               (tda_control.p_tda + i)->number_of_card_info);
 
       std::vector<::aidl::android::hardware::emvco::CardTLVInfo> cardTLVInfos;
       if (tda.numberOfCardInfo > 0) {
@@ -368,10 +436,6 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
               uint8_t *value =
                   ((uint8_t *)((tda_control.p_tda + i)->card_tlv_info->value) +
                    l);
-              ALOGD_IF(
-                  EMVCO_HAL_DEBUG, "%s: Enter, TDA_HAL card_val:%s", __func__,
-                  ((uint8_t *)((tda_control.p_tda + i)->card_tlv_info->value) +
-                   l));
               values.push_back(*value);
             }
             cardtlvInfo.value = values;
@@ -379,9 +443,7 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
           cardTLVInfos.push_back(cardtlvInfo);
         }
       }
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: adding cardTLVInfos", __func__);
       tda.cardTLVInfo = cardTLVInfos;
-      ALOGD_IF(EMVCO_HAL_DEBUG, "%s: adding full tda", __func__);
       tdas.push_back(tda);
     }
   }
@@ -419,8 +481,7 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
 ::ndk::ScopedAStatus Emvco::openTDA(int8_t in_tdaID, bool in_standBy,
                                     int8_t *out_connID) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_tdaID:%d", __func__, in_tdaID);
-  (void)in_standBy;
-  EMVCO_STATUS status = open_tda(in_tdaID, out_connID);
+  EMVCO_STATUS status = open_tda(in_tdaID, in_standBy, out_connID);
   if (status != EMVCO_STATUS_OK) {
     ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
     return ndk::ScopedAStatus::fromServiceSpecificError(status);
@@ -430,8 +491,7 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
 
 ::ndk::ScopedAStatus Emvco::closeTDA(int8_t in_tdaID, bool in_standBy) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  (void)in_standBy;
-  EMVCO_STATUS status = close_tda(in_tdaID);
+  EMVCO_STATUS status = close_tda(in_tdaID, in_standBy);
   if (status != EMVCO_STATUS_OK) {
     ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
     return ndk::ScopedAStatus::fromServiceSpecificError(status);

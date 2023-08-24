@@ -133,6 +133,8 @@ enum {
 emvco_stack_callback_t *m_p_nfc_stack_cback;
 emvco_stack_data_callback_t *m_p_nfc_stack_data_cback;
 emvco_state_change_callback_t *m_p_nfc_state_cback;
+emvco_tda_state_change_t *m_p_tda_state_change;
+emvco_cl_state_change_t *m_p_cl_state_change;
 
 typedef struct nci_data {
   uint16_t len;
@@ -205,6 +207,8 @@ typedef struct nci_hal_ctrl {
   emvco_stack_callback_t *p_nfc_stack_cback;
   emvco_stack_data_callback_t *p_nfc_stack_data_cback;
   emvco_state_change_callback_t *p_nfc_state_cback;
+  emvco_tda_state_change_t *p_tda_state_change;
+  emvco_cl_state_change_t *p_cl_state_change;
 
   /* control granted callback */
   control_granted_callback_t *p_control_granted_cback;
@@ -297,7 +301,9 @@ typedef struct nci_profile_Control {
  */
 int open_app_data_channel(emvco_stack_callback_t *p_cback,
                           emvco_stack_data_callback_t *p_data_cback,
-                          emvco_state_change_callback_t *p_nfc_state_cback);
+                          emvco_state_change_callback_t *p_nfc_state_cback,
+                          emvco_tda_state_change_t *p_tda_state_change,
+                          emvco_cl_state_change_t *p_cl_state_change);
 
 /**
  *
@@ -369,7 +375,9 @@ void enable_tml_read();
 
 int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
                               emvco_stack_data_callback_t *p_data_cback,
-                              emvco_state_change_callback_t *p_nfc_state_cback);
+                              emvco_state_change_callback_t *p_nfc_state_cback,
+                              emvco_tda_state_change_t *p_tda_state_change,
+                              emvco_cl_state_change_t *p_cl_state_change);
 
 void get_set_config(const char *p_nxp_conf);
 
@@ -379,8 +387,8 @@ typedef void (*fp_init_ecp_vas_t)();
 typedef EMVCO_STATUS (*fp_ct_init_ext_t)();
 typedef EMVCO_STATUS (*fp_ct_de_init_ext_t)();
 typedef void (*fp_ct_process_emvco_mode_rsp_t)(uint8_t *, uint16_t);
-typedef EMVCO_STATUS (*fp_ct_open_t)(int8_t, int8_t *);
-typedef EMVCO_STATUS (*fp_ct_close_t)(int8_t);
+typedef EMVCO_STATUS (*fp_ct_open_t)(int8_t, int8_t, int8_t *);
+typedef EMVCO_STATUS (*fp_ct_close_t)(int8_t, int8_t);
 typedef EMVCO_STATUS (*fp_is_ct_send_app_data_t)(const uint8_t *, uint16_t,
                                                  bool);
 typedef EMVCO_STATUS (*fp_transceive_t)(tda_data *, tda_data *);
@@ -388,4 +396,6 @@ typedef EMVCO_STATUS (*fp_transceive_t)(tda_data *, tda_data *);
 typedef EMVCO_STATUS (*fp_ct_discover_tda_t)(tda_control_t *);
 typedef bool (*fp_is_ct_data_credit_received_t)(uint8_t *, uint16_t);
 typedef bool (*fp_is_ct_data_rsp_t)(uint8_t *, uint16_t);
+typedef void (*fp_on_emvco_rf_pool_start_t)();
+
 #endif /* _EMVCO_DM_H_ */

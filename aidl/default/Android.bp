@@ -10,17 +10,16 @@ cc_binary {
     ],
 
     local_include_dirs: ["."],
-
     shared_libs: [
-        "libhardware",
-        "libbase",
         "liblog",
-        "libutils",
         "libbinder_ndk",
-        "android.hardware.emvco-V1-ndk",
         "emvco_poller",
     ],
-
+    static_libs: [
+        "libbase",
+        "libutils",
+        "android.hardware.emvco-V1-ndk",
+    ],
     srcs: [
         "EmvcoService.cpp",
         "Emvco.cpp",

@@ -30,7 +30,7 @@
  *
  ******************************************************************************/
 
-/*
+/**
  * EMVCO Status Values - Function Return Codes
  */
 
@@ -43,7 +43,7 @@
 /* Required by EMVCOSTVAL. */
 #define EMVCOSTBLOWER ((EMVCO_STATUS)(0x00FFU))
 
-/*
+/**
  *  EMVCO Status Composition Macro
  *
  *  This is the macro which must be used to compose status values.
@@ -64,7 +64,7 @@
        : ((((EMVCO_STATUS)(emvco_status)) & (EMVCOSTBLOWER)) |                 \
           (((uint16_t)(emvco_comp_id)) << (EMVCOSTSHL8))))
 
-/*
+/**
  * PHEMVCO_STATUS
  * Get grp_retval from Status Code
  */
@@ -73,7 +73,7 @@
 
 #define EMVCO_I2C_FRAGMENT_SIZE 512
 
-/*
+/**
  * Indicates the NFC state
  */
 typedef enum {
@@ -85,115 +85,201 @@ typedef enum {
 
 nfc_status_t nfc_status;
 
-/*
+/**
  * The function indicates successful completion
  */
 #define EMVCO_STATUS_SUCCESS (0x00)
 
-/*
+/**
  *  The function indicates successful completion
  */
 #define EMVCO_STATUS_OK (EMVCO_STATUS_SUCCESS)
 
-/*
+/**
  * At least one parameter could not be properly interpreted
  */
 #define EMVCO_STATUS_INVALID_PARAMETER (0x01)
 
-/*
+/**
  * Device specifier/handle value is invalid for the operation
  */
 #define EMVCO_STATUS_INVALID_DEVICE (0x02)
 
-/*
+/**
  * A non-blocking function returns this immediately to indicate
  * that an internal operation is in progress
  */
 #define EMVCO_STATUS_PENDING (0x03)
 
-/*
+/**
  * This Layer is Not initialized, hence initialization required.
  */
 #define EMVCO_STATUS_NOT_INITIALISED (0x04)
 
-/*
+/**
  * The Layer is already initialized, hence initialization repeated.
  */
 #define EMVCO_STATUS_ALREADY_INITIALISED (0x05)
 
-/*
+/**
  * Feature not supported
  */
 #define EMVCO_STATUS_FEATURE_NOT_SUPPORTED (0x06)
 
-/*
+/**
  *  The system is busy with the previous operation.
  */
 #define EMVCO_STATUS_BUSY (0x07)
 
-/*
+/**
  * Write operation failed
  */
 #define EMVCO_STATUS_WRITE_FAILED (0x08)
-
-/**
- * Indicates NFCEE Discovery not completed.
- * Try start the EMVCo mode again, if CT is supported and TDA present in the
- * hardware.
- */
-#define EMVCO_STATUS_TDA_INIT_NOT_COMPLETED (0x09)
 
 /**
  * Indicates NFCEE Discovery failed.
  * Try start the EMVCo mode again, if CT is supported and TDA present in the
  * hardware.
  */
-#define EMVCO_STATUS_TDA_INIT_FAILED (0x0A)
+#define EMVCO_STATUS_TDA_INIT_FAILED (0x09)
 
 /**
- * Indicates NCI Error response for NCI command.
- * COntroller is not in proper state to accept the NCI command.
+ * Indicates NFCEE Discovery not completed.
  * Try start the EMVCo mode again, if CT is supported and TDA present in the
  * hardware.
  */
-#define EMVCO_STATUS_NCI_RESPONSE_ERR (0x0B)
+#define EMVCO_STATUS_INVALID_STATE_TDA_INIT_NOT_COMPLETED (0x0A)
 
 /**
- * Indicates mode set mode set NCI command failed.
- * Try to call openTDA api with proper TDA ID and standby false.
+ * Indicates NFCEE Discovery already completed.
+ * No need to discover NFCEE again
+ *
  */
-#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_FAILED (0x0C)
+#define EMVCO_STATUS_INVALID_STATE_TDA_DISCOVERED_ALREADY (0x0B)
 
 /**
  * Indicates core connection create NCI command failed.
- * Try to call openTDA api with proper TDA ID.
+ * Try to call openTDA api with proper TDA ID standby flag as true and try open
+ * again
  */
-#define EMVCO_STATUS_CORE_CONN_CREATE_FAILED (0x0D)
+#define EMVCO_STATUS_CORE_CONN_CREATE_FAILED (0x0C)
 
 /**
- * Indicates transceive NCI data command failed.
- * Try to call closeAPI and then openTDA api with proper TDA ID to recover and
- * send the transceive data.
+ * Indicates core connection created already NCI.
+ * Try to call closeTDA api with proper TDA ID & standby flag as false and
+ * and try open again with proper TDA ID & standby flag as true
  */
-#define EMVCO_STATUS_TRANSCEIVE_FAILED (0x0E)
+#define EMVCO_STATUS_CORE_CONN_CREATED_ALREADY (0x0D)
 
 /**
- * Indicates core connection close NCI command failed.
- * Ensure TDA was opened and try to call closeTDA api with proper TDA ID.
+ * Indicates mode set mode set NCI command failed.
+ * Try to call openTDA api with proper TDA ID & standby flag as false.
  */
-#define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x0F)
-
-/**
- * Indicates mode set disable NCI command failed.
- * Ensure TDA was opened and try to call closeTDA api with proper TDA ID.
- */
-#define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x10)
+#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_FAILED (0x0E)
 
 /**
  * Indicates mode set enable command timeout and failed.
- * Try to call openTDA api with proper TDA ID.
+ * Try to call openTDA api with proper TDA ID & standby flag as false.
  */
-#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_TIMEOUT (0x11)
+#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_TIMEOUT (0x0F)
+
+/**
+ * Indicates that TDA is not opened
+ * Try to call openTDA api with proper TDA ID & standby flag as false.
+ */
+#define EMVCO_STATUS_INVALID_STATE_OPEN_NOT_COMPLETED (0x10)
+
+/**
+ * Indicates that TDA is not opened
+ * Try to call openTDA api with proper TDA ID & standby flag as true.
+ */
+#define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CREATE_NOT_COMPLETED (0x11)
+
+/**
+ * Indicates that TDA is already opened
+ * Try to call closeTDA api with proper TDA ID & standby flag as false and
+ * and try open again with proper TDA ID & standby flag as true
+ */
+#define EMVCO_STATUS_INVALID_STATE_TDA_OPENED_ALREADY (0x12)
+
+/**
+ * Indicates that TDA is already opened
+ * Try to call closeTDA api with proper TDA ID & standby flag as false and
+ * and try open again with proper TDA ID & standby flag as true
+ */
+#define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CREATED_ALREADY (0x13)
+
+/**
+ * Indicates transceive NCI data command failed.
+ * Try to call closeTDA api with proper TDA ID & standby flag as true and
+ * and try open again with proper TDA ID & standby flag as true to recover and
+ * send the transceive data.
+ */
+#define EMVCO_STATUS_TRANSCEIVE_FAILED (0x14)
+
+/**
+ * Indicates core connection close NCI command failed.
+ * Try to call closeTDA api with proper TDA ID & standby flag as false and
+ * and try open again with proper TDA ID & standby flag as true
+ */
+#define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x15)
+
+/**
+ * Indicates mode set disable NCI command failed.
+ * Try to call closeTDA api with proper TDA ID & standby flag as true and
+ * and try to call openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x16)
+
+/**
+ * Indicates nfcee interface activation failure.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_NFCEE_INTERFACE_ACTIVATION_FAILED (0x17)
+
+/**
+ * Indicates nfcee interface activation failure.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_NFCEE_TRANSMISSION_ERROR (0x18)
+
+/**
+ * Indicates nfcee interface activation failure.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_INVALID_STATE_TDA_IN_CLOSED (0x19)
+
+/**
+ * Indicates nfcee interface activation failure.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CLOSED_ALREADY (0x1A)
+
+/**
+ * Indicates TDA in already closed state.
+ * No need to close again
+ */
+#define EMVCO_STATUS_INVALID_STATE_TDA_CLOSED_ALREADY (0x1B)
+
+/**
+ * Indicates nfcee protocol error.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_NFCEE_PROTOCOL_ERROR (0x1C)
+
+/**
+ * Indicates nfcee timeout error.
+ * Try call to openTDA again with proper TDA ID & standby flag as false
+ */
+#define EMVCO_STATUS_NFCEE_TIMEOUT_ERROR (0x1D)
+
+/**
+ * Indicates NCI Error response for NCI command.
+ * Controller is not in proper state to accept the NCI command.
+ * Try start the EMVCo mode again, if CT is supported and TDA present in the
+ * hardware.
+ */
+#define EMVCO_STATUS_NCI_RESPONSE_ERR (0x1E)
 
 /*
  * Status code for failure

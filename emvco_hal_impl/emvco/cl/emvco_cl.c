@@ -63,7 +63,8 @@ tDISC_FREQ_CFG *p_rf_disc_freq_cfg = (tDISC_FREQ_CFG *)&rf_disc_freq_cfg;
 
 void open_app_data_channel_internal() {
   int hal_open_status = open_app_data_channelImpl(
-      m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback);
+      m_p_nfc_stack_cback, m_p_nfc_stack_data_cback, m_p_nfc_state_cback,
+      m_p_tda_state_change, m_p_cl_state_change);
   LOG_EMVCOHAL_D("%s EMVCo HAL open status:%d", __func__, hal_open_status);
   lib_emvco_message_t msg;
   msg.p_msg_data = NULL;

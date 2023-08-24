@@ -41,9 +41,8 @@ namespace emvco {
     const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  (void)in_clientCallback;
-  (void)_aidl_return;
-  return ndk::ScopedAStatus::ok();
+  return Emvco::getInstance()->registerEMVCoCTListener(in_clientCallback,
+                                                       _aidl_return);
 }
 
 ::ndk::ScopedAStatus EmvcoTDA::discoverTDA(
