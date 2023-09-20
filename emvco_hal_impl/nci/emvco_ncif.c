@@ -158,6 +158,7 @@ void process_emvco_data(uint8_t *p_ntf, uint16_t p_len) {
   LOG_EMVCOHAL_D("%s \n", __func__);
   if (p_len < 1) {
     LOG_EMVCOHAL_E("Not valid Non fragment APDU received length less than 1");
+    return;
   }
 
   int apdu_len = (int)p_ntf[2];
