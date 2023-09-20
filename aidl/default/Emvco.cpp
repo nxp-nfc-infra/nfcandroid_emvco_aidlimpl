@@ -227,7 +227,8 @@ void Emvco::unregisterCallback(
   auto matches = [callback](const auto &linked) {
     return linked->callback()->asBinder() == callback->asBinder();
   };
-  auto it1 = std::remove_if(callbacks_.begin(), callbacks_.end(), matches);
+  auto it1 = std::remove_if(callbacks_.begin(), callbacks_.end(),
+                            std::move(matches));
   bool removed = (it1 != callbacks_.end());
   if (removed) {
     callbacks_.erase(it1, callbacks_.end());
