@@ -1,8 +1,8 @@
 cc_binary {
-    name: "android.hardware.emvco-service",
+    name: "vendor.nxp.emvco-service",
     relative_install_path: "hw",
-    init_rc: ["android.hardware.emvco-service.rc"],
-    vintf_fragments: ["android.hardware.emvco-service.xml"],
+    init_rc: ["vendor.nxp.emvco-service.rc"],
+    vintf_fragments: ["vendor.nxp.emvco-service.xml"],
     vendor: true,
 
     include_dirs: [
@@ -18,7 +18,7 @@ cc_binary {
     static_libs: [
         "libbase",
         "libutils",
-        "android.hardware.emvco-V1-ndk",
+        "vendor.nxp.emvco-V1-ndk",
     ],
     srcs: [
         "EmvcoService.cpp",

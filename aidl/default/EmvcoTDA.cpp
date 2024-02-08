@@ -33,12 +33,12 @@
 #include "Emvco.h"
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
 ::ndk::ScopedAStatus EmvcoTDA::registerEMVCoCTListener(
-    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+    const std::shared_ptr<INxpEmvcoTDACallback> &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->registerEMVCoCTListener(in_clientCallback,
@@ -46,7 +46,7 @@ namespace emvco {
 }
 
 ::ndk::ScopedAStatus EmvcoTDA::discoverTDA(
-    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo) {
+    std::vector<::aidl::vendor::nxp::emvco::NxpEmvcoTDAInfo> *emvcoTDAInfo) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->discoverTDA(emvcoTDAInfo);
 }
@@ -68,6 +68,6 @@ EmvcoTDA::transceive(const std::vector<uint8_t> &in_cmd_data,
 }
 
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl

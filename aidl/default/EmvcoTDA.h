@@ -36,18 +36,18 @@
  *   card functionality.
  *  @{
  */
-#include <aidl/android/hardware/emvco/BnEmvcoTDA.h>
-#include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/IEmvcoTDACallback.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvcoTDA.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoClientCallback.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoTDACallback.h>
 #include <android-base/logging.h>
 #include <log/log.h>
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
-class EmvcoTDA : public BnEmvcoTDA {
+class EmvcoTDA : public BnNxpEmvcoTDA {
 
 public:
   /**
@@ -60,7 +60,7 @@ public:
    * @return void
    */
   ::ndk::ScopedAStatus registerEMVCoCTListener(
-      const std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoTDACallback>
+      const std::shared_ptr<::aidl::vendor::nxp::emvco::INxpEmvcoTDACallback>
           &in_in_clientCallback,
       bool *_aidl_return) override;
 
@@ -76,11 +76,11 @@ public:
    *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not
    * supported.
    *
-   * @return EmvcoTDAInfo[] returns all the smart card connected over TDA.
+   * @return NxpEmvcoTDAInfo[] returns all the smart card connected over TDA.
    *         valid emvcoTDAInfo received only when status is EMVCO_STATUS_OK
    */
   ::ndk::ScopedAStatus discoverTDA(
-      std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo)
+      std::vector<::aidl::vendor::nxp::emvco::NxpEmvcoTDAInfo> *emvcoTDAInfo)
       override;
   /**
    *
@@ -132,7 +132,7 @@ public:
 };
 
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl
   /** @}*/

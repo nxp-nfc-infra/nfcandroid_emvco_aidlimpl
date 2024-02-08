@@ -43,6 +43,7 @@
 extern "C" {
 #endif
 
+extern uint8_t wtx_timeout_val;
 /**
  * @brief discovers the smart card connected to TDA and returns the smart card
  * control.
@@ -113,6 +114,18 @@ EMVCO_STATUS close_tda_slot(int8_t tda_id, bool in_standBy);
  *
  */
 EMVCO_STATUS transceive_tda_slot(tda_data *cmd_apdu, tda_data *rsp_apdu);
+
+/**
+ *
+ * @brief           Get WTX timeout level from libemvco-nxp.conf
+ *                  and initialize the max WTX value
+ *
+ * @param[in]       void
+ *
+ * @return void
+ *
+ */
+void initialize_max_wtx_timeout_value(void);
 
 #ifdef __cplusplus
 }

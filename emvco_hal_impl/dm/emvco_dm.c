@@ -50,7 +50,6 @@
 #include <peripherals.h>
 #include <stdlib.h>
 #include <sys/stat.h>
-
 /*********************** Global Variables *************************************/
 #define PN547C2_CLOCK_SETTING
 #define CORE_RES_STATUS_BYTE 3
@@ -61,6 +60,7 @@ fp_init_ecp_vas_t fp_init_ecp_vas = NULL;
 void *p_emvco_ct_one_bin_handle = NULL;
 fp_ct_init_ext_t fp_ct_init_ext = NULL;
 fp_ct_de_init_ext_t fp_ct_de_init_ext = NULL;
+fp_ct_nfcee_discover_t fp_ct_nfcee_discover = NULL;
 fp_ct_process_emvco_mode_rsp_t fp_ct_process_emvco_mode_rsp = NULL;
 fp_ct_open_t fp_ct_open = NULL;
 fp_ct_close_t fp_ct_close = NULL;
@@ -70,6 +70,7 @@ fp_ct_discover_tda_t fp_ct_discover_tda = NULL;
 fp_is_ct_data_credit_received_t fp_is_ct_data_credit_received = NULL;
 fp_is_ct_data_rsp_t fp_is_ct_data_rsp = NULL;
 fp_on_emvco_rf_pool_start_t fp_on_emvco_rf_pool_start = NULL;
+fp_set_max_wtx_timeout_value_t fp_set_max_wtx_timeout_value = NULL;
 
 /* Processing of ISO 15693 EOF */
 extern uint8_t icode_send_eof;
@@ -213,6 +214,9 @@ static void *emvco_hal_client_thread(void *arg) {
         (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_POLLING_STOP_EVT, STATUS_OK);
         (*nci_hal_ctrl.p_nfc_stack_cback)(EMVCO_CLOSE_CHNL_CPLT_EVT, STATUS_OK);
       }
+      if (nci_hal_ctrl.p_nfc_state_cback != NULL) {
+        (*nci_hal_ctrl.p_nfc_state_cback)(true);
+      }
       kill_emvco_hal_client_thread(&nci_hal_ctrl);
       REENTRANCE_UNLOCK();
       break;
@@ -300,8 +304,6 @@ static void kill_emvco_hal_client_thread(nci_hal_ctrl_t *p_nci_hal_ctrl) {
   p_nci_hal_ctrl->p_nfc_stack_data_cback = NULL;
   p_nci_hal_ctrl->p_nfc_state_cback = NULL;
   p_nci_hal_ctrl->thread_running = 0;
-  p_nci_hal_ctrl->p_tda_state_change = NULL;
-  p_nci_hal_ctrl->p_cl_state_change = NULL;
   return;
 }
 
@@ -328,8 +330,8 @@ int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
   nci_hal_ctrl.p_nfc_stack_cback = p_cback;
   nci_hal_ctrl.p_nfc_stack_data_cback = p_data_cback;
   nci_hal_ctrl.p_nfc_state_cback = p_nfc_state_cback;
-  nci_hal_ctrl.p_tda_state_change = p_tda_state_change;
-  nci_hal_ctrl.p_cl_state_change = p_cl_state_change;
+  m_p_tda_state_change = p_tda_state_change;
+  m_p_cl_state_change = p_cl_state_change;
 
   open_app_data_channel_complete(wConfigStatus);
 
@@ -369,54 +371,64 @@ void initialize_emvco_ct() {
   p_emvco_ct_one_bin_handle =
       dlopen("/system/vendor/lib64/emvco_tda.so", RTLD_NOW);
   if (p_emvco_ct_one_bin_handle == NULL) {
-    LOG_EMVCOHAL_D("Error : opening (/system/vendor/lib64/emvco_tda.so) !!");
+    LOG_EMVCOHAL_E("Error : opening (/system/vendor/lib64/emvco_tda.so) !!");
+    return;
   }
   if ((fp_ct_init_ext = (fp_ct_init_ext_t)dlsym(p_emvco_ct_one_bin_handle,
                                                 "ct_init_ext")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (ct_init_ext) !!");
+    LOG_EMVCOHAL_E("Error while linking (ct_init_ext) !!");
   }
   if ((fp_ct_de_init_ext = (fp_ct_de_init_ext_t)dlsym(
            p_emvco_ct_one_bin_handle, "ct_de_init_ext")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (ct_de_init_ext) !!");
+    LOG_EMVCOHAL_E("Error while linking (ct_de_init_ext) !!");
   }
+  if ((fp_ct_nfcee_discover = (fp_ct_nfcee_discover_t)dlsym(
+           p_emvco_ct_one_bin_handle, "ct_nfcee_discover")) == NULL) {
+    LOG_EMVCOHAL_E("Error while linking (ct_nfcee_discover) !!");
+  }
+
   if ((fp_ct_discover_tda = (fp_ct_discover_tda_t)dlsym(
            p_emvco_ct_one_bin_handle, "ct_discover_tda")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (ct_discover_tda) !!");
+    LOG_EMVCOHAL_E("Error while linking (ct_discover_tda) !!");
   }
 
   if ((fp_ct_process_emvco_mode_rsp = (fp_ct_process_emvco_mode_rsp_t)dlsym(
            p_emvco_ct_one_bin_handle, "process_tda_rsp_ntf")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (process_tda_rsp_ntf) !!");
+    LOG_EMVCOHAL_E("Error while linking (process_tda_rsp_ntf) !!");
   }
   if ((fp_ct_open =
            (fp_ct_open_t)dlsym(p_emvco_ct_one_bin_handle, "ct_open")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (ct_open) !!");
+    LOG_EMVCOHAL_E("Error while linking (ct_open) !!");
   }
   if ((fp_ct_close = (fp_ct_close_t)dlsym(p_emvco_ct_one_bin_handle,
                                           "ct_close")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (ct_close) !!");
+    LOG_EMVCOHAL_E("Error while linking (ct_close) !!");
   }
 
   if ((fp_is_ct_data_credit_received = (fp_is_ct_data_credit_received_t)dlsym(
            p_emvco_ct_one_bin_handle, "is_ct_data_credit_received")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (is_ct_data_credit_received) !!");
+    LOG_EMVCOHAL_E("Error while linking (is_ct_data_credit_received) !!");
   }
   if ((fp_is_ct_send_app_data = (fp_is_ct_send_app_data_t)dlsym(
            p_emvco_ct_one_bin_handle, "is_ct_send_app_data")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (is_ct_send_app_data) !!");
+    LOG_EMVCOHAL_E("Error while linking (is_ct_send_app_data) !!");
   }
 
   if ((fp_transceive = (fp_transceive_t)dlsym(p_emvco_ct_one_bin_handle,
                                               "ct_transceive")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (transceive) !!");
+    LOG_EMVCOHAL_E("Error while linking (transceive) !!");
   }
   if ((fp_is_ct_data_rsp = (fp_is_ct_data_rsp_t)dlsym(
            p_emvco_ct_one_bin_handle, "is_ct_data_rsp")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (is_ct_data_rsp) !!");
+    LOG_EMVCOHAL_E("Error while linking (is_ct_data_rsp) !!");
   }
   if ((fp_on_emvco_rf_pool_start = (fp_on_emvco_rf_pool_start_t)dlsym(
            p_emvco_ct_one_bin_handle, "on_emvco_rf_pool_start")) == NULL) {
-    LOG_EMVCOHAL_D("Error while linking (on_emvco_rf_pool_start) !!");
+    LOG_EMVCOHAL_E("Error while linking (on_emvco_rf_pool_start) !!");
+  }
+  if ((fp_set_max_wtx_timeout_value = (fp_set_max_wtx_timeout_value_t)dlsym(
+           p_emvco_ct_one_bin_handle, "set_max_wtx_timeout_value")) == NULL) {
+    LOG_EMVCOHAL_E("Error while linking (set_max_wtx_timeout_value) !!");
   }
 }
 /******************************************************************************
@@ -478,7 +490,14 @@ int min_open_app_data_channel() {
 
   initialize_emvco_ecp_vas();
   initialize_emvco_ct();
-
+  initialize_max_wtx_timeout_value();
+  if (fp_ct_init_ext != NULL) {
+    EMVCO_STATUS status =
+        fp_ct_init_ext(m_p_tda_state_change, m_p_cl_state_change);
+    if (status != EMVCO_STATUS_SUCCESS) {
+      LOG_EMVCOHAL_E("CT Initialization failed");
+    }
+  }
   /* Read the nfc device node name */
   if (!get_byte_array_value(NAME_NXP_EMVCO_DEV_NODE, &p_nfc_dev_node,
                             &dev_node_size)) {
@@ -787,6 +806,7 @@ int send_app_data_unlocked(uint16_t data_len, const uint8_t *p_data) {
       EMVCO_STATUS_SUCCESS) {
     LOG_EMVCOHAL_D("send_app_data_unlocked check nci write window failed");
     data_len = 0;
+    osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
     goto clean_and_return;
   }
   send_emvco_data(nci_hal_ctrl.p_cmd_data, nci_hal_ctrl.cmd_len);
@@ -803,6 +823,26 @@ static bool is_data_credit_received(osal_transact_info_t *pInfo) {
        pInfo->p_buff[3] == NCI_CORE_CONN_CREDITS_NTF_NO_OF_ENTRY &&
        pInfo->p_buff[4] == NCI_CORE_CONN_CREDITS_NTF_CONN_ID &&
        pInfo->p_buff[5] == NCI_CORE_CONN_CREDITS_NTF_CONN_CREDITS)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+/**
+ * @brief process the nci packet and checks for core interface error
+ *
+ * @param[in] p_ntf data buffer
+ * @param[in] p_len data length
+ *
+ * @return true, if it is CT packet otherwise returns false
+ *
+ */
+static bool is_core_inf_err_ntf(osal_transact_info_t *pInfo) {
+  if ((5 == pInfo->w_length) &&
+      (pInfo->p_buff[0] == NCI_MT_NTF &&
+       pInfo->p_buff[1] == NCI_CORE_INTERFACE_ERROR_NTF &&
+       pInfo->p_buff[2] == NCI_CORE_INTERFACE_ERROR_NTF_LEN)) {
     return true;
   } else {
     return false;
@@ -859,9 +899,10 @@ static void read_app_data_complete(void *p_context,
       }
     }
     if (((pInfo->p_buff[0] & NCI_MT_MASK) == NCI_MT_RSP ||
-         is_data_credit_received(pInfo) || is_rf_link_loss_received(pInfo)) &&
+         is_data_credit_received(pInfo) || is_rf_link_loss_received(pInfo) ||
+         is_core_inf_err_ntf(pInfo)) &&
         sem_val == 0) {
-      LOG_EMVCOHAL_D("CT crdeit ntfc received. Unlocking")
+      LOG_EMVCOHAL_D("CT credit ntf received. Unlocking")
       osal_sem_post(&(nci_hal_ctrl.sync_nci_write));
     }
     /*Check the Omapi command response and store in dedicated buffer to solve
@@ -910,6 +951,8 @@ static void read_app_data_complete(void *p_context,
         } else {
           LOG_EMVCOHAL_D("%s CT data not processing.", __func__);
         }
+      } else {
+        process_emvco_data(nci_hal_ctrl.p_rx_data, nci_hal_ctrl.rx_data_len);
       }
     }
   } else {

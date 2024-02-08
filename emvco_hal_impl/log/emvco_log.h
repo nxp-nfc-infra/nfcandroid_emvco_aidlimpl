@@ -70,6 +70,7 @@ extern bool emvco_debug_enabled;
 #define NAME_NXP_PCD_SETTINGS "NXP_PCD_SETTINGS"
 #define NAME_NXP_SET_CONFIG "NXP_SET_CONFIG"
 #define NAME_NXP_GET_CONFIG "NXP_GET_CONFIG"
+#define NAME_NXP_CT_MAX_WTX_WAIT_TIME "NXP_CT_MAX_WTX_WAIT_TIME"
 /* ####################### Set the log module name by Android property
  * ########################## */
 #define PROP_NAME_LOG_GLOBAL_LOGLEVEL "emvco.log_level_global"
@@ -244,14 +245,11 @@ extern const char *LOG_ITEM_TML;    /* Android logging tag for NxpTml    */
 #endif /* Logging APIs used by NxpTml module */
 
 /**
- * @brief           Initialize and get log level of module from libemvco.conf
- *                  or
- *                  Android runtime properties.
- *                  The Android property emvco_global_log_level is to
- *                  define log level for all modules. Modules log level will
- *                  overwide global level.
- *                  The Android property will overwide the level
- *                  in libemvco.conf
+ * @brief           Initialize and get log level of module from
+ *libemvco-nxp.conf or Android runtime properties. The Android property
+ *emvco_global_log_level is to define log level for all modules. Modules log
+ *level will overwide global level. The Android property will overwide the level
+ *                  in libemvco-nxp.conf
  *
  *                  Android property names:
  *                      emvco.log_level_global    * defines log level for all

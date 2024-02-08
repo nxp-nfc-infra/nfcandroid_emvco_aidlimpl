@@ -33,12 +33,12 @@
 #define LOG_TAG "emvco_compliance_test"
 
 #include <aidl/Gtest.h>
-#include <aidl/android/hardware/emvco/BnEmvco.h>
-#include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/ConfigType.h>
-#include <aidl/android/hardware/emvco/IEmvco.h>
-#include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
-#include <aidl/android/hardware/emvco/IEmvcoProfileDiscovery.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvco.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvcoClientCallback.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvco.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoContactlessCard.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoProfileDiscovery.h>
+#include <aidl/vendor/nxp/emvco/NxpConfigType.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
 #include <android/binder_enums.h>
@@ -49,15 +49,15 @@
 #include <future>
 #include <log/log.h>
 
-using aidl::android::hardware::emvco::ConfigType;
-using aidl::android::hardware::emvco::DeactivationType;
-using aidl::android::hardware::emvco::EmvcoEvent;
-using aidl::android::hardware::emvco::EmvcoStatus;
-using aidl::android::hardware::emvco::IEmvco;
-using aidl::android::hardware::emvco::IEmvcoClientCallback;
-using aidl::android::hardware::emvco::IEmvcoContactlessCard;
-using aidl::android::hardware::emvco::IEmvcoProfileDiscovery;
-using aidl::android::hardware::emvco::LedControl;
+using aidl::vendor::nxp::emvco::INxpEmvco;
+using aidl::vendor::nxp::emvco::INxpEmvcoClientCallback;
+using aidl::vendor::nxp::emvco::INxpEmvcoContactlessCard;
+using aidl::vendor::nxp::emvco::INxpEmvcoProfileDiscovery;
+using aidl::vendor::nxp::emvco::NxpConfigType;
+using aidl::vendor::nxp::emvco::NxpDeactivationType;
+using aidl::vendor::nxp::emvco::NxpEmvcoEvent;
+using aidl::vendor::nxp::emvco::NxpEmvcoStatus;
+using aidl::vendor::nxp::emvco::NxpLedControl;
 using ndk::SpAIBinder;
 
 #define MIN_VALID_DATA_SIZE 9
@@ -102,31 +102,31 @@ std::mutex data_mutex_;
 std::mutex led_mutex_;
 int32_t aidl_return;
 
-std::shared_ptr<IEmvco> nxp_emvco_service_;
-std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_;
-std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
+std::shared_ptr<INxpEmvco> nxp_emvco_service_;
+std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_;
+std::shared_ptr<INxpEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
 
-static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
-                 const std::vector<uint8_t> data, int32_t aidl_return,
-                 std::string dataTag);
+static void
+send(std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_,
+     const std::vector<uint8_t> data, int32_t aidl_return, std::string dataTag);
 
-void setLedState(LedControl ledControl) {
+void setLedState(NxpLedControl ledControl) {
   const std::lock_guard<std::mutex> lock(led_mutex_);
-  aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+  aidl::vendor::nxp::emvco::NxpEmvcoStatus _aidl_return;
   nxp_emvco_prof_disc_service_->setLed(ledControl, &_aidl_return);
 }
 
 class EmvcoClientCallback
-    : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
+    : public aidl::vendor::nxp::emvco::BnNxpEmvcoClientCallback {
 public:
   EmvcoClientCallback(
-      const std::function<void(EmvcoEvent, EmvcoStatus)> &on_hal_event_cb,
+      const std::function<void(NxpEmvcoEvent, NxpEmvcoStatus)> &on_hal_event_cb,
       const std::function<void(const std::vector<uint8_t> &)> &on_nci_data_cb)
       : on_nci_data_cb_(on_nci_data_cb), on_hal_event_cb_(on_hal_event_cb) {}
   virtual ~EmvcoClientCallback() = default;
 
-  ::ndk::ScopedAStatus sendEvent(EmvcoEvent event,
-                                 EmvcoStatus event_status) override {
+  ::ndk::ScopedAStatus sendEvent(NxpEmvcoEvent event,
+                                 NxpEmvcoStatus event_status) override {
     ALOGI("%s ", __func__);
     if (!is_aborted_) {
       on_hal_event_cb_(event, event_status);
@@ -143,14 +143,14 @@ public:
 
 private:
   std::function<void(const std::vector<uint8_t> &)> on_nci_data_cb_;
-  std::function<void(EmvcoEvent, EmvcoStatus)> on_hal_event_cb_;
+  std::function<void(NxpEmvcoEvent, NxpEmvcoStatus)> on_hal_event_cb_;
 };
 
 static void controlRedLed() {
-  setLedState(LedControl::RED_LED_ON);
+  setLedState(NxpLedControl::RED_LED_ON);
   std::chrono::milliseconds sleepTime(led_glow_duration);
   std::this_thread::sleep_for(sleepTime);
-  setLedState(LedControl::RED_LED_OFF);
+  setLedState(NxpLedControl::RED_LED_OFF);
 }
 
 static bool isEndOfTest(std::vector<unsigned char> &data, int received_size) {
@@ -183,10 +183,10 @@ static bool isEndOfTest(std::vector<unsigned char> &data, int received_size) {
     }
     isEOT = true;
 
-    setLedState(LedControl::GREEN_LED_ON);
+    setLedState(NxpLedControl::GREEN_LED_ON);
     std::chrono::milliseconds sleepTime(led_glow_duration);
     std::this_thread::sleep_for(sleepTime);
-    setLedState(LedControl::GREEN_LED_OFF);
+    setLedState(NxpLedControl::GREEN_LED_OFF);
   } else if ((data.at(0) == 0x00) && (data.at(received_size - 1) != 0x00) &&
              (data.at(received_size - 2) != 0x90)) {
     ALOGI("InValid status byte - starting removal procedure\n");
@@ -209,9 +209,10 @@ static std::vector<uint8_t> getNCILoopbackData(uint8_t packetBoundaryFlag,
   return nci_send_loopback_;
 }
 
-static void send(std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_cl_service_,
-                 const std::vector<uint8_t> data, int32_t aidl_return,
-                 std::string dataTag) {
+static void
+send(std::shared_ptr<INxpEmvcoContactlessCard> nxp_emvco_cl_service_,
+     const std::vector<uint8_t> data, int32_t aidl_return,
+     std::string dataTag) {
   ALOGI("%s\n transceive data:%s", __func__, dataTag.c_str());
   nxp_emvco_cl_service_->transceive(data, &aidl_return);
 }
@@ -322,9 +323,9 @@ int main(int argc, char **argv) {
     signal(SIGINT, signal_callback_handler);
 
     const std::string instance =
-        std::string() + IEmvco::descriptor + "/default";
+        std::string() + INxpEmvco::descriptor + "/default";
     SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
-    nxp_emvco_service_ = IEmvco::fromBinder(binder);
+    nxp_emvco_service_ = INxpEmvco::fromBinder(binder);
 
     mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
         AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
@@ -334,7 +335,7 @@ int main(int argc, char **argv) {
     nxp_emvco_service_->getEmvcoContactlessCard(&nxp_emvco_cl_service_);
     nxp_emvco_service_->getEmvcoProfileDiscoveryInterface(
         &nxp_emvco_prof_disc_service_);
-    aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+    aidl::vendor::nxp::emvco::NxpEmvcoStatus _aidl_return;
     int tempPollProfileSelection = pollProfileSelectionVal;
     while (tempPollProfileSelection != 0) {
       tempPollProfileSelection /= 10;
@@ -344,7 +345,7 @@ int main(int argc, char **argv) {
           pollProfileSelectionVal, config_len);
 
     nxp_emvco_prof_disc_service_->setByteConfig(
-        ConfigType::POLL_PROFILE_SEL, config_len, pollProfileSelectionVal,
+        NxpConfigType::POLL_PROFILE_SEL, config_len, pollProfileSelectionVal,
         &_aidl_return);
 
     auto mCallback = ::ndk::SharedRefBase::make<EmvcoClientCallback>(
@@ -352,8 +353,8 @@ int main(int argc, char **argv) {
           ALOGI("Event callback event:%d", event);
           (void)status;
           if (EMVCO_POLLING_STARTED_EVT == (int)event) {
-            setLedState(LedControl::RED_LED_OFF);
-            setLedState(LedControl::GREEN_LED_OFF);
+            setLedState(NxpLedControl::RED_LED_OFF);
+            setLedState(NxpLedControl::GREEN_LED_OFF);
           }
         },
         [](auto &in_data) {
@@ -374,13 +375,13 @@ int main(int argc, char **argv) {
               if (is_removal_procedure) {
                 is_removal_procedure = false;
                 ALOGI("stopRFDisovery with DISCOVER");
-                EmvcoStatus emvcoStatus;
+                NxpEmvcoStatus emvcoStatus;
                 nxp_emvco_cl_service_->stopRFDisovery(
-                    DeactivationType::DISCOVER, &emvcoStatus);
+                    NxpDeactivationType::DISCOVER, &emvcoStatus);
               } else {
                 ALOGI("stopRFDisovery with IDLE");
-                EmvcoStatus emvcoStatus;
-                nxp_emvco_cl_service_->stopRFDisovery(DeactivationType::IDLE,
+                NxpEmvcoStatus emvcoStatus;
+                nxp_emvco_cl_service_->stopRFDisovery(NxpDeactivationType::IDLE,
                                                       &emvcoStatus);
                 std::chrono::microseconds sleepTime(DEACTIVATE_IDLE_TIMEOUT);
                 std::this_thread::sleep_for(sleepTime);

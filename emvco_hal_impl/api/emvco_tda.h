@@ -2,17 +2,31 @@
  *
  *  Copyright 2023 NXP
  *
- *  Licensed under the Apache License, Version 2.0 (the "License");
- *  you may not use this file except in compliance with the License.
- *  You may obtain a copy of the License at
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ * Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
  *
- *  Unless required by applicable law or agreed to in writing, software
- *  distributed under the License is distributed on an "AS IS" BASIS,
- *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and
- *  limitations under the License.
+ * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * Neither the name of NXP nor the names of its contributors may be used
+ * to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
 
@@ -28,6 +42,11 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief MAX data length of CT fragmented data
+ */
+#define CT_FRAG_MAX_DATA_LEN 1024
 
 /**
  * @brief tda_data defines the data buffer and length
@@ -164,6 +183,36 @@ typedef enum emvco_state {
 } emvco_state_t;
 
 /**
+ * @brief
+ * The callback passed in from the EMVCo HAL that EMVCo
+ * stack can use to pass emvco tda state change to EMVCo HAL.
+ */
+typedef void(emvco_tda_state_change_t)(void *tda_info, char *p_dbg_reason);
+
+/**
+ * @brief
+ * The callback passed in from the EMVCo HAL that EMVCo
+ * stack can use to pass emvco cl state change and card detection to EMVCo HAL.
+ */
+typedef void(emvco_cl_state_change_t)(uint8_t emvco_state, char *p_dbg_reason);
+
+/**
+ * @brief Structure representing Fragmented data and its properties.
+ *
+ * @param[in] p_data Pointer to the start of the Fragmented data.
+ * @param[in] data_size Total size of the Fragmented data
+ * @param[in] data_pos Current position in the Fragmented data.
+ * @param[in] is_chained Indicates whether there is chained data or not.
+ */
+
+typedef struct ct_frag_rsp {
+  uint8_t p_data[CT_FRAG_MAX_DATA_LEN];
+  uint16_t data_size;
+  uint16_t data_pos;
+  uint8_t is_chained;
+} ct_frag_rsp_t;
+
+/**
  * @brief tda_control has information to handle the TDA functionality
  */
 typedef struct tda_control {
@@ -189,7 +238,24 @@ typedef struct tda_control {
   transceive_buffer_t trans_buf;
   /* Ensures mutual exclusion for all client API */
   pthread_mutex_t snd_lck;
+  /* tda and cl state callbacks */
+  emvco_tda_state_change_t *p_tda_state_change;
+  emvco_cl_state_change_t *p_cl_state_change;
+  /* Fragment data structure holds fragment response data information */
+  ct_frag_rsp_t frag_rsp;
+  /* specifies whether command data is fragmented or not */
+  uint8_t is_chained_cmd;
 } tda_control_t;
+
+/* Macros to update the chained response data state */
+#define CT_SET_CHAINED_RSP_DATA() (g_tda_ctrl.frag_rsp.is_chained = 1)
+#define CT_RESET_CHAINED_RSP_DATA() (g_tda_ctrl.frag_rsp.is_chained = 0)
+#define CT_IS_CHAINED_RSP_DATA() (1 == g_tda_ctrl.frag_rsp.is_chained)
+
+/* Macros to update the chained command data state */
+#define CT_SET_CHAINED_CMD_DATA() (g_tda_ctrl.is_chained_cmd = 1)
+#define CT_RESET_CHAINED_CMD_DATA() (g_tda_ctrl.is_chained_cmd = 0)
+#define CT_IS_CHAINED_CMD_DATA() (1 == g_tda_ctrl.is_chained_cmd)
 
 #ifdef __cplusplus
 }

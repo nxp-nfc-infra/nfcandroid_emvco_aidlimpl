@@ -31,9 +31,9 @@
  ******************************************************************************/
 #pragma once
 #include "Emvco.h"
-#include <aidl/android/hardware/emvco/BnEmvcoProfileDiscovery.h>
-#include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/INfcStateChangeRequestCallback.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvcoProfileDiscovery.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoClientCallback.h>
+#include <aidl/vendor/nxp/emvco/INxpNfcStateChangeRequestCallback.h>
 
 /** \addtogroup EMVCO_STACK_HAL_MODE_SWITCH_API_INTERFACE
  *  @brief   The android application calls this interface to utilize EMVCo
@@ -42,11 +42,11 @@
  */
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
-class EmvcoProfileDiscovery : public BnEmvcoProfileDiscovery {
+class EmvcoProfileDiscovery : public BnNxpEmvcoProfileDiscovery {
 
 public:
   /**
@@ -63,7 +63,7 @@ public:
    * register
    */
   ::ndk::ScopedAStatus registerEMVCoEventListener(
-      const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
+      const std::shared_ptr<INxpEmvcoClientCallback> &in_clientCallback,
       bool *in_aidl_return) override;
 
   /**
@@ -90,7 +90,7 @@ public:
    *
    * @note This function is must to call before invoking any other api.
    *
-   * @param[in] in_nfcStateChangeCallback INfcStateChangeRequestCallback the
+   * @param[in] in_nfcStateChangeCallback INxpNfcStateChangeRequestCallback the
    * event callback function to be passed by caller. It should implement to turn
    * ON/OFF NFC based on the request received.
    *
@@ -99,7 +99,7 @@ public:
    */
   ::ndk::ScopedAStatus registerNFCStateChangeCallback(
       const std::shared_ptr<
-          ::aidl::android::hardware::emvco::INfcStateChangeRequestCallback>
+          ::aidl::vendor::nxp::emvco::INxpNfcStateChangeRequestCallback>
           &in_nfcStateChangeRequestCallback,
       bool *_aidl_return) override;
 
@@ -112,36 +112,28 @@ public:
    *
    * @return void
    */
-  ::ndk::ScopedAStatus onNfcStateChange(NfcState in_nfcState) override;
+  ::ndk::ScopedAStatus onNfcStateChange(NxpNfcState in_nfcState) override;
 
   /**
    * @brief returns the current active profile type.
    *
-   * @return DiscoveryMode - NFC/EMVCo/Unknown
+   * @return NxpDiscoveryMode - NFC/EMVCo/Unknown
    *
    */
   ::ndk::ScopedAStatus getCurrentDiscoveryMode(
-      ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) override;
+      ::aidl::vendor::nxp::emvco::NxpDiscoveryMode *_aidl_return) override;
 
   ::ndk::ScopedAStatus
-  setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
-         ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) override;
+  setLed(::aidl::vendor::nxp::emvco::NxpLedControl in_ledControl,
+         ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *emvco_status) override;
   ::ndk::ScopedAStatus setByteConfig(
-      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
+      ::aidl::vendor::nxp::emvco::NxpConfigType in_type, int32_t in_length,
       int8_t in_value,
-      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
-  ::ndk::ScopedAStatus setByteArrayConfig(
-      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
-      const std::vector<uint8_t> &in_value,
-      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
-  ::ndk::ScopedAStatus setStringConfig(
-      ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
-      const std::string &in_value,
-      ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) override;
+      ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *_aidl_return) override;
 };
 
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl
-  /** @}*/
+/** @}*/

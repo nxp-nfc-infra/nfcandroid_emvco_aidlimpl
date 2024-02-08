@@ -36,7 +36,7 @@
 #include <android/binder_process.h>
 //#include <cstring>
 
-using ::aidl::android::hardware::emvco::Emvco;
+using ::aidl::vendor::nxp::emvco::Emvco;
 
 int main() {
   LOG(INFO) << "EMVCO HAL starting up";

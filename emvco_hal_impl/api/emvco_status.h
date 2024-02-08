@@ -210,68 +210,81 @@ nfc_status_t nfc_status;
 #define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CREATED_ALREADY (0x13)
 
 /**
- * Indicates transceive NCI data command failed.
+ * Indicates transceive NCI data command failed due to invalid connection ID.
  * Try to call closeTDA api with proper TDA ID & standby flag as true and
  * and try open again with proper TDA ID & standby flag as true to recover and
  * send the transceive data.
  */
-#define EMVCO_STATUS_TRANSCEIVE_FAILED (0x14)
+#define EMVCO_STATUS_TRANSCEIVE_FAILED_INVALID_CONN_ID (0x14)
+/**
+ * Indicates transceive NCI data command failed.
+ * Retry to write again. if it fails, check the I2C line status.
+ *
+ */
+#define EMVCO_STATUS_TRANSCEIVE_FAILED_WRITE_ERR (0x15)
+/**
+ * Indicates transceive NCI data command failed due to WTX time out.
+ * No response received from card with in the WTX time out value.
+ * Increase WTX time out value in configuration, turn off and on
+ * EMVCo and re-try the use case again.
+ */
+#define EMVCO_STATUS_TRANSCEIVE_FAILED_WTX_TIMED_OUT (0x16)
 
 /**
  * Indicates core connection close NCI command failed.
  * Try to call closeTDA api with proper TDA ID & standby flag as false and
  * and try open again with proper TDA ID & standby flag as true
  */
-#define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x15)
+#define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x17)
 
 /**
  * Indicates mode set disable NCI command failed.
  * Try to call closeTDA api with proper TDA ID & standby flag as true and
  * and try to call openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x16)
+#define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x18)
 
 /**
  * Indicates nfcee interface activation failure.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_NFCEE_INTERFACE_ACTIVATION_FAILED (0x17)
+#define EMVCO_STATUS_NFCEE_INTERFACE_ACTIVATION_FAILED (0x19)
 
 /**
  * Indicates nfcee interface activation failure.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_NFCEE_TRANSMISSION_ERROR (0x18)
+#define EMVCO_STATUS_NFCEE_TRANSMISSION_ERROR (0x1A)
 
 /**
  * Indicates nfcee interface activation failure.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_INVALID_STATE_TDA_IN_CLOSED (0x19)
+#define EMVCO_STATUS_INVALID_STATE_TDA_IN_CLOSED (0x1B)
 
 /**
  * Indicates nfcee interface activation failure.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CLOSED_ALREADY (0x1A)
+#define EMVCO_STATUS_INVALID_STATE_CORE_CONN_CLOSED_ALREADY (0x1C)
 
 /**
  * Indicates TDA in already closed state.
  * No need to close again
  */
-#define EMVCO_STATUS_INVALID_STATE_TDA_CLOSED_ALREADY (0x1B)
+#define EMVCO_STATUS_INVALID_STATE_TDA_CLOSED_ALREADY (0x1D)
 
 /**
  * Indicates nfcee protocol error.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_NFCEE_PROTOCOL_ERROR (0x1C)
+#define EMVCO_STATUS_NFCEE_PROTOCOL_ERROR (0x1E)
 
 /**
  * Indicates nfcee timeout error.
  * Try call to openTDA again with proper TDA ID & standby flag as false
  */
-#define EMVCO_STATUS_NFCEE_TIMEOUT_ERROR (0x1D)
+#define EMVCO_STATUS_NFCEE_TIMEOUT_ERROR (0x1F)
 
 /**
  * Indicates NCI Error response for NCI command.
@@ -279,7 +292,7 @@ nfc_status_t nfc_status;
  * Try start the EMVCo mode again, if CT is supported and TDA present in the
  * hardware.
  */
-#define EMVCO_STATUS_NCI_RESPONSE_ERR (0x1E)
+#define EMVCO_STATUS_NCI_RESPONSE_ERR (0x20)
 
 /*
  * Status code for failure

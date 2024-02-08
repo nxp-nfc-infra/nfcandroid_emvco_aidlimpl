@@ -32,13 +32,12 @@
 #include "EmvcoProfileDiscovery.h"
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
 ::ndk::ScopedAStatus EmvcoProfileDiscovery::registerEMVCoEventListener(
-    const std::shared_ptr<
-        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
+    const std::shared_ptr<::aidl::vendor::nxp::emvco::INxpEmvcoClientCallback>
         &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
@@ -54,7 +53,7 @@ namespace emvco {
 
 ::ndk::ScopedAStatus EmvcoProfileDiscovery::registerNFCStateChangeCallback(
     const std::shared_ptr<
-        ::aidl::android::hardware::emvco::INfcStateChangeRequestCallback>
+        ::aidl::vendor::nxp::emvco::INxpNfcStateChangeRequestCallback>
         &in_nfcStateChangeCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
@@ -62,48 +61,32 @@ namespace emvco {
       in_nfcStateChangeCallback, _aidl_return);
 }
 ::ndk::ScopedAStatus
-EmvcoProfileDiscovery::onNfcStateChange(NfcState in_nfcState) {
+EmvcoProfileDiscovery::onNfcStateChange(NxpNfcState in_nfcState) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->onNfcStateChange(in_nfcState);
 }
 
 ::ndk::ScopedAStatus EmvcoProfileDiscovery::getCurrentDiscoveryMode(
-    ::aidl::android::hardware::emvco::DiscoveryMode *_aidl_return) {
+    ::aidl::vendor::nxp::emvco::NxpDiscoveryMode *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->getCurrentDiscoveryMode(_aidl_return);
 }
 
 ::ndk::ScopedAStatus EmvcoProfileDiscovery::setLed(
-    ::aidl::android::hardware::emvco::LedControl in_ledControl,
-    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+    ::aidl::vendor::nxp::emvco::NxpLedControl in_ledControl,
+    ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *emvco_status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->setLed(in_ledControl, emvco_status);
 }
 ::ndk::ScopedAStatus EmvcoProfileDiscovery::setByteConfig(
-    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
-    int8_t in_value,
-    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
+    ::aidl::vendor::nxp::emvco::NxpConfigType in_type, int32_t in_length,
+    int8_t in_value, ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->setByteConfig(in_type, in_length, in_value,
                                              _aidl_return);
 }
-::ndk::ScopedAStatus EmvcoProfileDiscovery::setByteArrayConfig(
-    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
-    const std::vector<uint8_t> &in_value,
-    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->setByteArrayConfig(in_type, in_length, in_value,
-                                                  _aidl_return);
-}
-::ndk::ScopedAStatus EmvcoProfileDiscovery::setStringConfig(
-    ::aidl::android::hardware::emvco::ConfigType in_type, int32_t in_length,
-    const std::string &in_value,
-    ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->setStringConfig(in_type, in_length, in_value,
-                                               _aidl_return);
-}
+
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl

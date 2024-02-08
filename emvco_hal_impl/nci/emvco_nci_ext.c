@@ -932,6 +932,7 @@ void static send_poll_event_to_upper_layer() {
   msg.p_msg_data = NULL;
   memset(msg.data, 0, sizeof(msg.data));
   msg.size = 0;
+  msg.w_status = EMVCO_STATUS_SUCCESS;
   tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
 }
 
@@ -964,7 +965,7 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
     case NCI_GID_PROP:
       switch (op_code) {
       case MSG_CORE_PROPRIETARY_RSP: {
-        if (p_len == 8) {
+        if (p_len == MSG_CORE_PROPRIETARY_STANDBY_RSP) {
           uint8_t num_params;
           tEMVCO_DISCOVER_PARAMS disc_params[MAX_DISC_PARAMS];
           num_params = get_rf_discover_config(modeSwitchArgs->emvco_config,
@@ -978,7 +979,14 @@ EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
       break;
     case NCI_GID_RF_MANAGE:
       switch (op_code) {
-      case RF_DEACTIVATE_NTF:
+      case RF_DEACTIVATE_NTF: {
+        /** Send poll event to upper layer only, if deactivate with discover mode
+            received */
+        if ((p_data[2] == NCI_DEACTIVATE_NTF_LEN) &&
+            (NCI_DEACT_TYPE_DISCOVERY == p_data[3])) {
+          send_poll_event_to_upper_layer();
+        }
+      } break;
       case MSG_RF_DISCOVER_RSP: {
         send_poll_event_to_upper_layer();
       } break;

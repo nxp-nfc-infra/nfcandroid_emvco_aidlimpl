@@ -69,20 +69,6 @@ typedef void(emvco_stack_data_callback_t)(uint16_t data_len, uint8_t *p_data);
 typedef void(emvco_state_change_callback_t)(bool enableNfc);
 
 /**
- * @brief
- * The callback passed in from the EMVCo HAL that EMVCo
- * stack can use to pass emvco tda state change to EMVCo HAL.
- */
-typedef void(emvco_tda_state_change_t)(void *tda_info, char *p_dbg_reason);
-
-/**
- * @brief
- * The callback passed in from the EMVCo HAL that EMVCo
- * stack can use to pass emvco cl state change and card detection to EMVCo HAL.
- */
-typedef void(emvco_cl_state_change_t)(uint8_t emvco_state, char *p_dbg_reason);
-
-/**
 
  *
  * @brief           This function is called by EMVCo HAL during the
@@ -207,36 +193,6 @@ EMVCO_STATUS set_led(uint8_t led_control);
  */
 EMVCO_STATUS set_byte_config(config_type_t type, const int32_t in_length,
                              const int8_t in_value);
-
-/**
- * @brief allows to set the byte array value.
- *
- * @param[in] type - name of the config
- * @param[in] length - length of the config value
- * @param[in] value - actual byte array value to be set
- *
- * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
- * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
- * successfully
- *
- */
-EMVCO_STATUS set_byte_array_config(config_type_t type, const int32_t in_length,
-                                   const uint8_t *in_value);
-
-/**
- * @brief allows to set the string value.
- *
- * @param[in] type - name of the config
- * @param[in] length - length of the config value
- * @param[in] value - actual string value to be set
- *
- * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
- * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
- * successfully
- *
- */
-EMVCO_STATUS set_string_config(config_type_t type, const int32_t in_length,
-                               const char *p_value);
 
 /**
  * @brief discovers the smart card connected to TDA and returns the smart card

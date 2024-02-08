@@ -30,6 +30,7 @@
  *
  ******************************************************************************/
 
+#include <emvco_config.h>
 #include <emvco_ct.h>
 #include <emvco_dm.h>
 #include <emvco_log.h>
@@ -40,6 +41,7 @@ extern fp_ct_open_t fp_ct_open;
 extern fp_ct_close_t fp_ct_close;
 extern fp_transceive_t fp_transceive;
 extern fp_ct_discover_tda_t fp_ct_discover_tda;
+extern fp_set_max_wtx_timeout_value_t fp_set_max_wtx_timeout_value;
 
 EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control) {
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
@@ -84,4 +86,22 @@ EMVCO_STATUS transceive_tda_slot(tda_data *cmd_apdu, tda_data *rsp_apdu) {
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
   }
   return status;
+}
+
+void initialize_max_wtx_timeout_value(void) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  unsigned long num = 0;
+  unsigned int num_len;
+
+  if (get_byte_value(NAME_NXP_CT_MAX_WTX_WAIT_TIME, &num, &num_len)) {
+    LOG_EMVCOHAL_D(
+        "%s NAME_NXP_CT_MAX_WTX_WAIT_TIME property num_len:%d, num:%lu",
+        __func__, num_len, num);
+    if (fp_set_max_wtx_timeout_value != NULL) {
+      fp_set_max_wtx_timeout_value(num);
+    }
+  } else {
+    LOG_EMVCOHAL_E("%s NAME_NXP_CT_MAX_WTX_WAIT_TIME property not found",
+                   __func__);
+  }
 }

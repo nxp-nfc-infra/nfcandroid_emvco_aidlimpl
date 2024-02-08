@@ -110,7 +110,6 @@ uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
     if (size >= ulen) {
       size -= ulen;
     } else {
-      free(p);
       return NCI_STATUS_FAILED;
     }
   }

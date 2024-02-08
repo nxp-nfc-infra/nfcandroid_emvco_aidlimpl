@@ -30,6 +30,7 @@
  *
  ******************************************************************************/
 
+#include "emvco_tda.h"
 #include <emvco_cl.h>
 #include <emvco_common.h>
 #include <emvco_config.h>
@@ -48,7 +49,8 @@ extern nci_hal_ctrl_t nci_hal_ctrl;
 emvco_args_t *modeSwitchArgs;
 extern fp_init_ecp_vas_t fp_init_ecp_vas;
 extern fp_ct_de_init_ext_t fp_ct_de_init_ext;
-extern fp_ct_init_ext_t fp_ct_init_ext;
+extern fp_ct_nfcee_discover_t fp_ct_nfcee_discover;
+
 pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /* the RF Discovery Frequency for each technology */
@@ -143,7 +145,11 @@ void handle_set_emvco_mode(const int8_t emvco_config, bool_t is_start_emvco) {
         if (nfc_status == STATE_OFF) {
           open_app_data_channel_internal();
         } else {
-          m_p_nfc_state_cback(false);
+          if (m_p_nfc_state_cback != NULL) {
+            m_p_nfc_state_cback(false);
+          } else {
+            LOG_EMVCOHAL_E("Failed to turn off the NFC");
+          }
         }
       }
     } else {
@@ -212,8 +218,8 @@ EMVCO_STATUS start_emvco_mode() {
   if (fp_init_ecp_vas != NULL) {
     fp_init_ecp_vas();
   }
-  if (fp_ct_init_ext != NULL) {
-    EMVCO_STATUS status = fp_ct_init_ext();
+  if (fp_ct_nfcee_discover != NULL) {
+    EMVCO_STATUS status = fp_ct_nfcee_discover();
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_D("CT command Failed. start CL");
       ct_init_completed();
@@ -232,18 +238,17 @@ void ct_init_completed() {
 }
 EMVCO_STATUS stop_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
+  led_switch_control(GREEN_LED_OFF);
+  int hal_close_status = close_app_data_channel(true);
+  LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
+
+  modeSwitchArgs->current_discovery_mode = UNKNOWN;
   if (fp_ct_de_init_ext != NULL) {
     EMVCO_STATUS status = fp_ct_de_init_ext();
     if (status != EMVCO_STATUS_SUCCESS) {
       LOG_EMVCOHAL_D("%s Failed to de-init CT", __func__);
     }
   }
-  led_switch_control(GREEN_LED_OFF);
-  int hal_close_status = close_app_data_channel(true);
-  LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
-
-  modeSwitchArgs->current_discovery_mode = UNKNOWN;
-  (*m_p_nfc_state_cback)(true);
   return EMVCO_STATUS_SUCCESS;
 }
 

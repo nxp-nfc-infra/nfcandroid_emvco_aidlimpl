@@ -34,10 +34,10 @@
 
 #include <aidl/Gtest.h>
 #include <aidl/Vintf.h>
-#include <aidl/android/hardware/emvco/BnEmvco.h>
-#include <aidl/android/hardware/emvco/BnEmvcoClientCallback.h>
-#include <aidl/android/hardware/emvco/IEmvco.h>
-#include <aidl/android/hardware/emvco/IEmvcoContactlessCard.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvco.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvcoClientCallback.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvco.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoContactlessCard.h>
 #include <android-base/logging.h>
 #include <android-base/stringprintf.h>
 #include <android/binder_auto_utils.h>
@@ -56,18 +56,18 @@
 #include <time.h>
 #include <unistd.h>
 
-using aidl::android::hardware::emvco::EmvcoEvent;
-using aidl::android::hardware::emvco::EmvcoStatus;
-using aidl::android::hardware::emvco::IEmvco;
-using aidl::android::hardware::emvco::IEmvcoClientCallback;
-using aidl::android::hardware::emvco::IEmvcoContactlessCard;
+using aidl::vendor::nxp::emvco::INxpEmvco;
+using aidl::vendor::nxp::emvco::INxpEmvcoClientCallback;
+using aidl::vendor::nxp::emvco::INxpEmvcoContactlessCard;
+using aidl::vendor::nxp::emvco::NxpEmvcoEvent;
+using aidl::vendor::nxp::emvco::NxpEmvcoStatus;
 
 using ndk::ScopedAStatus;
 using ndk::SharedRefBase;
 using ndk::SpAIBinder;
 
-using aidl::android::hardware::emvco::ConfigType;
-using aidl::android::hardware::emvco::IEmvcoProfileDiscovery;
+using aidl::vendor::nxp::emvco::INxpEmvcoProfileDiscovery;
+using aidl::vendor::nxp::emvco::NxpConfigType;
 using android::getAidlHalInstanceNames;
 using android::PrintInstanceNameToString;
 using android::base::StringPrintf;
@@ -85,8 +85,8 @@ using ndk::SpAIBinder;
 
 #define PPSE_SEND_MAX_TIMES 250
 
-std::shared_ptr<IEmvco> iIEmvco_;
-std::shared_ptr<IEmvcoContactlessCard> iEmvcoContactlessCard_;
+std::shared_ptr<INxpEmvco> iIEmvco_;
+std::shared_ptr<INxpEmvcoContactlessCard> iEmvcoContactlessCard_;
 constexpr static int kCallbackTimeoutMs = 100;
 volatile static int index = 0;
 static std::vector<std::promise<void>> psse_cb_promise;
@@ -100,19 +100,19 @@ const int NFC_VAS_PASSIVE_POLL_MODE = 3;
 const int pollProfileSelection = 0b00000010;
 int count = 0;
 ::ndk::ScopedAIBinder_DeathRecipient mDeathRecipient;
-std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
+std::shared_ptr<INxpEmvcoProfileDiscovery> nxp_emvco_prof_disc_service_;
 
 class EmvcoClientCallback
-    : public aidl::android::hardware::emvco::BnEmvcoClientCallback {
+    : public aidl::vendor::nxp::emvco::BnNxpEmvcoClientCallback {
 public:
   EmvcoClientCallback(
-      const std::function<void(EmvcoEvent, EmvcoStatus)> &on_hal_event_cb,
+      const std::function<void(NxpEmvcoEvent, NxpEmvcoStatus)> &on_hal_event_cb,
       const std::function<void(const std::vector<uint8_t> &)> &on_nci_data_cb)
       : on_nci_data_cb_(on_nci_data_cb), on_hal_event_cb_(on_hal_event_cb) {}
   virtual ~EmvcoClientCallback() = default;
 
-  ::ndk::ScopedAStatus sendEvent(EmvcoEvent event,
-                                 EmvcoStatus event_status) override {
+  ::ndk::ScopedAStatus sendEvent(NxpEmvcoEvent event,
+                                 NxpEmvcoStatus event_status) override {
     ALOGI("%s ", __func__);
     if (!is_aborted_) {
       on_hal_event_cb_(event, event_status);
@@ -129,7 +129,7 @@ public:
 
 private:
   std::function<void(const std::vector<uint8_t> &)> on_nci_data_cb_;
-  std::function<void(EmvcoEvent, EmvcoStatus)> on_hal_event_cb_;
+  std::function<void(NxpEmvcoEvent, NxpEmvcoStatus)> on_hal_event_cb_;
 };
 
 void signal_callback_handler(int signum) {
@@ -263,9 +263,9 @@ int main(int argc, char **argv) {
         });
 
     const std::string instance =
-        std::string() + IEmvco::descriptor + "/default";
+        std::string() + INxpEmvco::descriptor + "/default";
     SpAIBinder binder(AServiceManager_waitForService(instance.c_str()));
-    iIEmvco_ = IEmvco::fromBinder(binder);
+    iIEmvco_ = INxpEmvco::fromBinder(binder);
     mDeathRecipient = ::ndk::ScopedAIBinder_DeathRecipient(
         AIBinder_DeathRecipient_new(EmvcoHalBinderDied));
     AIBinder_linkToDeath(iIEmvco_->asBinder().get(), mDeathRecipient.get(), 0);
@@ -273,7 +273,7 @@ int main(int argc, char **argv) {
     iIEmvco_->getEmvcoContactlessCard(&iEmvcoContactlessCard_);
 
     iIEmvco_->getEmvcoProfileDiscoveryInterface(&nxp_emvco_prof_disc_service_);
-    aidl::android::hardware::emvco::EmvcoStatus _aidl_return;
+    aidl::vendor::nxp::emvco::NxpEmvcoStatus _aidl_return;
     int tempPollProfileSelection = pollProfileSelection;
     while (tempPollProfileSelection != 0) {
       tempPollProfileSelection /= 10;
@@ -282,7 +282,7 @@ int main(int argc, char **argv) {
     ALOGI("setByteConfig called with pollProfileSelection:%d, count:%d",
           pollProfileSelection, count);
 
-    nxp_emvco_prof_disc_service_->setByteConfig(ConfigType::POLL_PROFILE_SEL,
+    nxp_emvco_prof_disc_service_->setByteConfig(NxpConfigType::POLL_PROFILE_SEL,
                                                 count, pollProfileSelection,
                                                 &_aidl_return);
 

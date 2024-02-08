@@ -37,15 +37,15 @@
  *  @{
  */
 
-#include <aidl/android/hardware/emvco/BnEmvcoContactlessCard.h>
-#include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
+#include <aidl/vendor/nxp/emvco/BnNxpEmvcoContactlessCard.h>
+#include <aidl/vendor/nxp/emvco/INxpEmvcoClientCallback.h>
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
-class EmvcoContactlessCard : public BnEmvcoContactlessCard {
+class EmvcoContactlessCard : public BnNxpEmvcoContactlessCard {
 
 public:
   /**
@@ -62,7 +62,7 @@ public:
    * register
    */
   ::ndk::ScopedAStatus registerEMVCoEventListener(
-      const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
+      const std::shared_ptr<INxpEmvcoClientCallback> &in_clientCallback,
       bool *_aidl_return) override;
 
   /**
@@ -74,7 +74,7 @@ public:
    *
    * @param[in] in_data Application data buffer
    *
-   * @return EmvcoStatus indicating execution status
+   * @return NxpEmvcoStatus indicating execution status
    *
    */
   ::ndk::ScopedAStatus transceive(const std::vector<uint8_t> &in_data,
@@ -102,18 +102,18 @@ public:
    * @param[in] in_deactivationType specifies the state to be in after RF
    * deactivation
    *
-   * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed
+   * @return NxpEmvcoStatus returns EMVCO_STATUS_OK, if command processed
    * successfully and returns EMVCO_STATUS_FAILED, if command is not processed
    * due to in-valid state. EMVCo mode should be ON to call this API
    *
    */
   ::ndk::ScopedAStatus stopRFDisovery(
-      ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
-      ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) override;
+      ::aidl::vendor::nxp::emvco::NxpDeactivationType in_deactivationType,
+      ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *emvco_status) override;
 };
 
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl
   /** @}*/

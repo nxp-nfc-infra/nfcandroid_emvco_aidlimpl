@@ -33,13 +33,12 @@
 #include "Emvco.h"
 
 namespace aidl {
-namespace android {
-namespace hardware {
+namespace vendor {
+namespace nxp {
 namespace emvco {
 
 ::ndk::ScopedAStatus EmvcoContactlessCard::registerEMVCoEventListener(
-    const std::shared_ptr<
-        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
+    const std::shared_ptr<::aidl::vendor::nxp::emvco::INxpEmvcoClientCallback>
         &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
@@ -61,14 +60,14 @@ EmvcoContactlessCard::transceive(const std::vector<uint8_t> &in_data,
 }
 
 ::ndk::ScopedAStatus EmvcoContactlessCard::stopRFDisovery(
-    ::aidl::android::hardware::emvco::DeactivationType in_deactivationType,
-    ::aidl::android::hardware::emvco::EmvcoStatus *emvco_status) {
+    ::aidl::vendor::nxp::emvco::NxpDeactivationType in_deactivationType,
+    ::aidl::vendor::nxp::emvco::NxpEmvcoStatus *emvco_status) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->stopRFDisovery(in_deactivationType,
                                               emvco_status);
 }
 
 } // namespace emvco
-} // namespace hardware
-} // namespace android
+} // namespace nxp
+} // namespace vendor
 } // namespace aidl
