@@ -36,9 +36,9 @@
 package android.hardware.emvco;
 @VintfStability
 interface IEmvcoTDA {
-  boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
-  android.hardware.emvco.EmvcoTDAInfo[] discoverTDA(in android.hardware.emvco.IEmvcoTDACallback in_clientCallback);
-  byte openTDA(in byte tdaID);
+  boolean registerEMVCoCTListener(in android.hardware.emvco.IEmvcoTDACallback in_clientCallback);
+  android.hardware.emvco.EmvcoTDAInfo[] discoverTDA();
+  byte openTDA(in byte tdaID, boolean standBy);
   byte[] transceive(in byte[] in_cmd_data);
-  void closeTDA(in byte tdaID);
+  void closeTDA(in byte tdaID, boolean standBy);
 }

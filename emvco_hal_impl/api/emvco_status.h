@@ -88,7 +88,7 @@ nfc_status_t nfc_status;
 /*
  * The function indicates successful completion
  */
-#define EMVCO_STATUS_SUCCESS (0x0000)
+#define EMVCO_STATUS_SUCCESS (0x00)
 
 /*
  *  The function indicates successful completion
@@ -98,284 +98,100 @@ nfc_status_t nfc_status;
 /*
  * At least one parameter could not be properly interpreted
  */
-#define EMVCO_STATUS_INVALID_PARAMETER (0x0001)
-
-/*
- * The buffer provided by the caller is too small
- */
-#define EMVCO_STATUS_BUFFER_TOO_SMALL (0x0003)
+#define EMVCO_STATUS_INVALID_PARAMETER (0x01)
 
 /*
  * Device specifier/handle value is invalid for the operation
  */
-#define EMVCO_STATUS_INVALID_DEVICE (0x0006)
-
-/*
- * The function executed successfully but could have returned
- * more information than space provided by the caller
- */
-#define EMVCO_STATUS_MORE_INFORMATION (0x0008)
-
-/*
- * No response from the remote device received: Time-out
- */
-#define EMVCO_STATUS_RF_TIMEOUT (0x0009)
-
-/*
- * RF Error during data transaction with the remote device
- */
-#define EMVCO_STATUS_RF_ERROR (0x000A)
-
-/*
- * Not enough resources Memory, Timer etc(e.g. allocation failed.)
- */
-#define EMVCO_STATUS_INSUFFICIENT_RESOURCES (0x000C)
+#define EMVCO_STATUS_INVALID_DEVICE (0x02)
 
 /*
  * A non-blocking function returns this immediately to indicate
  * that an internal operation is in progress
  */
-#define EMVCO_STATUS_PENDING (0x000D)
-
-/*
- * A board communication error occurred
- * (e.g. Configuration went wrong)
- */
-#define EMVCO_STATUS_BOARD_COMMUNICATION_ERROR (0x000F)
-
-/*
- * Invalid State of the particular state machine
- */
-#define EMVCO_STATUS_INVALID_STATE (0x0011)
+#define EMVCO_STATUS_PENDING (0x03)
 
 /*
  * This Layer is Not initialized, hence initialization required.
  */
-#define EMVCO_STATUS_NOT_INITIALISED (0x0031)
+#define EMVCO_STATUS_NOT_INITIALISED (0x04)
 
 /*
  * The Layer is already initialized, hence initialization repeated.
  */
-#define EMVCO_STATUS_ALREADY_INITIALISED (0x0032)
+#define EMVCO_STATUS_ALREADY_INITIALISED (0x05)
 
 /*
  * Feature not supported
  */
-#define EMVCO_STATUS_FEATURE_NOT_SUPPORTED (0x0033)
-
-/*  The Unregistration command has failed because the user wants to unregister
- * on
- * an element for which he was not registered
- */
-#define EMVCO_STATUS_NOT_REGISTERED (0x0034)
-
-/* The Registration command has failed because the user wants to register on
- * an element for which he is already registered
- */
-#define EMVCO_STATUS_ALREADY_REGISTERED (0x0035)
-
-/*  Single Tag with Multiple
-    Protocol support detected */
-#define EMVCO_STATUS_MULTIPLE_PROTOCOLS (0x0036)
-
-/*
- * Feature not supported
- */
-#define EMVCO_STATUS_MULTIPLE_TAGS (0x0037)
-
-/*
- * A DESELECT event has occurred
- */
-#define EMVCO_STATUS_DESELECTED (0x0038)
-
-/*
- * A RELEASE event has occurred
- */
-#define EMVCO_STATUS_RELEASED (0x0039)
-
-/*
- * The operation is currently not possible or not allowed
- */
-#define EMVCO_STATUS_NOT_ALLOWED (0x003A)
+#define EMVCO_STATUS_FEATURE_NOT_SUPPORTED (0x06)
 
 /*
  *  The system is busy with the previous operation.
  */
-#define EMVCO_STATUS_BUSY (0x006F)
-
-/* NDEF Mapping error codes */
-
-/* The remote device (type) is not valid for this request. */
-#define EMVCO_STATUS_INVALID_REMOTE_DEVICE (0x001D)
-
-/* Read operation failed */
-#define EMVCO_STATUS_READ_FAILED (0x0014)
+#define EMVCO_STATUS_BUSY (0x07)
 
 /*
  * Write operation failed
  */
-#define EMVCO_STATUS_WRITE_FAILED (0x0015)
+#define EMVCO_STATUS_WRITE_FAILED (0x08)
 
-/* Non Ndef Compliant */
-#define EMVCO_STATUS_NO_NDEF_SUPPORT (0x0016)
-
-/* Could not proceed further with the write operation: reached card EOF*/
-#define EMVCO_STATUS_EOF_NDEF_CONTAINER_REACHED (0x001A)
-
-/* Incorrect number of bytes received from the card*/
-#define EMVCO_STATUS_INVALID_RECEIVE_LENGTH (0x001B)
-
-/* The data format/composition is not understood/correct. */
-#define EMVCO_STATUS_INVALID_FORMAT (0x001C)
-
-/* There is not sufficient storage available. */
-#define EMVCO_STATUS_INSUFFICIENT_STORAGE (0x001F)
-
-/* The Ndef Format procedure has failed. */
-#define EMVCO_STATUS_FORMAT_ERROR (0x0023)
-
-/* The NCI Cedit error */
-#define EMVCO_STATUS_CREDIT_TIMEOUT (0x0024)
-
-/*
- * Response Time out for the control message(NFCC not responded)
+/**
+ * Indicates NFCEE Discovery not completed.
+ * Try start the EMVCo mode again, if CT is supported and TDA present in the
+ * hardware.
  */
-#define EMVCO_STATUS_RESPONSE_TIMEOUT (0x0025)
+#define EMVCO_STATUS_TDA_INIT_NOT_COMPLETED (0x09)
 
-/*
- * Device is already connected
+/**
+ * Indicates NFCEE Discovery failed.
+ * Try start the EMVCo mode again, if CT is supported and TDA present in the
+ * hardware.
  */
-#define EMVCO_STATUS_ALREADY_CONNECTED (0x0026)
+#define EMVCO_STATUS_TDA_INIT_FAILED (0x0A)
 
-/*
- * Device is already connected
+/**
+ * Indicates NCI Error response for NCI command.
+ * COntroller is not in proper state to accept the NCI command.
+ * Try start the EMVCo mode again, if CT is supported and TDA present in the
+ * hardware.
  */
-#define EMVCO_STATUS_ANOTHER_DEVICE_CONNECTED (0x0027)
+#define EMVCO_STATUS_NCI_RESPONSE_ERR (0x0B)
 
-/*
- * Single Target Detected and Activated
+/**
+ * Indicates mode set mode set NCI command failed.
+ * Try to call openTDA api with proper TDA ID and standby false.
  */
-#define EMVCO_STATUS_SINGLE_TAG_ACTIVATED (0x0028)
+#define EMVCO_STATUS_NFCEE_MODE_SET_ENABLE_FAILED (0x0C)
 
-/*
- * Single Target Detected
+/**
+ * Indicates core connection create NCI command failed.
+ * Try to call openTDA api with proper TDA ID.
  */
-#define EMVCO_STATUS_SINGLE_TAG_DISCOVERED (0x0029)
+#define EMVCO_STATUS_CORE_CONN_CREATE_FAILED (0x0D)
 
-/*
- * Secure element Detected and Activated
+/**
+ * Indicates transceive NCI data command failed.
+ * Try to call closeAPI and then openTDA api with proper TDA ID to recover and
+ * send the transceive data.
  */
-#define EMVCO_STATUS_SECURE_ELEMENT_ACTIVATED (0x0028)
+#define EMVCO_STATUS_TRANSCEIVE_FAILED (0x0E)
 
-/*
- * Unknown error Status Codes
+/**
+ * Indicates core connection close NCI command failed.
+ * Ensure TDA was opened and ry to call closeTDA api with proper TDA ID.
  */
-#define EMVCO_STATUS_UNKNOWN_ERROR (0x00FE)
+#define EMVCO_STATUS_CORE_CONN_CLOSE_FAILED (0x0F)
+
+/**
+ * Indicates mode set disable NCI command failed.
+ * Ensure TDA was opened and ry to call closeTDA api with proper TDA ID.
+ */
+#define EMVCO_STATUS_NFCEE_MODE_SET_DISABLE_FAILED (0x10)
 
 /*
  * Status code for failure
  */
-#define EMVCO_STATUS_FAILED (0x00FF)
-
-/*
- * The function/command has been aborted
- */
-#define EMVCO_STATUS_CMD_ABORTED (0x0002)
-
-/*
- * No target found after poll
- */
-#define EMVCO_STATUS_NO_TARGET_FOUND (0x000A)
-
-/* Attempt to disconnect a not connected remote device. */
-#define EMVCO_STATUS_NO_DEVICE_CONNECTED (0x000B)
-
-/* External RF field detected. */
-#define EMVCO_STATUS_EXTERNAL_RF_DETECTED (0x000E)
-
-/* Message is not allowed by the state machine
- * (e.g. configuration went wrong)
- */
-#define EMVCO_STATUS_MSG_NOT_ALLOWED_BY_FSM (0x0010)
-
-/*
- * No access has been granted
- */
-#define EMVCO_STATUS_ACCESS_DENIED (0x001E)
-
-/* No registry node matches the specified input data. */
-#define EMVCO_STATUS_NODE_NOT_FOUND (0x0017)
-
-/* The current module is busy ; one might retry later */
-#define EMVCO_STATUS_SMX_BAD_STATE (0x00F0)
-
-/* The Abort mechanism has failed for unexpected reason: user can try again*/
-#define EMVCO_STATUS_ABORT_FAILED (0x00F2)
-
-/* The Registration command has failed because the user wants to register as
- * target
- * on a operating mode not supported
- */
-#define EMVCO_STATUS_REG_OPMODE_NOT_SUPPORTED (0x00F5)
-
-/*
- * Shutdown in progress, cannot handle the request at this time.
- */
-#define EMVCO_STATUS_SHUTDOWN (0x0091)
-
-/*
- * Target is no more in RF field
- */
-#define EMVCO_STATUS_TARGET_LOST (0x0092)
-
-/*
- * Request is rejected
- */
-#define EMVCO_STATUS_REJECTED (0x0093)
-
-/*
- * Target is not connected
- */
-#define EMVCO_STATUS_TARGET_NOT_CONNECTED (0x0094)
-
-/*
- * Invalid handle for the operation
- */
-#define EMVCO_STATUS_INVALID_HANDLE (0x0095)
-
-/*
- * Process aborted
- */
-#define EMVCO_STATUS_ABORTED (0x0096)
-
-/*
- * Requested command is not supported
- */
-#define EMVCO_STATUS_COMMAND_NOT_SUPPORTED (0x0097)
-
-/*
- * Tag is not NDEF compilant
- */
-#define EMVCO_STATUS_NON_NDEF_COMPLIANT (0x0098)
-
-/*
- * Not enough memory available to complete the requested operation
- */
-#define EMVCO_STATUS_NOT_ENOUGH_MEMORY (0x001F)
-
-/*
- * Indicates incoming connection
- */
-#define EMVCO_STATUS_INCOMING_CONNECTION (0x0045)
-
-/*
- * Indicates Connection was successful
- */
-#define EMVCO_STATUS_CONNECTION_SUCCESS (0x0046)
-
-/*
- * Indicates Connection failed
- */
-#define EMVCO_STATUS_CONNECTION_FAILED (0x0047)
+#define EMVCO_STATUS_FAILED (0xFF)
 
 #endif /* _EMVCO_STATUS_H_ */

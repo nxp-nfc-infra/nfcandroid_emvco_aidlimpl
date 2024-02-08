@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -52,28 +52,83 @@ class EmvcoTDA : public BnEmvcoTDA {
 public:
   /**
    *
-   * @brief Register EMVCo callback function to receive the events from a
-   * listener device.
+   * @brief registers the EMVCoCT callback to EMVCo stack
    *
-   * @note This function is must to call before invoking any other api.
+   * @param[in]  *in_in_clientCallback provides EMVCo state and TDA state as
+   * callback
    *
-   * @param[in]  *in_clientCallback has EMVCo client HAL callback
-   * @param[in]  *in_aidl_return indicates register status in return to caller
-   *
-   * @return ::ndk::ScopedAStatus indicates registerEMVCoEventListener request
-   * processed by EMVCo HAL successfully or not
+   * @return void
    */
-  ::ndk::ScopedAStatus registerEMVCoEventListener(
-      const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
+  ::ndk::ScopedAStatus registerEMVCoCTListener(
+      const std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoTDACallback>
+          &in_in_clientCallback,
       bool *_aidl_return) override;
-  ::ndk::ScopedAStatus
-  discoverTDA(const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
-              std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
-                  *emvcoTDAInfo) override;
-  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, int8_t *out_connID) override;
+
+  /**
+   *
+   * @brief discoverTDA provides all the details of smart card connected over
+   * TDA
+   *
+   * @param[in]  *in_clientCallback provides EMVCo state and TDA state as
+   * callback
+   *
+   * @throws ServiceSpecificException with code
+   *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not
+   * supported.
+   *
+   * @return EmvcoTDAInfo[] returns all the smart card connected over TDA.
+   *         valid emvcoTDAInfo received only when status is EMVCO_STATUS_OK
+   */
+  ::ndk::ScopedAStatus discoverTDA(
+      std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo)
+      override;
+  /**
+   *
+   * @brief opens the smart card connected over TDA
+   * @param[in]  tdaID tda id of the smard card received through discoverTDA
+   *
+   *
+   * @throws ServiceSpecificException with codes
+   *   - EMVCO_STATUS_INVALID_PARAMETER, if provided tdaID is in-valid
+   *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not
+   * supported.
+   *
+   * @return byte returns connection id of the smard card.
+   *         valid connection id received only when status is EMVCO_STATUS_OK
+   */
+  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, bool in_standBy,
+                               int8_t *out_connID) override;
+  /**
+   * @brief sends application data with the Device-Controller and
+   *        receives response data from controller
+   *
+   * @note connection id of the TDA should be added as part of NCI header.
+   *
+   * @param[in] in_cmd_data Application command data buffer
+   *
+   * @throws ServiceSpecificException with codes
+   *   - EMVCO_STATUS_INVALID_PARAMETER, if provided connection id is in-valid
+   *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not
+   * supported.
+   *
+   * @return Response APDU received from controller.
+   *         valid Response APDU received only when status is EMVCO_STATUS_OK
+   */
   ::ndk::ScopedAStatus transceive(const std::vector<uint8_t> &in_cmd_data,
                                   std::vector<uint8_t> *out_rsp_data) override;
-  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID) override;
+  /**
+   *
+   * @brief closes the smart card connected over TDA
+   * @param[in]  tdaID id of the tda slot to be closed
+   *
+   * @throws ServiceSpecificException with codes
+   *   - EMVCO_STATUS_INVALID_PARAMETER, if provided tdaID is in-valid
+   *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not
+   * supported.
+   *
+   * @return void
+   */
+  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID, bool in_standBy) override;
 };
 
 } // namespace emvco

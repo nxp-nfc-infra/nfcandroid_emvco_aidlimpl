@@ -37,25 +37,23 @@ import android.hardware.emvco.IEmvcoTDACallback;
  
 @VintfStability
 interface IEmvcoTDA {
+    
     /**
     *
-    * @brief Register EMVCo callback function to receive the events from a listener device.
+    * @brief Register callback function to receive the events needed for CT functionality.
     *
     * @note This function is must to call before invoking any other api.
     *
-    * @param[in]  *in_clientCallback has EMVCo client HAL callback
-    * @param[in]  *in_aidl_return indicates register status in return to caller
+    * @param[in]  *in_clientCallback has EMVCo contact card client HAL callback
     *
-    * @return ::ndk::ScopedAStatus indicates doRegisterEMVCoEventListener request processed by EMVCo HAL successfully or not
-	* @throws EX_UNSUPPORTED_OPERATION when the contact card feature is not supported.
+    * @return boolean returns true, if success and returns false, if failed to register
     */
-    boolean registerEMVCoEventListener(in IEmvcoClientCallback clientCallback);
-    
+    boolean registerEMVCoCTListener(in IEmvcoTDACallback in_clientCallback);
+
     /**
     *
     * @brief discoverTDA provides all the details of smart card connected over TDA
     *
-    * @param[in]  *in_clientCallback has EMVCo contact card client HAL callback
     *
     * @throws ServiceSpecificException with code
     *   - EMVCO_STATUS_FEATURE_NOT_SUPPORTED when the contact card feature is not supported.
@@ -63,13 +61,23 @@ interface IEmvcoTDA {
     * @return EmvcoTDAInfo[] returns all the smart card connected over TDA.
     *         valid emvcoTDAInfo received only when status is EMVCO_STATUS_OK
     */
-    EmvcoTDAInfo[] discoverTDA(in IEmvcoTDACallback in_clientCallback);
+    EmvcoTDAInfo[] discoverTDA();
 
     /**
     *
-    * @brief opens the smart card connected over TDA
+    * @brief opens the smart card connected over TDA. It internally calls
+    *        mode set enable and core connection create. mode set enable is 
+    *        called based on standBy flag.
+    *
+    * @note  Please gothrough closeTDA API to understand the usage of standBy flag
+    *
     * @param[in]  tdaID tda id of the smard card received through discoverTDA
+    * @param[in]  standBy false, opens the communication with TDA freshely and mode set enable command is sent to controller.
+    *         standBy true, resumes the communication from partial close and does not send mode set enable command to controller
     * 
+    * @note       use standby false, if you are opening the TDA for first time.
+    *             use standby true, if you are opening the TDA followed by partial close of another TDA
+    *
     *
     * @throws ServiceSpecificException with codes
     *   - EMVCO_STATUS_INVALID_PARAMETER, if provided tdaID is in-valid
@@ -78,7 +86,7 @@ interface IEmvcoTDA {
     * @return byte returns connection id of the smard card.
     *         valid connection id received only when status is EMVCO_STATUS_OK
     */
-    byte openTDA(in byte tdaID);
+    byte openTDA(in byte tdaID, boolean standBy);
 
     /**
     * @brief sends application data with the Device-Controller and 
@@ -99,8 +107,16 @@ interface IEmvcoTDA {
 
     /**
     *
-    * @brief closes the smart card connected over TDA
-    * @param[in]  tdaID id of the tda slot to be closed
+    * @brief closes the smart card connected over TDA.It internally calls
+    *        core connection close and mode set disable. mode set disable is 
+    *        called based on standBy flag.
+    *
+    * @param[in]  tdaID tda ID of the tda slot to be closed
+    * @param[in]  standBy true, closes the communication with TDA fully and allows the system to go in standbymode 
+    *         standBy false, closes the communication partially and does not allow the system to go in standbymode.
+    * 
+    * @note       use standby false, If you are closing the current TDA to open another TDA for communication then use false to get better performance
+    *             use standby true, If you are closing the current TDA to stop the communication with it fully and allow system to enter standby mode
     *
     * @throws ServiceSpecificException with codes
     *   - EMVCO_STATUS_INVALID_PARAMETER, if provided tdaID is in-valid
@@ -108,6 +124,6 @@ interface IEmvcoTDA {
     *
     * @return void
     */
-    void closeTDA(in byte tdaID);
+    void closeTDA(in byte tdaID, boolean standBy);
 
 }

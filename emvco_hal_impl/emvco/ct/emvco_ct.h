@@ -78,14 +78,14 @@ EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id);
 /**
  * @brief closes the contactcard.
  *
- * @param[in] connection_id id of the contact card to be closed
+ * @param[in] tda_id id of the contact card to be closed
  *
  * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
  * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
  * not supported
  *
  */
-EMVCO_STATUS close_tda_slot(uint8_t connection_id);
+EMVCO_STATUS close_tda_slot(uint8_t tda_id);
 
 /**
  *

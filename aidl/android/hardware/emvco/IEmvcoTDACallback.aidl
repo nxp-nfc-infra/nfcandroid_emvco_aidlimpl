@@ -18,7 +18,8 @@
 
 package android.hardware.emvco;
 
-import android.hardware.emvco.EmvcoTDAStatus;
+import android.hardware.emvco.EmvcoTDAInfo;
+import android.hardware.emvco.EmvcoState;
 /** \addtogroup EMVCO_HAL_API_INTERFACE
  *  @{
  */
@@ -33,13 +34,23 @@ interface IEmvcoTDACallback {
     /**
      * Used to inform the client about changes in the state of the TDA
      * 
-     * @param tdaID unique ID of the TDA
-     * @param tdaStaus indicates the current status of the smart card over TDA
+     * @param emvcoState state of EMVCo
+     * @param debugReason provides additional data why there was a change in state
+     *               This is used only for debugging purpose to understand
+     *               in-field issues.
+     *
+     */
+    oneway void onEMVCoCLStateChange(in EmvcoState emvcoState, in String debugReason);
+
+    /**
+     * Used to inform the client about changes in the state of the TDA
+     * 
+     * @param emvcoTDAInfo indicates the information of the the smart card connected over TDA
      * @param debugReason provides additional data why there was a change in state
      *               ex. initialization error, smart card removed etc
      *               This is used only for debugging purpose to understand
      *               in-field issues.
      */
-    oneway void onStateChange(in byte tdaID, in EmvcoTDAStatus tdaStaus, in String debugReason);
+    oneway void onTDAStateChange(in EmvcoTDAInfo emvcoTDAInfo, in String debugReason);
 }
 /** @}*/

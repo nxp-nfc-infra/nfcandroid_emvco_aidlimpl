@@ -36,30 +36,15 @@
 #include <string.h>
 
 extern tda_control_t g_tda_ctrl;
-extern fp_send_core_conn_create_t fp_send_core_conn_create;
-extern fp_send_core_conn_close_t fp_send_core_conn_close;
-extern fp_get_tda_type_t fp_get_tda_type;
+extern fp_ct_open_t fp_ct_open;
+extern fp_ct_close_t fp_ct_close;
 extern fp_transceive_t fp_transceive;
+extern fp_ct_discover_tda_t fp_ct_discover_tda;
 
 EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control) {
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
-  if (g_tda_ctrl.p_tda != NULL) {
-    tda_control->p_tda = g_tda_ctrl.p_tda;
-    tda_control->num_tda_supported = g_tda_ctrl.num_tda_supported;
-
-    LOG_EMVCOHAL_D("%s", __func__);
-    LOG_EMVCOHAL_D("%s, g_tda_ctrl.num_tda_supported:%d", __func__,
-                   g_tda_ctrl.num_tda_supported);
-    LOG_EMVCOHAL_D("%s, g_tda_ctrl.id:%d", __func__, g_tda_ctrl.p_tda->id);
-    LOG_EMVCOHAL_D("%s, g_tda_ctrl.id+1:%d", __func__,
-                   (g_tda_ctrl.p_tda + 1)->id);
-
-    LOG_EMVCOHAL_D("%s, tda_control.num_tda_supported:%d", __func__,
-                   tda_control->num_tda_supported);
-    LOG_EMVCOHAL_D("%s, tda_control.id:%d", __func__, tda_control->p_tda->id);
-    LOG_EMVCOHAL_D("%s, tda_control.id+1:%d", __func__,
-                   (tda_control->p_tda + 1)->id);
-    status = EMVCO_STATUS_OK;
+  if (fp_ct_discover_tda != NULL) {
+    status = fp_ct_discover_tda(tda_control);
   } else {
     LOG_EMVCOHAL_D("%s", __func__);
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
@@ -70,10 +55,10 @@ EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control) {
 EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id) {
   LOG_EMVCOHAL_D("%s", __func__);
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
-  if (fp_send_core_conn_create != NULL) {
-    *conn_id = fp_send_core_conn_create(tda_id);
-    LOG_EMVCOHAL_D("%s channel:%02x", __func__, status);
+  if (fp_ct_open != NULL) {
+    status = fp_ct_open(tda_id, conn_id);
   } else {
+    LOG_EMVCOHAL_D("%s", __func__);
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
   }
   return status;
@@ -82,8 +67,8 @@ EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id) {
 EMVCO_STATUS close_tda_slot(uint8_t tda_id) {
   LOG_EMVCOHAL_D("%s", __func__);
   EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
-  if (fp_send_core_conn_close != NULL) {
-    status = fp_send_core_conn_close(tda_id);
+  if (fp_ct_close != NULL) {
+    status = fp_ct_close(tda_id);
   } else {
     status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
   }

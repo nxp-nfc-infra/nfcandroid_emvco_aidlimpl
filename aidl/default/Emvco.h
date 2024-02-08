@@ -142,14 +142,16 @@ public:
                   int32_t in_length, const std::string &in_value,
                   ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
 
+  ::ndk::ScopedAStatus registerEMVCoCTListener(
+      const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback);
   ::ndk::ScopedAStatus
-  discoverTDA(const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
-              std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
+  discoverTDA(std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
                   *emvcoTDAInfo);
-  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, int8_t *out_connID);
+  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, bool in_standBy,
+                               int8_t *out_connID);
   ::ndk::ScopedAStatus transceive(const std::vector<uint8_t> &in_cmd_data,
-                                  const std::vector<uint8_t> *out_rsp_data);
-  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID);
+                                  std::vector<uint8_t> *out_rsp_data);
+  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID, bool in_standBy);
 
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);

@@ -306,17 +306,21 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus Emvco::discoverTDA(
-    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
-    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *_aidl_return) {
+::ndk::ScopedAStatus Emvco::registerEMVCoCTListener(
+    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   Emvco::mEmvcoTDACallback = in_clientCallback;
+  return ndk::ScopedAStatus::ok();
+}
+
+::ndk::ScopedAStatus Emvco::discoverTDA(
+    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   tda_control_t tda_control;
-  if (discover_tda(&tda_control) == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
-    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
-             __func__);
-    return ndk::ScopedAStatus::fromServiceSpecificError(
-        EMVCO_STATUS_FEATURE_NOT_SUPPORTED);
+  EMVCO_STATUS status = discover_tda(&tda_control);
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: status:%d", __func__, status);
+  if (status != EMVCO_STATUS_SUCCESS) {
+    return ndk::ScopedAStatus::fromServiceSpecificError(status);
   }
 
   std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> tdas;
@@ -412,8 +416,10 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus Emvco::openTDA(int8_t in_tdaID, int8_t *out_connID) {
+::ndk::ScopedAStatus Emvco::openTDA(int8_t in_tdaID, bool in_standBy,
+                                    int8_t *out_connID) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter in_tdaID:%d", __func__, in_tdaID);
+  (void)in_standBy;
   uint8_t connID = -1;
   uint8_t tdaID = (uint8_t)in_tdaID;
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter tdaID:%d", __func__, tdaID);
@@ -429,8 +435,9 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus Emvco::closeTDA(int8_t in_tdaID) {
+::ndk::ScopedAStatus Emvco::closeTDA(int8_t in_tdaID, bool in_standBy) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  (void)in_standBy;
   EMVCO_STATUS status = close_tda(in_tdaID);
   if (status == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
     ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
@@ -441,19 +448,52 @@ Emvco::setLed(::aidl::android::hardware::emvco::LedControl in_ledControl,
   return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus
-Emvco::transceive(const std::vector<uint8_t> &in_cmd_data,
-                  const std::vector<uint8_t> *out_rsp_data) {
+::ndk::ScopedAStatus Emvco::transceive(const std::vector<uint8_t> &in_cmd_data,
+                                       std::vector<uint8_t> *out_rsp_data) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  (void)in_cmd_data;
-  (void)out_rsp_data;
+  std::vector<uint8_t> result;
   tda_data cmd_apdu, rsp_apdu;
+  memset(&cmd_apdu, 0x00, sizeof(cmd_apdu));
+  memset(&rsp_apdu, 0x00, sizeof(rsp_apdu));
+  cmd_apdu.len = (uint32_t)in_cmd_data.size();
+  cmd_apdu.p_data = (uint8_t *)malloc(in_cmd_data.size() * sizeof(uint8_t));
+  memcpy(cmd_apdu.p_data, in_cmd_data.data(), cmd_apdu.len);
+
+  if (NULL == cmd_apdu.p_data) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: transceive failed to allocate the Memory!!!",
+             __func__);
+    /*Return empty vec*/
+    *out_rsp_data = result;
+    return ndk::ScopedAStatus::ok();
+  }
+
   EMVCO_STATUS status = transceive_tda(&cmd_apdu, &rsp_apdu);
   if (status == EMVCO_STATUS_FEATURE_NOT_SUPPORTED) {
     ALOGD_IF(EMVCO_HAL_DEBUG, "%s: EMVCO_STATUS_FEATURE_NOT_SUPPORTED",
              __func__);
     return ndk::ScopedAStatus::fromServiceSpecificError(
         EMVCO_STATUS_FEATURE_NOT_SUPPORTED);
+  }
+  result.resize(rsp_apdu.len);
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: resp size:%d", __func__, rsp_apdu.len);
+  memcpy(&result[0], rsp_apdu.p_data, rsp_apdu.len);
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: after memcpy resp size:%d", __func__,
+           rsp_apdu.len);
+
+  for (uint8_t data : result) {
+    ALOGD_IF(EMVCO_HAL_DEBUG, "%s: data:%02x \t", __func__, data);
+  }
+  *out_rsp_data = result;
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: after rsp_data assignment resp size:%d",
+           __func__, rsp_apdu.len);
+
+  if (NULL != cmd_apdu.p_data) {
+    free(cmd_apdu.p_data);
+    cmd_apdu.p_data = NULL;
+  }
+  if (NULL != rsp_apdu.p_data) {
+    free(rsp_apdu.p_data);
+    rsp_apdu.p_data = NULL;
   }
   return ndk::ScopedAStatus::ok();
 }

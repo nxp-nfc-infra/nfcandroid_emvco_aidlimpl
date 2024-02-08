@@ -37,25 +37,25 @@ namespace android {
 namespace hardware {
 namespace emvco {
 
-::ndk::ScopedAStatus EmvcoTDA::registerEMVCoEventListener(
-    const std::shared_ptr<
-        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
-        &in_clientCallback,
+::ndk::ScopedAStatus EmvcoTDA::registerEMVCoCTListener(
+    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
     bool *_aidl_return) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
-                                                          _aidl_return);
-}
-::ndk::ScopedAStatus EmvcoTDA::discoverTDA(
-    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
-    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->discoverTDA(in_clientCallback, emvcoTDAInfo);
+  (void)in_clientCallback;
+  (void)_aidl_return;
+  return ndk::ScopedAStatus::ok();
 }
 
-::ndk::ScopedAStatus EmvcoTDA::openTDA(int8_t in_tdaID, int8_t *out_connID) {
+::ndk::ScopedAStatus EmvcoTDA::discoverTDA(
+    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->openTDA(in_tdaID, out_connID);
+  return Emvco::getInstance()->discoverTDA(emvcoTDAInfo);
+}
+
+::ndk::ScopedAStatus EmvcoTDA::openTDA(int8_t in_tdaID, bool in_standBy,
+                                       int8_t *out_connID) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->openTDA(in_tdaID, in_standBy, out_connID);
 }
 ::ndk::ScopedAStatus
 EmvcoTDA::transceive(const std::vector<uint8_t> &in_cmd_data,
@@ -63,9 +63,9 @@ EmvcoTDA::transceive(const std::vector<uint8_t> &in_cmd_data,
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
   return Emvco::getInstance()->transceive(in_cmd_data, out_rsp_data);
 }
-::ndk::ScopedAStatus EmvcoTDA::closeTDA(int8_t in_tdaID) {
+::ndk::ScopedAStatus EmvcoTDA::closeTDA(int8_t in_tdaID, bool in_standBy) {
   ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->closeTDA(in_tdaID);
+  return Emvco::getInstance()->closeTDA(in_tdaID, in_standBy);
 }
 
 } // namespace emvco

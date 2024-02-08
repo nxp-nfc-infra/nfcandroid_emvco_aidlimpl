@@ -72,6 +72,8 @@ typedef void(control_granted_callback_t)();
 #define NCI_MT_MASK 0xE0
 #define NCI_OID_MASK 0x3F
 
+#define NCI_CONN_ID_MASK 0x0F
+
 #define NXP_MAX_CONFIG_STRING_LEN 260
 #define NCI_HEADER_SIZE 3
 
@@ -319,7 +321,8 @@ int close_app_data_channel(bool shutdown);
  * @return          int It returns number of bytes successfully written to NFCC.
  *
  ******************************************************************************/
-int send_app_data_internal(uint16_t data_len, const uint8_t *p_data);
+int send_app_data_internal(uint16_t data_len, const uint8_t *p_data,
+                           bool is_tda);
 
 /**
  *
@@ -331,11 +334,12 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data);
  *
  * @param[in]       data_len length of the data to be written
  * @param[in]       p_data actual data to be written
+ * @param[in]       is_tda specifies data received from CT or CL
  *
  * @return          int status of the write operation performed
  *
  */
-int send_app_data(uint16_t data_len, const uint8_t *p_data);
+int send_app_data(uint16_t data_len, const uint8_t *p_data, bool is_tda);
 
 /**
  * @brief           This is the actual function which is being called by
@@ -371,13 +375,15 @@ void get_set_config(const char *p_nxp_conf);
 void ct_process_emvco_mode_rsp_impl(osal_transact_info_t *pTransactionInfo);
 
 typedef void (*fp_init_ecp_vas_t)();
-typedef void (*fp_init_ct_ext_t)();
-typedef void (*fp_de_init_ct_ext_t)();
+typedef EMVCO_STATUS (*fp_init_ct_ext_t)();
+typedef EMVCO_STATUS (*fp_de_init_ct_ext_t)();
 typedef void (*fp_ct_process_emvco_mode_rsp_t)();
-typedef int (*fp_send_core_conn_create_t)();
-typedef int (*fp_send_core_conn_close_t)();
-typedef int (*fp_get_tda_type_t)();
-typedef int (*fp_transceive_t)();
-typedef int (*fp_read_tda_data_complete_t)();
+typedef EMVCO_STATUS (*fp_ct_open_t)(uint8_t, uint8_t *);
+typedef EMVCO_STATUS (*fp_ct_close_t)();
+typedef EMVCO_STATUS (*fp_get_tda_channel_num_t)();
+typedef EMVCO_STATUS (*fp_transceive_t)();
+
+typedef EMVCO_STATUS (*fp_ct_discover_tda_t)(tda_control_t *);
+typedef EMVCO_STATUS (*fp_is_ct_data_credit_received_t)();
 
 #endif /* _EMVCO_DM_H_ */

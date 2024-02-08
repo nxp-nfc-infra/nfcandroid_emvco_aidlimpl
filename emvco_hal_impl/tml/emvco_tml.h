@@ -80,10 +80,6 @@
  * successfully.
  *     - EMVCO_STATUS_FAILED                     Failed to wait on Read/Write
  * operation.
- *     - EMVCO_STATUS_INSUFFICIENT_STORAGE       Not enough memory to store data
- * in case of read.
- *     - EMVCO_STATUS_BOARD_COMMUNICATION_ERROR  Failure to Read/Write from the
- * file or timeout.
  */
 
 typedef struct osal_transact_info {

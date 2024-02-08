@@ -213,7 +213,11 @@ EMVCO_STATUS start_emvco_mode() {
     fp_init_ecp_vas();
   }
   if (fp_init_ct_ext != NULL) {
-    fp_init_ct_ext();
+    EMVCO_STATUS status = fp_init_ct_ext();
+    if (status != EMVCO_STATUS_SUCCESS) {
+      LOG_EMVCOHAL_D("CT command Failed. start CL");
+      ct_init_completed();
+    }
   } else {
     LOG_EMVCOHAL_D("CT not supported, start CL");
     ct_init_completed();
@@ -229,7 +233,10 @@ void ct_init_completed() {
 EMVCO_STATUS stop_emvco_mode() {
   LOG_EMVCOHAL_D("%s", __func__);
   if (fp_de_init_ct_ext != NULL) {
-    fp_de_init_ct_ext();
+    EMVCO_STATUS status = fp_de_init_ct_ext();
+    if (status != EMVCO_STATUS_SUCCESS) {
+      LOG_EMVCOHAL_D("%s Failed to de-init CT", __func__);
+    }
   }
   led_switch_control(GREEN_LED_OFF);
   int hal_close_status = close_app_data_channel(true);

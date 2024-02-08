@@ -51,7 +51,7 @@ int open_emvco_app_data_channel(
 
 int send_emvco_app_data(uint16_t data_len, const uint8_t *p_data) {
   LOG_EMVCOHAL_D("send_emvco_app_data");
-  return send_app_data(data_len, p_data);
+  return send_app_data(data_len, p_data, false);
 }
 
 int close_emvco_app_data_channel(bool isShutdown) {

@@ -36,5 +36,6 @@
 package android.hardware.emvco;
 @VintfStability
 interface IEmvcoTDACallback {
-  oneway void onStateChange(in byte tdaID, in android.hardware.emvco.EmvcoTDAStatus tdaStaus, in String debugReason);
+  oneway void onEMVCoCLStateChange(in android.hardware.emvco.EmvcoState emvcoState, in String debugReason);
+  oneway void onTDAStateChange(in android.hardware.emvco.EmvcoTDAInfo emvcoTDAInfo, in String debugReason);
 }

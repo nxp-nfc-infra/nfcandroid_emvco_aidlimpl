@@ -147,11 +147,14 @@ typedef struct tda_control {
   uint8_t num_tda_supported;
   uint8_t tda_state;
   uint8_t last_tda_id_of_channel;
+  sem_t sync_tda_write;
   pthread_mutex_t tda_data_lock;
+  uint16_t ret_status;
 } tda_control_t;
 
 typedef struct mode_set_control {
-  uint8_t id;
+  uint8_t tda_id;
+  uint8_t mode;
   uint8_t flag;
   uint8_t curr_index;
 } mode_set_control_t;

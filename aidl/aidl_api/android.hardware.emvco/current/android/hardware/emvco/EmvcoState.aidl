@@ -34,8 +34,10 @@
 // later when a module using the interface is updated, e.g., Mainline modules.
 
 package android.hardware.emvco;
-@VintfStability
-interface IEmvcoTDACallback {
-  oneway void onEMVCoCLStateChange(in android.hardware.emvco.EmvcoState emvcoState, in String debugReason);
-  oneway void onTDAStateChange(in android.hardware.emvco.EmvcoTDAInfo emvcoTDAInfo, in String debugReason);
+@Backing(type="int") @VintfStability
+enum EmvcoState {
+  ON = 0,
+  CL_TYPE_A_B_T3T_CARD_DETECTED = 1,
+  CL_TYPE_A_B_T3T_CARD_REMOVED = 2,
+  OFF = 3,
 }

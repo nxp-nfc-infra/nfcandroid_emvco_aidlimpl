@@ -38,6 +38,7 @@
 #ifndef NCI_DEFS_H
 #define NCI_DEFS_H
 
+#include <nci_parser.h>
 #include <stdint.h>
 
 /* Define the message header size for all NCI Commands and Notifications.
