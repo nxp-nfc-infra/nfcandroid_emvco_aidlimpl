@@ -52,5 +52,5 @@ package android.hardware.emvco;
 interface IEmvco {
   android.hardware.emvco.IEmvcoProfileDiscovery getEmvcoProfileDiscoveryInterface();
   android.hardware.emvco.IEmvcoContactlessCard getEmvcoContactlessCard();
-  android.hardware.emvco.IEmvcoContactCard getEmvcoContactCard();
+  android.hardware.emvco.IEmvcoTDA getEmvcoTDA();
 }

@@ -37,6 +37,7 @@
 #include <emvco_nci_ext.h>
 #include <emvco_ncif.h>
 #include <emvco_util.h>
+#include <nci_parser.h>
 
 /* NCI HAL Control structure */
 nci_hal_ctrl_t nci_hal_ctrl;
@@ -49,26 +50,22 @@ static uint8_t *get_nci_loopback_data(uint8_t pbf, uint8_t *p_data,
 uint8_t send_core_reset(uint8_t reset_type) {
   uint8_t *pp, *p;
   int len = NCI_MSG_HDR_SIZE + NCI_CORE_PARAM_SIZE_RESET;
-  p = (uint8_t *)osal_malloc(len);
-  if (p == NULL)
-    return (NCI_STATUS_FAILED);
+  uint8_t cmd_buf[len];
+  p = cmd_buf;
   pp = p;
 
   NCI_MSG_BLD_HDR0(pp, MT_CMD, NCI_GID_CORE);
   NCI_MSG_BLD_HDR1(pp, MSG_CORE_RESET);
   UINT8_TO_STREAM(pp, NCI_CORE_PARAM_SIZE_RESET);
   UINT8_TO_STREAM(pp, reset_type);
-  send_ext_cmd(len, p);
-  free(p);
-  return (NCI_STATUS_OK);
+  return send_ext_cmd(len, p);
 }
 
 uint8_t send_core_init(uint8_t nci_version) {
   uint8_t *pp, *p;
   int len = NCI_MSG_HDR_SIZE + NCI_CORE_PARAM_SIZE_INIT(nci_version);
-  p = (uint8_t *)osal_malloc(len);
-  if (p == NULL)
-    return (NCI_STATUS_FAILED);
+  uint8_t cmd_buf[len];
+  p = cmd_buf;
   pp = p;
 
   NCI_MSG_BLD_HDR0(pp, MT_CMD, NCI_GID_CORE);
@@ -78,9 +75,7 @@ uint8_t send_core_init(uint8_t nci_version) {
     UINT8_TO_STREAM(pp, NCI2_0_CORE_INIT_CMD_BYTE_0);
     UINT8_TO_STREAM(pp, NCI2_0_CORE_INIT_CMD_BYTE_1);
   }
-  send_ext_cmd(len, p);
-  free(p);
-  return (NCI_STATUS_OK);
+  return send_ext_cmd(len, p);
 }
 
 uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
@@ -89,9 +84,8 @@ uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   uint8_t num = 0, ulen, size, *pt;
   int len = NCI_MSG_HDR_SIZE + tlv_size + 1;
 
-  p = (uint8_t *)osal_malloc(len);
-  if (p == NULL)
-    return (NCI_STATUS_FAILED);
+  uint8_t cmd_buf[len];
+  p = cmd_buf;
 
   pp = (uint8_t *)(p);
 
@@ -124,9 +118,12 @@ uint8_t send_core_set_config(uint8_t *p_param_tlvs, uint8_t tlv_size) {
   UINT8_TO_STREAM(pp, num);
   ARRAY_TO_STREAM(pp, p_param_tlvs, tlv_size);
 
-  send_ext_cmd(len, p);
-  free(p);
-  return (NCI_STATUS_OK);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+
+  if (0 == send_app_data_unlocked(len, p)) {
+    status = EMVCO_STATUS_FAILED;
+  }
+  return status;
 }
 
 uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
@@ -158,13 +155,18 @@ uint8_t send_discover_cmd(uint8_t num, tEMVCO_DISCOVER_PARAMS *p_param) {
   *p_disc_size = (uint8_t)((pp - p_start) - NCI_MSG_HDR_SIZE);
   len = NCI_MSG_HDR_SIZE + (*p_disc_size);
 
-  send_app_data_unlocked(len, p_start);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+
+  if (0 == send_app_data_unlocked(len, p_start)) {
+    status = EMVCO_STATUS_FAILED;
+  }
   free(p);
-  return (NCI_STATUS_OK);
+  return status;
 }
 
 uint8_t send_proprietary_act_cmd(uint16_t data_len, uint8_t *p_data) {
-  send_ext_cmd(data_len, p_data);
+  LOG_EMVCOHAL_D("%s withsend_app_data_unlocked \n", __func__);
+  send_app_data_unlocked(data_len, p_data);
   return (NCI_STATUS_OK);
 }
 
@@ -240,7 +242,7 @@ retry:
       usleep(1000 * 10);
       goto retry;
     } else {
-      LOG_EMVCOHAL_E("write_unlocked failed - controller Maybe in Standby Mode "
+      LOG_EMVCOHAL_E("Error in I2C Write "
                      "(max count = "
                      "0x%x)",
                      nci_hal_ctrl.retry_cnt);
@@ -301,9 +303,8 @@ void send_emvco_data(uint8_t *p_data, uint16_t data_len) {
 uint8_t send_deactivate_cmd(uint8_t de_act_type) {
   uint8_t *pp, *p;
   int len = NCI_MSG_HDR_SIZE + NCI_DISCOVER_PARAM_SIZE_DEACT;
-  p = (uint8_t *)osal_malloc(len);
-  if (p == NULL)
-    return (NCI_STATUS_FAILED);
+  uint8_t cmd_buf[len];
+  p = cmd_buf;
   pp = p;
 
   NCI_MSG_BLD_HDR0(pp, MT_CMD, NCI_GID_RF_MANAGE);
@@ -311,7 +312,10 @@ uint8_t send_deactivate_cmd(uint8_t de_act_type) {
   UINT8_TO_STREAM(pp, NCI_DISCOVER_PARAM_SIZE_DEACT);
   UINT8_TO_STREAM(pp, de_act_type);
 
-  send_app_data_unlocked(len, p);
-  free(p);
-  return (NCI_STATUS_OK);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+
+  if (0 == send_app_data_unlocked(len, p)) {
+    status = EMVCO_STATUS_FAILED;
+  }
+  return status;
 }

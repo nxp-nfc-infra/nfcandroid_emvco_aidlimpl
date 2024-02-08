@@ -119,17 +119,6 @@ EMVCO_STATUS start_emvco_mode();
 EMVCO_STATUS stop_emvco_mode();
 
 /**
- * @brief process the NCI response and notification and ensures to do EMVCo
- * polling from EMVCo mode switch start.
- *
- * @param[in] osal_transact_info NCI response or ntf to be processed
- *
- * @return EMVCO_STATUS indicates success or failure
- *
- */
-EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *osal_transact_info);
-
-/**
  * @brief starts/stops the EMVCo mode with the Device-Controller.
  *
  * @param[in] in_disc_mask EMVCo polling technologies are configured through
@@ -173,6 +162,8 @@ void handle_nfc_state_change(int32_t nfc_state);
  * to call this API
  */
 EMVCO_STATUS rf_deactivate(uint8_t deactivation_type);
+
+void ct_init_completed();
 
 /** @}*/
 #endif /* _EMVCO_CL_H_ */

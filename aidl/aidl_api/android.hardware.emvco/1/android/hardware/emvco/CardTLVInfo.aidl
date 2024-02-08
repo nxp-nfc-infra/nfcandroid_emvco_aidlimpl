@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2023 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,25 +29,28 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
-#include "EmvcoContactCard.h"
-#include "Emvco.h"
+///////////////////////////////////////////////////////////////////////////////
+// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
+///////////////////////////////////////////////////////////////////////////////
 
-namespace aidl {
-namespace android {
-namespace hardware {
-namespace emvco {
+// This file is a snapshot of an AIDL file. Do not edit it manually. There are
+// two cases:
+// 1). this is a frozen version file - do not edit this in any case.
+// 2). this is a 'current' file. If you make a backwards compatible change to
+//     the interface (from the latest frozen version), the build system will
+//     prompt you to update this file with `m <name>-update-api`.
+//
+// You must not make a backward incompatible change to any AIDL file built
+// with the aidl_interface module type with versions property set. The module
+// type is used to build AIDL files in a way that they can be used across
+// independently updatable components of the system. If a device is shipped
+// with such a backward incompatible change, it has a high risk of breaking
+// later when a module using the interface is updated, e.g., Mainline modules.
 
-::ndk::ScopedAStatus EmvcoContactCard::registerEMVCoEventListener(
-    const std::shared_ptr<
-        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
-        &in_clientCallback,
-    bool *_aidl_return) {
-  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
-  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
-                                                          _aidl_return);
+package android.hardware.emvco;
+@VintfStability
+parcelable CardTLVInfo {
+  byte type;
+  byte length;
+  byte[] value;
 }
-
-} // namespace emvco
-} // namespace hardware
-} // namespace android
-} // namespace aidl

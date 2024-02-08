@@ -99,5 +99,16 @@ EMVCO_STATUS send_ext_cmd(uint16_t p_len, uint8_t *p_cmd);
  ******************************************************************************/
 EMVCO_STATUS send_app_data_ext(uint16_t *cmd_len, uint8_t *p_cmd_data,
                                uint16_t *rsp_len, uint8_t *p_rsp_data);
+
+/**
+ * @brief process the NCI response and notification and ensures to do EMVCo
+ * polling from EMVCo mode switch start.
+ *
+ * @param[in] osal_transact_info NCI response or ntf to be processed
+ *
+ * @return EMVCO_STATUS indicates success or failure
+ *
+ */
+EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *osal_transact_info);
 /** @}*/
 #endif /* _PHNXPNICHAL_EXT_H_ */

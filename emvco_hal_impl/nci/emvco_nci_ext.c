@@ -30,6 +30,7 @@
  *
  ******************************************************************************/
 #include "emvco_cl.h"
+#include "emvco_ncif.h"
 #include <emvco_config.h>
 #include <emvco_dm.h>
 #include <emvco_log.h>
@@ -67,6 +68,9 @@ extern nci_profile_Control_t nxpprofile_ctrl;
 extern tml_emvco_context_t *gptml_emvco_context;
 // extern uint32_t cleanup_timer;
 extern bool emvco_debug_enabled;
+extern emvco_args_t *modeSwitchArgs;
+extern fp_init_ct_ext_t fp_init_ct_ext;
+
 uint8_t icode_detected = 0x00;
 uint8_t icode_send_eof = 0x00;
 uint8_t nfcdep_detected = 0x00;
@@ -915,4 +919,72 @@ static void hal_extns_write_rsp_timeout_cb(uint32_t timerId, void *p_context) {
   SEM_POST(&(nci_hal_ctrl.ext_cb_data));
 
   return;
+}
+
+void static send_poll_event_to_upper_layer() {
+  LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
+  nci_hal_ctrl.frag_rsp.data_pos = 0;
+  RESET_CHAINED_DATA();
+
+  modeSwitchArgs->current_discovery_mode = EMVCO;
+  lib_emvco_message_t msg;
+  msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
+  msg.p_msg_data = NULL;
+  memset(msg.data, 0, sizeof(msg.data));
+  msg.size = 0;
+  tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
+}
+
+EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp");
+  uint8_t *p_ntf = pTransactionInfo->p_buff;
+  uint16_t p_len = pTransactionInfo->w_length;
+  if (!modeSwitchArgs->is_start_emvco) {
+    return EMVCO_STATUS_FAILED;
+  }
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp data_len:%d "
+                 "modeSwitchArgs->is_start_emvco:%d",
+                 p_len, modeSwitchArgs->is_start_emvco);
+  uint8_t msg_type, pbf, group_id, op_code, *p_data;
+
+  p_data = p_ntf;
+  NCI_MSG_PRS_HDR0(p_data, msg_type, pbf, group_id);
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp msg_type:%d group_id:%d ", msg_type,
+                 group_id);
+
+  NCI_MSG_PRS_HDR1(p_data, op_code);
+  LOG_EMVCOHAL_D("process_emvco_mode_rsp op_code:%d", op_code);
+  p_data = p_ntf;
+
+  ct_process_emvco_mode_rsp_impl(pTransactionInfo);
+
+  switch (msg_type) {
+  case NCI_MSG_TYPE_RSP:
+    switch (group_id) {
+    case NCI_GID_PROP:
+      switch (op_code) {
+      case MSG_CORE_PROPRIETARY_RSP: {
+        if (p_len == 8) {
+          uint8_t num_params;
+          tEMVCO_DISCOVER_PARAMS disc_params[MAX_DISC_PARAMS];
+          num_params = get_rf_discover_config(modeSwitchArgs->emvco_config,
+                                              disc_params, MAX_DISC_PARAMS);
+          LOG_EMVCOHAL_D("RFDiscover num_params:%d", num_params);
+          send_discover_cmd(num_params, disc_params);
+        }
+        break;
+      }
+      }
+      break;
+    case NCI_GID_RF_MANAGE:
+      switch (op_code) {
+      case RF_DEACTIVATE_NTF:
+      case MSG_RF_DISCOVER_RSP: {
+        send_poll_event_to_upper_layer();
+      } break;
+      }
+    }
+    break;
+  }
+  return EMVCO_STATUS_SUCCESS;
 }

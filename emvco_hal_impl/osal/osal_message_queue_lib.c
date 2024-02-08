@@ -203,7 +203,6 @@ intptr_t osal_msg_snd(intptr_t msqid, lib_emvco_message_t *msg, int msgflg) {
     pQueue->p_items = pNew;
   }
   pthread_mutex_unlock(&pQueue->n_critical_section_mutex);
-
   sem_post(&pQueue->n_process_semaphore);
 
   return 0;

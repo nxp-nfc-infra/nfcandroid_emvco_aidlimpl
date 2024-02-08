@@ -36,8 +36,9 @@
  *   card functionality.
  *  @{
  */
-#include <aidl/android/hardware/emvco/BnEmvcoContactCard.h>
+#include <aidl/android/hardware/emvco/BnEmvcoTDA.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
+#include <aidl/android/hardware/emvco/IEmvcoTDACallback.h>
 #include <android-base/logging.h>
 #include <log/log.h>
 
@@ -46,7 +47,7 @@ namespace android {
 namespace hardware {
 namespace emvco {
 
-class EmvcoContactCard : public BnEmvcoContactCard {
+class EmvcoTDA : public BnEmvcoTDA {
 
 public:
   /**
@@ -65,6 +66,14 @@ public:
   ::ndk::ScopedAStatus registerEMVCoEventListener(
       const std::shared_ptr<IEmvcoClientCallback> &in_clientCallback,
       bool *_aidl_return) override;
+  ::ndk::ScopedAStatus
+  discoverTDA(const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+              std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
+                  *emvcoTDAInfo) override;
+  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, int8_t *out_connID) override;
+  ::ndk::ScopedAStatus transceive(const std::vector<uint8_t> &in_cmd_data,
+                                  std::vector<uint8_t> *out_rsp_data) override;
+  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID) override;
 };
 
 } // namespace emvco

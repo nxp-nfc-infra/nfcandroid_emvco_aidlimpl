@@ -60,7 +60,8 @@ interface IEmvcoProfileDiscovery {
     *
     * Once the @ref open "Application Data Channel is "
     * established, the Application may send start the EMVCo mode with the
-    * Device-Controller.
+    * Device-Controller.Ensure to call setByteConfig with POLL_PROFILE_SEL and 0b00000010 
+    * combination to run EMVCo digital mode
     *
     * @param[in] in_config EMVCo polling technologies are configured through this parameter
     * @param[in] in_isStartEMVCo specifies to start or stop the EMVCo mode

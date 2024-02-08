@@ -38,6 +38,7 @@
  */
 
 #include <emvco_hal.h>
+#include <emvco_tml.h>
 #include <emvco_util.h>
 #include <nci_defs.h>
 #include <pthread.h>
@@ -364,6 +365,19 @@ void enable_tml_read();
 int open_app_data_channelImpl(emvco_stack_callback_t *p_cback,
                               emvco_stack_data_callback_t *p_data_cback,
                               emvco_state_change_callback_t *p_nfc_state_cback);
+
 void get_set_config(const char *p_nxp_conf);
+
+void ct_process_emvco_mode_rsp_impl(osal_transact_info_t *pTransactionInfo);
+
 typedef void (*fp_init_ecp_vas_t)();
+typedef void (*fp_init_ct_ext_t)();
+typedef void (*fp_de_init_ct_ext_t)();
+typedef void (*fp_ct_process_emvco_mode_rsp_t)();
+typedef int (*fp_send_core_conn_create_t)();
+typedef int (*fp_send_core_conn_close_t)();
+typedef int (*fp_get_tda_type_t)();
+typedef int (*fp_transceive_t)();
+typedef int (*fp_read_tda_data_complete_t)();
+
 #endif /* _EMVCO_DM_H_ */

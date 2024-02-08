@@ -41,17 +41,18 @@
 /** \addtogroup EMVCO_STACK_HAL_API_INTERFACE
  *  @brief interface to EMVCo mode switch, contact and contact interfaces.
  *           The android device, which supports EMVCo feature, implements
- * IEmvcoProfileDiscovery, IEmvcoContactlessCard, IEmvcoContactCard interface as
+ * IEmvcoProfileDiscovery, IEmvcoContactlessCard, IEmvcoTDA interface as
  * @ref EMVCo_POLLER_LIB to provide functionalities to Android application.
  *  @{
  */
 
-#include "EmvcoContactCard.h"
 #include "EmvcoContactlessCard.h"
 #include "EmvcoProfileDiscovery.h"
+#include "EmvcoTDA.h"
 #include <aidl/android/hardware/emvco/BnEmvco.h>
 #include <aidl/android/hardware/emvco/DiscoveryMode.h>
 #include <aidl/android/hardware/emvco/IEmvcoClientCallback.h>
+#include <aidl/android/hardware/emvco/IEmvcoTDACallback.h>
 #include <aidl/android/hardware/emvco/INfcStateChangeRequestCallback.h>
 #include <android-base/logging.h>
 #include <log/log.h>
@@ -97,12 +98,12 @@ public:
    *
    * @param  none
    *
-   * @return IEmvcoContactCard EMVCo contact HAL interface
+   * @return IEmvcoTDA EMVCo contact HAL interface
    *
    */
-  ::ndk::ScopedAStatus getEmvcoContactCard(
-      std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoContactCard>
-          *_aidl_return) override;
+  ::ndk::ScopedAStatus
+  getEmvcoTDA(std::shared_ptr<::aidl::android::hardware::emvco::IEmvcoTDA>
+                  *_aidl_return) override;
   ::ndk::ScopedAStatus onNfcStateChange(NfcState in_nfcState);
 
   ::ndk::ScopedAStatus registerEMVCoEventListener(
@@ -141,6 +142,15 @@ public:
                   int32_t in_length, const std::string &in_value,
                   ::aidl::android::hardware::emvco::EmvcoStatus *_aidl_return);
 
+  ::ndk::ScopedAStatus
+  discoverTDA(const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+              std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo>
+                  *emvcoTDAInfo);
+  ::ndk::ScopedAStatus openTDA(int8_t in_tdaID, int8_t *out_connID);
+  ::ndk::ScopedAStatus transceive(const std::vector<uint8_t> &in_cmd_data,
+                                  const std::vector<uint8_t> *out_rsp_data);
+  ::ndk::ScopedAStatus closeTDA(int8_t in_tdaID);
+
   static void eventCallback(uint8_t event, uint8_t status);
   static void dataCallback(uint16_t data_len, uint8_t *p_data);
   static std::shared_ptr<Emvco> getInstance();
@@ -155,8 +165,9 @@ private:
   static std::mutex callbacks_lock_;
   ndk::ScopedAIBinder_DeathRecipient death_recipient_;
   std::shared_ptr<IEmvcoProfileDiscovery> nxp_emvco_profile_discovery_;
-  std::shared_ptr<IEmvcoContactCard> nxp_emvco_contact_card_;
+  std::shared_ptr<IEmvcoTDA> nxp_emvco_tda_;
   std::shared_ptr<IEmvcoContactlessCard> nxp_emvco_contactless_card;
+  static std::shared_ptr<IEmvcoTDACallback> mEmvcoTDACallback;
 
   void registerCallback(const std::shared_ptr<IEmvcoClientCallback> &callback);
   void

@@ -47,6 +47,8 @@ extern tml_emvco_context_t *gptml_emvco_context;
 extern nci_hal_ctrl_t nci_hal_ctrl;
 emvco_args_t *modeSwitchArgs;
 extern fp_init_ecp_vas_t fp_init_ecp_vas;
+extern fp_init_ct_ext_t fp_init_ct_ext;
+extern fp_de_init_ct_ext_t fp_de_init_ct_ext;
 
 pthread_mutex_t emvco_lock = PTHREAD_MUTEX_INITIALIZER;
 
@@ -205,93 +207,36 @@ uint8_t get_rf_discover_config(tDISC_TECH_PROTO_MASK dm_disc_mask,
 }
 
 EMVCO_STATUS start_emvco_mode() {
-  LOG_EMVCOHAL_D("%s", __func__);
+  LOG_EMVCOHAL_D("%s start", __func__);
   send_dynamic_set_config();
   if (fp_init_ecp_vas != NULL) {
     fp_init_ecp_vas();
   }
-  uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
-  send_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
+  if (fp_init_ct_ext != NULL) {
+    fp_init_ct_ext();
+  } else {
+    LOG_EMVCOHAL_D("CT not supported, start CL");
+    ct_init_completed();
+  }
+  LOG_EMVCOHAL_D("%s end", __func__);
   return EMVCO_STATUS_SUCCESS;
 }
-
+void ct_init_completed() {
+  LOG_EMVCOHAL_D("%s", __func__);
+  uint8_t cmd_prop_act[] = {0x2F, 0x02, 0x00};
+  send_proprietary_act_cmd(sizeof(cmd_prop_act), cmd_prop_act);
+}
 EMVCO_STATUS stop_emvco_mode() {
-  LOG_EMVCOHAL_D("stop_emvco_mode nci_stop_discovery without modeswitch");
+  LOG_EMVCOHAL_D("%s", __func__);
+  if (fp_de_init_ct_ext != NULL) {
+    fp_de_init_ct_ext();
+  }
   led_switch_control(GREEN_LED_OFF);
   int hal_close_status = close_app_data_channel(true);
   LOG_EMVCOHAL_D("%s EMVCO HAL close status:%d", __func__, hal_close_status);
 
   modeSwitchArgs->current_discovery_mode = UNKNOWN;
   (*m_p_nfc_state_cback)(true);
-  return EMVCO_STATUS_SUCCESS;
-}
-void static send_poll_event_to_upper_layer() {
-  LOG_EMVCOHAL_D("EMVCO_POLLING_STARTED_MSG");
-  nci_hal_ctrl.frag_rsp.data_pos = 0;
-  RESET_CHAINED_DATA();
-
-  modeSwitchArgs->current_discovery_mode = EMVCO;
-  lib_emvco_message_t msg;
-  msg.e_msgType = EMVCO_POLLING_STARTED_MSG;
-  msg.p_msg_data = NULL;
-  memset(msg.data, 0, sizeof(msg.data));
-  msg.size = 0;
-  msg.w_status = EMVCO_STATUS_SUCCESS;
-  tml_deferred_call(gptml_emvco_context->dw_callback_thread_id, &msg);
-}
-
-EMVCO_STATUS process_emvco_mode_rsp(osal_transact_info_t *pTransactionInfo) {
-  LOG_EMVCOHAL_D("process_emvco_mode_rsp");
-  uint8_t *p_ntf = pTransactionInfo->p_buff;
-  uint16_t p_len = pTransactionInfo->w_length;
-  if (!modeSwitchArgs->is_start_emvco) {
-    return EMVCO_STATUS_FAILED;
-  }
-  LOG_EMVCOHAL_D("process_emvco_mode_rsp data_len:%d "
-                 "modeSwitchArgs->is_start_emvco:%d",
-                 p_len, modeSwitchArgs->is_start_emvco);
-  uint8_t msg_type, pbf, group_id, op_code, *p_data;
-
-  p_data = p_ntf;
-  NCI_MSG_PRS_HDR0(p_data, msg_type, pbf, group_id);
-  LOG_EMVCOHAL_D("process_emvco_mode_rsp msg_type:%d group_id:%d ", msg_type,
-                 group_id);
-
-  if (!(NCI_GID_CORE == group_id || NCI_GID_PROP == group_id ||
-        NCI_GID_RF_MANAGE == group_id)) {
-    return EMVCO_STATUS_FAILED;
-  }
-  NCI_MSG_PRS_HDR1(p_data, op_code);
-  LOG_EMVCOHAL_D("process_emvco_mode_rsp op_code:%d", op_code);
-  p_data = p_ntf;
-
-  switch (msg_type) {
-  case NCI_MSG_TYPE_RSP:
-    switch (group_id) {
-    case NCI_GID_PROP:
-      switch (op_code) {
-      case MSG_CORE_PROPRIETARY_RSP:
-        if (p_len == 8) {
-          uint8_t num_params;
-          tEMVCO_DISCOVER_PARAMS disc_params[MAX_DISC_PARAMS];
-          num_params = get_rf_discover_config(modeSwitchArgs->emvco_config,
-                                              disc_params, MAX_DISC_PARAMS);
-          LOG_EMVCOHAL_D("RFDiscover num_params:%d", num_params);
-          send_discover_cmd(num_params, disc_params);
-        }
-        break;
-      }
-      break;
-    case NCI_GID_RF_MANAGE:
-      switch (op_code) {
-      case RF_DEACTIVATE_NTF:
-      case MSG_RF_DISCOVER_RSP: {
-        send_poll_event_to_upper_layer();
-      } break;
-      }
-    }
-    break;
-  }
   return EMVCO_STATUS_SUCCESS;
 }
 

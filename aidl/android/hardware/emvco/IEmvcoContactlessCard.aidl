@@ -45,9 +45,6 @@ import android.hardware.emvco.EmvcoStatus;
   *
   * The android application calls this interface to utilize EMVCo
   * Contact less functionality of the underlying device.
-  * The android device, which supports Wireless Charging, implements INxpEmvcoContactlessCard
-  * interface as @ref EMVCo_POLLER_LIB "EMVCo HAL" to provide functionalities to
-  * Android application.
   *
   */
 
@@ -85,7 +82,8 @@ interface IEmvcoContactlessCard {
     *
     * Once the @ref open "Application Data Channel is "
     * established, the Application may send start the EMVCo mode with the
-    * Device-Controller.
+    * Device-Controller.Ensure to call setByteConfig with POLL_PROFILE_SEL and 0b00000010 
+    * combination to run EMVCo digital mode
     *
     * @param[in] in_config EMVCo polling technologies are configured through this parameter
     * @param[in] in_isStartEMVCo specifies to start or stop the EMVCo mode
@@ -101,7 +99,7 @@ interface IEmvcoContactlessCard {
     * @param[in] in_deactivationType specifies the state to be in after RF deactivation
     *
     * @return EmvcoStatus returns EMVCO_STATUS_OK, if command processed successfully and returns EMVCO_STATUS_FAILED, if command
-	*         is not processed due to in-valid state. EMVCo mode should be ON to call this API
+    *         is not processed due to in-valid state. EMVCo mode should be ON to call this API
     *
     */
     EmvcoStatus stopRFDisovery(in DeactivationType deactivationType);

@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,13 +32,75 @@
 
 #ifndef _EMVCO_CT_H_
 #define _EMVCO_CT_H_
-/** \addtogroup EMVCO_STACK_CONTACT_LESS_CARD_API_INTERFACE
- *  @brief  interface to perform the EMVCo mode switch.
+/** \addtogroup EMVCO_STACK_CONTACT_CARD_API_INTERFACE
+ *  @brief  interface to interact with CT interfaces.
  *  @{
  */
+
+#include <emvco_common.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+extern tda_control_t g_tda_ctrl;
+
+tda_type_t g_tda_type;
+
+/**
+ * @brief discovers the smart card connected to TDA and returns the smart card
+ * control.
+ *
+ * @param[in] void
+ * @param[out] tda_control provides the deatils of the smartcards present over
+ * TDA
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control);
+
+/**
+ * @brief opens the contactcard.
+ *
+ * @param[in] tda_id id of the contact card to be opened
+ * @param[out] returns the conn_id id of the contact card
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id);
+
+/**
+ * @brief closes the contactcard.
+ *
+ * @param[in] connection_id id of the contact card to be closed
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS close_tda_slot(uint8_t connection_id);
+
+/**
+ *
+ * @brief           This function write the data to NFCC through physical
+ *                  interface (e.g. I2C) using the PN7220 driver interface.
+ *
+ * @param[in]       cmd_apdu: Command to TDA
+ * @param[out]      rsp_apdu: Command to TDA
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS transceive_tda_slot(tda_data *cmd_apdu, tda_data *rsp_apdu);
 
 #ifdef __cplusplus
 }

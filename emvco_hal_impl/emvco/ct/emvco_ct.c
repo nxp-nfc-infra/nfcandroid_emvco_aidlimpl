@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,3 +29,74 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
+
+#include <emvco_ct.h>
+#include <emvco_dm.h>
+#include <emvco_log.h>
+#include <string.h>
+
+extern tda_control_t g_tda_ctrl;
+extern fp_send_core_conn_create_t fp_send_core_conn_create;
+extern fp_send_core_conn_close_t fp_send_core_conn_close;
+extern fp_get_tda_type_t fp_get_tda_type;
+extern fp_transceive_t fp_transceive;
+
+EMVCO_STATUS discover_tda_slots(tda_control_t *tda_control) {
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  if (g_tda_ctrl.p_tda != NULL) {
+    tda_control->p_tda = g_tda_ctrl.p_tda;
+    tda_control->num_tda_supported = g_tda_ctrl.num_tda_supported;
+
+    LOG_EMVCOHAL_D("%s", __func__);
+    LOG_EMVCOHAL_D("%s, g_tda_ctrl.num_tda_supported:%d", __func__,
+                   g_tda_ctrl.num_tda_supported);
+    LOG_EMVCOHAL_D("%s, g_tda_ctrl.id:%d", __func__, g_tda_ctrl.p_tda->id);
+    LOG_EMVCOHAL_D("%s, g_tda_ctrl.id+1:%d", __func__,
+                   (g_tda_ctrl.p_tda + 1)->id);
+
+    LOG_EMVCOHAL_D("%s, tda_control.num_tda_supported:%d", __func__,
+                   tda_control->num_tda_supported);
+    LOG_EMVCOHAL_D("%s, tda_control.id:%d", __func__, tda_control->p_tda->id);
+    LOG_EMVCOHAL_D("%s, tda_control.id+1:%d", __func__,
+                   (tda_control->p_tda + 1)->id);
+    status = EMVCO_STATUS_OK;
+  } else {
+    LOG_EMVCOHAL_D("%s", __func__);
+    status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+  }
+  return status;
+}
+
+EMVCO_STATUS open_tda_slot(uint8_t tda_id, uint8_t *conn_id) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  if (fp_send_core_conn_create != NULL) {
+    *conn_id = fp_send_core_conn_create(tda_id);
+    LOG_EMVCOHAL_D("%s channel:%02x", __func__, status);
+  } else {
+    status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+  }
+  return status;
+}
+
+EMVCO_STATUS close_tda_slot(uint8_t tda_id) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  if (fp_send_core_conn_close != NULL) {
+    status = fp_send_core_conn_close(tda_id);
+  } else {
+    status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+  }
+  return status;
+}
+
+EMVCO_STATUS transceive_tda_slot(tda_data *cmd_apdu, tda_data *rsp_apdu) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  EMVCO_STATUS status = EMVCO_STATUS_SUCCESS;
+  if (fp_transceive != NULL) {
+    status = fp_transceive(cmd_apdu, rsp_apdu);
+  } else {
+    status = EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+  }
+  return status;
+}

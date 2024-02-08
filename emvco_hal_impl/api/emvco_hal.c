@@ -32,6 +32,7 @@
 
 #include <emvco_cl.h>
 #include <emvco_config.h>
+#include <emvco_ct.h>
 #include <emvco_dm.h>
 #include <emvco_hal.h>
 #include <emvco_log.h>
@@ -112,4 +113,24 @@ EMVCO_STATUS set_string_config(config_type_t type, const int32_t in_length,
   (void)in_length;
   (void)p_value;
   return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
+}
+
+EMVCO_STATUS discover_tda(tda_control_t *tda_control) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  return discover_tda_slots(tda_control);
+}
+
+EMVCO_STATUS open_tda(uint8_t tda_id, uint8_t *conn_id) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  return open_tda_slot(tda_id, conn_id);
+}
+
+EMVCO_STATUS close_tda(uint8_t tda_id) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  return close_tda_slot(tda_id);
+}
+
+EMVCO_STATUS transceive_tda(tda_data *cmd_apdu, tda_data *rsp_apdu) {
+  LOG_EMVCOHAL_D("%s", __func__);
+  return transceive_tda_slot(cmd_apdu, rsp_apdu);
 }

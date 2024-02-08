@@ -101,7 +101,7 @@ int open_emvco_app_data_channel(
  * @param[in]       data_len length of the data to be written
  * @param[in]       p_data actual data to be written
  *
- * @return          int status of the write operation performed
+ * @return          int returns number of byte successfully written
  *
  */
 int send_emvco_app_data(uint16_t data_len, const uint8_t *p_data);
@@ -221,6 +221,61 @@ EMVCO_STATUS set_byte_array_config(config_type_t type, const int32_t in_length,
  */
 EMVCO_STATUS set_string_config(config_type_t type, const int32_t in_length,
                                const char *p_value);
+
+/**
+ * @brief discovers the smart card connected to TDA and returns the smart card
+ * control.
+ *
+ * @param[in] void
+ * @param[out] tda_control provides the deatils of the smartcards present over
+ * TDA
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS discover_tda(tda_control_t *tda_control);
+
+/**
+ * @brief opens the contactcard and returns the logical channel.
+ *
+ * @param[in] tda_id id of the contact card to be opened
+ * @param[out] returns the conn_id id of the contact card
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS open_tda(uint8_t tda_id, uint8_t *conn_id);
+
+/**
+ * @brief closes the contactcard.
+ *
+ * @param[in] connection_id id of the contact card to be closed
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS close_tda(uint8_t tda_id);
+
+/**
+ *
+ * @brief           This function write the data to NFCC through physical
+ *                  interface (e.g. I2C) using the PN7220 driver interface.
+ *
+ * @param[in]       cmd_apdu: Command to TDA
+ * @param[out]      rsp_apdu: Command to TDA
+ *
+ * @return EMVCO_STATUS returns EMVCO_STATUS_OK, if feature supported
+ * and returns EMVCO_STATUS_FEATURE_NOT_SUPPORTED, if feature is
+ * not supported
+ *
+ */
+EMVCO_STATUS transceive_tda(tda_data *cmd_apdu, tda_data *rsp_apdu);
 
 #ifdef __cplusplus
 }

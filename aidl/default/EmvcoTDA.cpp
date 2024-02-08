@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022 NXP
+ *  Copyright 2022-2023 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -29,26 +29,46 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
  ******************************************************************************/
-///////////////////////////////////////////////////////////////////////////////
-// THIS FILE IS IMMUTABLE. DO NOT EDIT IN ANY CASE.                          //
-///////////////////////////////////////////////////////////////////////////////
+#include "EmvcoTDA.h"
+#include "Emvco.h"
 
-// This file is a snapshot of an AIDL file. Do not edit it manually. There are
-// two cases:
-// 1). this is a frozen version file - do not edit this in any case.
-// 2). this is a 'current' file. If you make a backwards compatible change to
-//     the interface (from the latest frozen version), the build system will
-//     prompt you to update this file with `m <name>-update-api`.
-//
-// You must not make a backward incompatible change to any AIDL file built
-// with the aidl_interface module type with versions property set. The module
-// type is used to build AIDL files in a way that they can be used across
-// independently updatable components of the system. If a device is shipped
-// with such a backward incompatible change, it has a high risk of breaking
-// later when a module using the interface is updated, e.g., Mainline modules.
+namespace aidl {
+namespace android {
+namespace hardware {
+namespace emvco {
 
-package android.hardware.emvco;
-@VintfStability
-interface IEmvcoContactCard {
-  boolean registerEMVCoEventListener(in android.hardware.emvco.IEmvcoClientCallback clientCallback);
+::ndk::ScopedAStatus EmvcoTDA::registerEMVCoEventListener(
+    const std::shared_ptr<
+        ::aidl::android::hardware::emvco::IEmvcoClientCallback>
+        &in_clientCallback,
+    bool *_aidl_return) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->registerEMVCoEventListener(in_clientCallback,
+                                                          _aidl_return);
 }
+::ndk::ScopedAStatus EmvcoTDA::discoverTDA(
+    const std::shared_ptr<IEmvcoTDACallback> &in_clientCallback,
+    std::vector<::aidl::android::hardware::emvco::EmvcoTDAInfo> *emvcoTDAInfo) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->discoverTDA(in_clientCallback, emvcoTDAInfo);
+}
+
+::ndk::ScopedAStatus EmvcoTDA::openTDA(int8_t in_tdaID, int8_t *out_connID) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->openTDA(in_tdaID, out_connID);
+}
+::ndk::ScopedAStatus
+EmvcoTDA::transceive(const std::vector<uint8_t> &in_cmd_data,
+                     std::vector<uint8_t> *out_rsp_data) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->transceive(in_cmd_data, out_rsp_data);
+}
+::ndk::ScopedAStatus EmvcoTDA::closeTDA(int8_t in_tdaID) {
+  ALOGD_IF(EMVCO_HAL_DEBUG, "%s: Enter", __func__);
+  return Emvco::getInstance()->closeTDA(in_tdaID);
+}
+
+} // namespace emvco
+} // namespace hardware
+} // namespace android
+} // namespace aidl

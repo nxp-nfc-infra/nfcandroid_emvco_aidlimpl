@@ -35,6 +35,7 @@
 #include <dlfcn.h>
 #include <emvco_cl.h>
 #include <emvco_config.h>
+#include <emvco_ct.h>
 #include <emvco_dm.h>
 #include <emvco_log.h>
 #include <emvco_nci_ext.h>
@@ -57,6 +58,16 @@
 void *p_emvco_ecp_vas_handle = NULL;
 fp_init_ecp_vas_t fp_init_ecp_vas = NULL;
 
+void *p_emvco_ct_one_bin_handle = NULL;
+fp_init_ct_ext_t fp_init_ct_ext = NULL;
+fp_de_init_ct_ext_t fp_de_init_ct_ext = NULL;
+fp_ct_process_emvco_mode_rsp_t fp_ct_process_emvco_mode_rsp = NULL;
+fp_send_core_conn_create_t fp_send_core_conn_create = NULL;
+fp_send_core_conn_close_t fp_send_core_conn_close = NULL;
+fp_get_tda_type_t fp_get_tda_type = NULL;
+fp_transceive_t fp_transceive = NULL;
+fp_read_tda_data_complete_t fp_read_tda_data_complete = NULL;
+
 /* Processing of ISO 15693 EOF */
 extern uint8_t icode_send_eof;
 extern uint8_t icode_detected;
@@ -67,6 +78,7 @@ static uint8_t config_success = true;
 
 extern nci_clock_t nci_clock;
 extern emvco_args_t *modeSwitchArgs;
+tda_control_t g_tda_ctrl;
 
 /* NCI HAL Control structure */
 nci_hal_ctrl_t nci_hal_ctrl;
@@ -340,6 +352,52 @@ void initialize_emvco_ecp_vas() {
     return;
   }
 }
+
+void initialize_emvco_ct() {
+  LOG_EMVCOHAL_D("%s", __func__);
+  p_emvco_ct_one_bin_handle =
+      dlopen("/system/vendor/lib64/emvco_tda.so", RTLD_NOW);
+  if (p_emvco_ct_one_bin_handle == NULL) {
+    LOG_EMVCOHAL_D("Error : opening (/system/vendor/lib64/emvco_tda.so) !!");
+    return;
+  }
+  if ((fp_init_ct_ext = (fp_init_ct_ext_t)dlsym(p_emvco_ct_one_bin_handle,
+                                                "init_ct_ext")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (init_ct_ext) !!");
+    return;
+  }
+  if ((fp_de_init_ct_ext = (fp_de_init_ct_ext_t)dlsym(
+           p_emvco_ct_one_bin_handle, "de_init_ct_ext")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (de_init_ct_ext) !!");
+    return;
+  }
+
+  if ((fp_ct_process_emvco_mode_rsp = (fp_ct_process_emvco_mode_rsp_t)dlsym(
+           p_emvco_ct_one_bin_handle, "ct_process_emvco_mode_rsp")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (ct_process_emvco_mode_rsp) !!");
+    return;
+  }
+  if ((fp_send_core_conn_create = (fp_send_core_conn_create_t)dlsym(
+           p_emvco_ct_one_bin_handle, "send_core_conn_create")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (send_core_conn_create) !!");
+    return;
+  }
+  if ((fp_send_core_conn_close = (fp_send_core_conn_close_t)dlsym(
+           p_emvco_ct_one_bin_handle, "send_core_conn_close")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (send_core_conn_close) !!");
+    return;
+  }
+  if ((fp_transceive = (fp_transceive_t)dlsym(p_emvco_ct_one_bin_handle,
+                                              "transceive")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (transceive) !!");
+    return;
+  }
+  if ((fp_read_tda_data_complete = (fp_read_tda_data_complete_t)dlsym(
+           p_emvco_ct_one_bin_handle, "read_tda_data_complete")) == NULL) {
+    LOG_EMVCOHAL_D("Error while linking (read_tda_data_complete) !!");
+    return;
+  }
+}
 /******************************************************************************
  * Function         min_open_app_data_channel
  *
@@ -398,6 +456,8 @@ int min_open_app_data_channel() {
   nci_hal_ctrl.nci_info.nci_version = NCI_VERSION_UNKNOWN;
 
   initialize_emvco_ecp_vas();
+  initialize_emvco_ct();
+
   /* Read the nfc device node name */
   if (!get_byte_array_value(NAME_NXP_EMVCO_DEV_NODE, &p_nfc_dev_node,
                             &dev_node_size)) {
@@ -630,6 +690,7 @@ int send_app_data_internal(uint16_t data_len, const uint8_t *p_data) {
     LOG_EMVCOHAL_E("cmd_len exceeds limit NCI_MAX_DATA_LEN");
     return EMVCO_STATUS_FAILED;
   }
+
   if ((p_data[0] & (NCI_MSG_TYPE_CMD << NCI_MT_SHIFT))) {
     LOG_EMVCOHAL_E("NCI command not allowed to send to controller");
     return EMVCO_STATUS_FEATURE_NOT_SUPPORTED;
@@ -1112,5 +1173,13 @@ static void print_res_status(uint8_t *p_rx_data, uint16_t *p_len) {
       LOG_EMVCOHAL_W("Invalid Data from config file.");
       config_success = false;
     }
+  }
+}
+
+void ct_process_emvco_mode_rsp_impl(osal_transact_info_t *pTransactionInfo) {
+  if (fp_ct_process_emvco_mode_rsp != NULL) {
+    fp_ct_process_emvco_mode_rsp(pTransactionInfo);
+  } else {
+    LOG_EMVCOHAL_W("CT not supported");
   }
 }

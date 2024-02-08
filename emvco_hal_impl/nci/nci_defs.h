@@ -96,6 +96,12 @@
     for (ijk = 0; ijk < (len); ijk++)                                          \
       *(p)++ = (uint8_t)(a)[ijk];                                              \
   }
+#define STREAM_TO_ARRAY(a, p, len)                                             \
+  {                                                                            \
+    int ijk;                                                                   \
+    for (ijk = 0; ijk < (len); ijk++)                                          \
+      ((uint8_t *)(a))[ijk] = *(p)++;                                          \
+  }
 /**********************************************
  * NCI Core Group Opcode        - 0
  **********************************************/

@@ -34,7 +34,7 @@ package android.hardware.emvco;
 
 import android.hardware.emvco.IEmvcoProfileDiscovery;
 import android.hardware.emvco.IEmvcoContactlessCard;
-import android.hardware.emvco.IEmvcoContactCard;
+import android.hardware.emvco.IEmvcoTDA;
 
 /** \addtogroup EMVCO_HAL_API_INTERFACE
  *  @{
@@ -73,9 +73,9 @@ interface IEmvco {
     *
     * @param  none
     *
-    * @return IEmvcoContactCard EMVCo contact HAL interface
+    * @return IEmvcoTDA EMVCo contact HAL interface
     *
     */
-    IEmvcoContactCard getEmvcoContactCard();
+    IEmvcoTDA getEmvcoTDA();
 }
 /** @}*/
