@@ -595,7 +595,7 @@ init_retry:
     goto clean_and_return;
   }
 
-  get_set_config(NAME_NXP_PCD_SETTINGS);
+  //NAME_NXP_PCD_SETTINGS configuration applied as part of NFC initialization
   get_set_config(NAME_NXP_SET_CONFIG);
   get_set_config(NAME_NXP_GET_CONFIG);
 
