@@ -1,9 +1,0 @@
-NXP Software Content Register
---------------------------------------------
-Repository: nfcandroid_emvco_aidlimpl
-Outgoing License: LA_OPT_NXP_Software_License v57 July 2024 -  Section 2.3 applies
-License File: LICENSE.pdf
-Description and Comments: PN7220/21 Android EMVCo Middleware
-Release Location: https://github.com/nxp-nfc-infra/nfcandroid_emvco_aidlimpl
-Origin: NXP (Proprietary)
---------------------------------------------
