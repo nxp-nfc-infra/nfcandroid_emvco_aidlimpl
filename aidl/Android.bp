@@ -4,11 +4,6 @@ aidl_interface {
     srcs: ["vendor/nxp/emvco/*.aidl"],
     stability: "vintf",
     backend: {
-        ndk: {
-            vndk: {
-                enabled: true,
-            },
-        },
         java: {
             sdk_version: "module_current",
             enabled: true,
