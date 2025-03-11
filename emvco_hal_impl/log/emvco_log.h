@@ -1,6 +1,6 @@
 /******************************************************************************
  *
- *  Copyright 2022-2024 NXP
+ *  Copyright 2022-2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -72,11 +72,11 @@ extern bool emvco_debug_enabled;
 #define NAME_NXP_CT_MAX_WTX_WAIT_TIME "NXP_CT_MAX_WTX_WAIT_TIME"
 /* ####################### Set the log module name by Android property
  * ########################## */
-#define PROP_NAME_LOG_GLOBAL_LOGLEVEL "emvco.log_level_global"
-#define PROP_NAME_LOG_EXTNS_LOGLEVEL "emvco.log_level_extns"
-#define PROP_NAME_LOG_HAL_LOGLEVEL "emvco.log_level_hal"
-#define PROP_NAME_LOG_NCI_LOGLEVEL "emvco.log_level_nci"
-#define PROP_NAME_LOG_TML_LOGLEVEL "emvco.log_level_tml"
+#define PROP_NAME_LOG_GLOBAL_LOGLEVEL "vendor.emvco.log_level_global"
+#define PROP_NAME_LOG_EXTNS_LOGLEVEL "vendor.emvco.log_level_extns"
+#define PROP_NAME_LOG_HAL_LOGLEVEL "vendor.emvco.log_level_hal"
+#define PROP_NAME_LOG_NCI_LOGLEVEL "vendor.emvco.log_level_nci"
+#define PROP_NAME_LOG_TML_LOGLEVEL "vendor.emvco.log_level_tml"
 
 /* ####################### Set the logging level for EVERY COMPONENT here
  * ######################## :START: */
