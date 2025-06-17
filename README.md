@@ -12,7 +12,7 @@ AOSP based Nxp’s EMVCo CL L1 Library, EMVCo CT library  and HAL
 | :-------------: |:---------------------:| :-----:|
 | android-14.0.0_r4              |  14.02.00 (PN7xxx) |  NFC_AR_INFRA_001E_14.02.00_OpnSrc |
 | android-14.0.0_r4              |  14.03.00 (PN7xxx) |  NFC_AR_INFRA_001E_14.03.00_OpnSrc |
-
+| android-14.0.0_r4              |  14.04.00 (PN7xxx) |  NFC_AR_INFRA_001E_14.04.00_OpnSrc |
 
 
 
