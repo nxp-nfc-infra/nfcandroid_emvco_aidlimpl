@@ -397,5 +397,5 @@ typedef EMVCO_STATUS (*fp_ct_discover_tda_t)(tda_control_t *);
 typedef bool (*fp_is_ct_data_credit_received_t)(uint8_t *, uint16_t);
 typedef bool (*fp_is_ct_data_rsp_t)(uint8_t *, uint16_t);
 typedef void (*fp_on_emvco_rf_pool_start_t)();
-typedef void (*fp_set_max_wtx_timeout_value_t)();
+typedef void (*fp_set_max_wtx_timeout_value_t)(int);
 #endif /* _EMVCO_DM_H_ */
